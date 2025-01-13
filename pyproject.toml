@@ -1,0 +1,69 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "cleanlab-codex"
+dynamic = ["version"]
+description = 'Python client library for developers to integrate Cleanlab Codex into RAG systems'
+readme = "README.md"
+requires-python = ">=3.8"
+license = "MIT"
+keywords = []
+authors = [
+  { name = "Angela", email = "angela@cleanlab.ai" },
+]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: Implementation :: CPython",
+  "Programming Language :: Python :: Implementation :: PyPy",
+]
+dependencies = [
+  "codex @ git+ssh://git@github.com/stainless-sdks/codex-python.git", # TODO: update this once we've published SDK
+  "llama-index-core",
+]
+
+[project.urls]
+Documentation = "https://github.com/cleanlab/cleanlab-codex#readme"
+Issues = "https://github.com/cleanlab/cleanlab-codex/issues"
+Source = "https://github.com/cleanlab/cleanlab-codex"
+
+[tool.hatch.version]
+path = "src/cleanlab_codex/__about__.py"
+
+[tool.hatch.envs.types]
+extra-dependencies = [
+  "mypy>=1.0.0",
+]
+[tool.hatch.envs.types.scripts]
+check = "mypy --install-types --non-interactive {args:src/cleanlab_codex tests}"
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.coverage.run]
+source_pkgs = ["cleanlab_codex", "tests"]
+branch = true
+parallel = true
+omit = [
+  "src/cleanlab_codex/__about__.py",
+]
+
+[tool.coverage.paths]
+cleanlab_codex = ["src/cleanlab_codex", "*/cleanlab-codex/src/cleanlab_codex"]
+tests = ["tests", "*/cleanlab-codex/tests"]
+
+[tool.coverage.report]
+exclude_lines = [
+  "no cov",
+  "if __name__ == .__main__.:",
+  "if TYPE_CHECKING:",
+]
+
+[tool.ruff.lint]
+ignore = ["FA100"]
