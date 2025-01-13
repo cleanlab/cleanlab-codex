@@ -14,7 +14,7 @@ authors = [
   { name = "Angela", email = "angela@cleanlab.ai" },
 ]
 classifiers = [
-  "Development Status :: 4 - Beta",
+  "Development Status :: 5 - Production/Stable",
   "Programming Language :: Python",
   "Programming Language :: Python :: 3.8",
   "Programming Language :: Python :: 3.9",
@@ -26,7 +26,7 @@ classifiers = [
 ]
 dependencies = [
   "codex @ git+ssh://git@github.com/cleanlab/codex-python.git", # TODO: update this once we've published SDK
-  "llama-index-core",
+  "pydantic>=1.9.0, <3",
 ]
 
 [project.urls]
