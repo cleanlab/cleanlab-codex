@@ -26,7 +26,7 @@ def query_project(
 ) -> tuple[Optional[str], Optional[Entry]]:
     if client.access_key is not None:
         project_id = client.projects.access_keys.retrieve_project_id()
-    else:
+    elif project_id is None:
         raise ValueError(
             "project_id is required when authenticating with a user-level API Key"
         )
