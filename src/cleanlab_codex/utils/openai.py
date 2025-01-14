@@ -1,4 +1,5 @@
 from typing import Any, Literal
+
 from pydantic import BaseModel
 
 
@@ -34,8 +35,6 @@ def format_as_openai_tool(
         function=Function(
             name=tool_name,
             description=tool_description,
-            parameters=FunctionParameters(
-                properties=tool_properties, required=required_properties
-            ),
+            parameters=FunctionParameters(properties=tool_properties, required=required_properties),
         )
     ).model_dump()

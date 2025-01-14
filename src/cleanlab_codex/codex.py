@@ -37,9 +37,7 @@ class Codex:
         """
         return self._client.users.myself.organizations.list().organizations
 
-    def create_project(
-        self, name: str, organization_id: str, description: Optional[str] = None
-    ) -> int:
+    def create_project(self, name: str, organization_id: str, description: Optional[str] = None) -> int:
         """Create a new Codex project.
 
         Args:
@@ -69,20 +67,18 @@ class Codex:
         """
         # TODO: implement batch creation of entries in backend and update this function
         for entry in entries:
-            self._client.projects.knowledge.create(
-                project_id, question=entry["question"], answer=entry.get("answer")
-            )
+            self._client.projects.entries.create(project_id, question=entry["question"], answer=entry.get("answer"))
 
     def create_project_access_key(
         self,
-        project_id: str,
+        project_id: int,
         access_key_name: str,
         access_key_description: Optional[str] = None,
     ) -> str:
         """Create a new access key for a project.
 
         Args:
-            project_id (str): The ID of the project to create the access key for.
+            project_id (int): The ID of the project to create the access key for.
             access_key_name (str): The name of the access key.
             access_key_description (:obj:`str`, optional): The description of the access key.
 
@@ -99,9 +95,7 @@ class Codex:
         self,
         question: str,
         *,
-        project_id: Optional[
-            int
-        ] = None,  # TODO: update to uuid once project IDs are changed to UUIDs
+        project_id: Optional[int] = None,  # TODO: update to uuid once project IDs are changed to UUIDs
         fallback_answer: Optional[str] = None,
         read_only: bool = False,
     ) -> tuple[Optional[str], Optional[Entry]]:
@@ -109,7 +103,7 @@ class Codex:
 
         Args:
             question (str): The question to ask the Codex API.
-            project_id (:obj:`str`, optional): The ID of the project to query.
+            project_id (:obj:`int`, optional): The ID of the project to query.
                 If the client is authenticated with a user-level API Key, this is required.
                 If the client is authenticated with a project-level Access Key, this is optional. The client will use the Access Key's project ID by default.
             fallback_answer (:obj:`str`, optional): Optional fallback answer to return if Codex is unable to answer the question.

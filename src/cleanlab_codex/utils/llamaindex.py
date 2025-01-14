@@ -1,13 +1,10 @@
 from inspect import signature
 from typing import Any, Callable, Type
 
-
 from llama_index.core.bridge.pydantic import BaseModel, FieldInfo, create_model
 
 
-def get_function_schema(
-    name: str, func: Callable[..., Any], tool_properties: dict[str, Any]
-) -> Type[BaseModel]:
+def get_function_schema(name: str, func: Callable[..., Any], tool_properties: dict[str, Any]) -> Type[BaseModel]:
     fields = {}
     params = signature(func).parameters
     for param_name in params:

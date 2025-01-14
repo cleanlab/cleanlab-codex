@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from typing import Any, Optional
+
 from cleanlab_codex.codex import Codex
 
 
@@ -22,7 +23,7 @@ class CodexTool:
         self,
         codex_client: Codex,
         *,
-        project_id: Optional[str] = None,
+        project_id: Optional[int] = None,
         fallback_answer: Optional[str] = DEFAULT_FALLBACK_ANSWER,
     ):
         self._codex_client = codex_client
@@ -34,7 +35,7 @@ class CodexTool:
         cls,
         access_key: str,
         *,
-        project_id: Optional[str] = None,
+        project_id: Optional[int] = None,
         fallback_answer: Optional[str] = DEFAULT_FALLBACK_ANSWER,
     ) -> CodexTool:
         """Creates a CodexTool from an access key. The project ID that the CodexTool will use is the one that is associated with the access key."""
@@ -49,7 +50,7 @@ class CodexTool:
         cls,
         codex_client: Codex,
         *,
-        project_id: Optional[str] = None,
+        project_id: Optional[int] = None,
         fallback_answer: Optional[str] = DEFAULT_FALLBACK_ANSWER,
     ) -> CodexTool:
         """Creates a CodexTool from a Codex client.
@@ -91,9 +92,7 @@ class CodexTool:
         Returns:
             The answer to the question, or None if the answer is not available.
         """
-        return self._codex_client.query(
-            question, project_id=self._project_id, fallback_answer=self._fallback_answer
-        )[0]
+        return self._codex_client.query(question, project_id=self._project_id, fallback_answer=self._fallback_answer)[0]
 
     def to_openai_tool(self) -> dict[str, Any]:
         """Converts the tool to an OpenAI tool."""
@@ -110,6 +109,7 @@ class CodexTool:
         """Converts the tool to a LlamaIndex FunctionTool."""
         try:
             from llama_index.core.tools import FunctionTool
+
             from cleanlab_codex.utils.llamaindex import get_function_schema
         except ImportError:
             raise ImportError(
