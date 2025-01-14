@@ -66,4 +66,4 @@ exclude_lines = [
 ]
 
 [tool.ruff.lint]
-ignore = ["FA100"]
+ignore = ["FA100", "UP007"]

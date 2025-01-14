@@ -12,5 +12,5 @@ def is_access_key(key: str) -> bool:
 def init_codex_client(key: str) -> _Codex:
     if is_access_key(key):
         return _Codex(access_key=key)
-    else:
-        return _Codex(api_key=key)
+
+    return _Codex(api_key=key)

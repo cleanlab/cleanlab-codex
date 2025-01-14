@@ -1,9 +1,13 @@
-from typing import Optional
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Optional
 
 from cleanlab_codex.internal.project import create_project, query_project
 from cleanlab_codex.internal.utils import init_codex_client
-from cleanlab_codex.types.entry import Entry, EntryCreate
-from cleanlab_codex.types.organization import Organization
+
+if TYPE_CHECKING:
+    from cleanlab_codex.types.entry import Entry, EntryCreate
+    from cleanlab_codex.types.organization import Organization
 
 
 class Codex:

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Optional
+from typing import Any, ClassVar, Optional
 
 from cleanlab_codex.codex import Codex
 
@@ -10,13 +10,13 @@ class CodexTool:
 
     _tool_name = "ask_advisor"
     _tool_description = "Asks an all-knowing advisor this query in cases where it cannot be answered from the provided Context. If the answer is avalible, this returns None."
-    _tool_properties = {
+    _tool_properties: ClassVar[dict[str, Any]] = {
         "question": {
             "type": "string",
             "description": "The question to ask the advisor. This should be the same as the original user question, except in cases where the user question is missing information that could be additionally clarified.",
         }
     }
-    _tool_requirements = ["question"]
+    _tool_requirements: ClassVar[list[str]] = ["question"]
     DEFAULT_FALLBACK_ANSWER = "Based on the available information, I cannot provide a complete answer to this question."
 
     def __init__(
@@ -107,14 +107,9 @@ class CodexTool:
 
     def to_llamaindex_tool(self) -> Any:
         """Converts the tool to a LlamaIndex FunctionTool."""
-        try:
-            from llama_index.core.tools import FunctionTool
+        from llama_index.core.tools import FunctionTool
 
-            from cleanlab_codex.utils.llamaindex import get_function_schema
-        except ImportError:
-            raise ImportError(
-                "LlamaIndex is not installed. Please install it with `pip install llama-index` in order to use the LlamaIndex tool."
-            )
+        from cleanlab_codex.utils.llamaindex import get_function_schema
 
         return FunctionTool.from_defaults(
             fn=self.query,
