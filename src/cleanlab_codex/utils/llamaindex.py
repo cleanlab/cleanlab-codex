@@ -6,9 +6,7 @@ from typing import Any, Callable
 from llama_index.core.bridge.pydantic import BaseModel, FieldInfo, create_model
 
 
-def get_function_schema(
-    name: str, func: Callable[..., Any], tool_properties: dict[str, Any]
-) -> type[BaseModel]:
+def get_function_schema(name: str, func: Callable[..., Any], tool_properties: dict[str, Any]) -> type[BaseModel]:
     fields = {}
     params = signature(func).parameters
     for param_name in params:
