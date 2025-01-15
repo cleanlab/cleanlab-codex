@@ -1,0 +1,29 @@
+name: CI
+on:
+  push:
+  pull_request:
+
+jobs:
+  typecheck:
+    name: Type check
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - uses: pypa/hatch@install
+      # TODO: remove after we release codex-sdk package (and are no longer installing from github)
+      - name: setup git url rewrite
+        run: git config --global url."https://${{ secrets.GH_USERNAME }}:${{ secrets.CLEANLAB_BOT_PAT }}@github.com".insteadOf ssh://git@github.com
+      - run: hatch run types:check
+  fmt:
+    name: Format and lint
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - uses: pypa/hatch@install
+      - run: hatch fmt --check

@@ -27,4 +27,4 @@ def get_function_schema(name: str, func: Callable[..., Any], tool_properties: di
                 FieldInfo(default=param_default, description=description),
             )
 
-    return create_model(name, **fields)
+    return create_model(name, **fields)  # type: ignore
