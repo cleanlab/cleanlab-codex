@@ -1,4 +1,5 @@
 from unittest.mock import patch
+
 from cleanlab_codex.internal.utils import init_codex_client, is_access_key
 
 DUMMY_ACCESS_KEY = "sk-1-EMOh6UrRo7exTEbEi8_azzACAEdtNiib2LLa1IGo6kA"

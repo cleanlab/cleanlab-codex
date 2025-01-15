@@ -1,6 +1,8 @@
+# ruff: noqa: DTZ005
+
+import uuid
 from datetime import datetime
 from unittest.mock import MagicMock
-import uuid
 
 import pytest
 from codex.types import ProjectReturnSchema
@@ -50,9 +52,7 @@ def test_create_project(mock_client: MagicMock):
         description=FAKE_PROJECT_DESCRIPTION,
     )
     codex = Codex("")
-    project_id = codex.create_project(
-        FAKE_PROJECT_NAME, FAKE_ORGANIZATION_ID, FAKE_PROJECT_DESCRIPTION
-    )
+    project_id = codex.create_project(FAKE_PROJECT_NAME, FAKE_ORGANIZATION_ID, FAKE_PROJECT_DESCRIPTION)
     mock_client.projects.create.assert_called_once_with(
         config=DEFAULT_PROJECT_CONFIG,
         organization_id=FAKE_ORGANIZATION_ID,
@@ -69,9 +69,7 @@ def test_add_entries(mock_client: MagicMock):
     }
     unanswered_entry_create = {"question": "What is the capital of Germany?"}
     codex = Codex("")
-    codex.add_entries(
-        [answered_entry_create, unanswered_entry_create], project_id=FAKE_PROJECT_ID
-    )
+    codex.add_entries([answered_entry_create, unanswered_entry_create], project_id=FAKE_PROJECT_ID)
 
     for call, entry in zip(
         mock_client.projects.entries.create.call_args_list,
@@ -86,9 +84,7 @@ def test_create_project_access_key(mock_client: MagicMock):
     codex = Codex("")
     access_key_name = "Test Access Key"
     access_key_description = "Test Access Key Description"
-    codex.create_project_access_key(
-        FAKE_PROJECT_ID, access_key_name, access_key_description
-    )
+    codex.create_project_access_key(FAKE_PROJECT_ID, access_key_name, access_key_description)
     mock_client.projects.access_keys.create.assert_called_once_with(
         project_id=FAKE_PROJECT_ID,
         name=access_key_name,
@@ -109,9 +105,7 @@ def test_query_read_only(mock_client: MagicMock):
     mock_client.projects.entries.query.return_value = None
 
     codex = Codex("")
-    res = codex.query(
-        "What is the capital of France?", read_only=True, project_id=FAKE_PROJECT_ID
-    )
+    res = codex.query("What is the capital of France?", read_only=True, project_id=FAKE_PROJECT_ID)
     mock_client.projects.entries.query.assert_called_once_with(
         FAKE_PROJECT_ID, question="What is the capital of France?"
     )
