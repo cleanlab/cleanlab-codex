@@ -54,11 +54,11 @@ branch = true
 parallel = true
 omit = [
   "src/cleanlab_codex/__about__.py",
+  "*/tests/*",
 ]
 
 [tool.coverage.paths]
 cleanlab_codex = ["src/cleanlab_codex", "*/cleanlab-codex/src/cleanlab_codex"]
-tests = ["tests", "*/cleanlab-codex/tests"]
 
 [tool.coverage.report]
 exclude_lines = [
@@ -66,6 +66,17 @@ exclude_lines = [
   "if __name__ == .__main__.:",
   "if TYPE_CHECKING:",
 ]
+
+[tool.hatch.envs.coverage]
+detached = true
+dependencies = [
+  "coverage",
+]
+
+[tool.hatch.envs.coverage.scripts]
+report = "coverage report --fail-under=90"
+html = "coverage html"
+xml = "coverage xml"
 
 [tool.ruff.lint]
 ignore = ["FA100", "UP007"]
