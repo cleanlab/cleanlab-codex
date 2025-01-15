@@ -48,6 +48,11 @@ check = "mypy --install-types --non-interactive {args:src/cleanlab_codex tests}"
 [tool.hatch.metadata]
 allow-direct-references = true
 
+[tool.hatch.envs.hatch-test]
+extra-dependencies = [
+  "llama-index-core",
+]
+
 [tool.coverage.run]
 source_pkgs = ["cleanlab_codex", "tests"]
 branch = true
