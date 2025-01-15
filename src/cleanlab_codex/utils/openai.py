@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Literal
+from typing import Any, Dict, List, Literal
 
 from pydantic import BaseModel
 
@@ -12,8 +12,8 @@ class Property(BaseModel):
 
 class FunctionParameters(BaseModel):
     type: Literal["object"] = "object"
-    properties: dict[str, Property]
-    required: list[str]
+    properties: Dict[str, Property]
+    required: List[str]
 
 
 class Function(BaseModel):
@@ -30,9 +30,9 @@ class Tool(BaseModel):
 def format_as_openai_tool(
     tool_name: str,
     tool_description: str,
-    tool_properties: dict[str, Any],
-    required_properties: list[str],
-) -> dict[str, Any]:
+    tool_properties: Dict[str, Any],
+    required_properties: List[str],
+) -> Dict[str, Any]:
     return Tool(
         function=Function(
             name=tool_name,
