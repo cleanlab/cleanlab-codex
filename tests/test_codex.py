@@ -14,7 +14,7 @@ from cleanlab_codex.types.entry import Entry, EntryCreate
 from cleanlab_codex.types.organization import Organization
 from cleanlab_codex.types.project import ProjectConfig
 
-FAKE_PROJECT_ID = 1
+FAKE_PROJECT_ID = str(uuid.uuid4())
 FAKE_USER_ID = "Test User"
 FAKE_ORGANIZATION_ID = "Test Organization"
 FAKE_PROJECT_NAME = "Test Project"

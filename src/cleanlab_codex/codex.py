@@ -41,7 +41,7 @@ class Codex:
         """
         return self._client.users.myself.organizations.list().organizations
 
-    def create_project(self, name: str, organization_id: str, description: Optional[str] = None) -> int:
+    def create_project(self, name: str, organization_id: str, description: Optional[str] = None) -> str:
         """Create a new Codex project.
 
         Args:
@@ -59,7 +59,7 @@ class Codex:
             description=description,
         )
 
-    def add_entries(self, entries: list[EntryCreate], project_id: int) -> None:
+    def add_entries(self, entries: list[EntryCreate], project_id: str) -> None:
         """Add a list of entries to the Codex project.
 
         Args:
@@ -75,7 +75,7 @@ class Codex:
 
     def create_project_access_key(
         self,
-        project_id: int,
+        project_id: str,
         access_key_name: str,
         access_key_description: Optional[str] = None,
     ) -> str:
@@ -99,7 +99,7 @@ class Codex:
         self,
         question: str,
         *,
-        project_id: Optional[int] = None,  # TODO: update to uuid once project IDs are changed to UUIDs
+        project_id: Optional[str] = None,  # TODO: update to uuid once project IDs are changed to UUIDs
         fallback_answer: Optional[str] = None,
         read_only: bool = False,
     ) -> tuple[Optional[str], Optional[Entry]]:

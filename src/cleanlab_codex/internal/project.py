@@ -17,7 +17,7 @@ class MissingProjectIdError(Exception):
         return "project_id is required when authenticating with a user-level API Key"
 
 
-def create_project(client: _Codex, name: str, organization_id: str, description: Optional[str] = None) -> int:
+def create_project(client: _Codex, name: str, organization_id: str, description: Optional[str] = None) -> str:
     project = client.projects.create(
         config=ProjectConfig(),
         organization_id=organization_id,
@@ -31,7 +31,7 @@ def query_project(
     client: _Codex,
     question: str,
     *,
-    project_id: Optional[int] = None,
+    project_id: Optional[str] = None,
     fallback_answer: Optional[str] = None,
     read_only: bool = False,
 ) -> tuple[Optional[str], Optional[Entry]]:
