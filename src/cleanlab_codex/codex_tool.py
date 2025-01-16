@@ -23,7 +23,7 @@ class CodexTool:
         self,
         codex_client: Codex,
         *,
-        project_id: Optional[int] = None,
+        project_id: Optional[str] = None,
         fallback_answer: Optional[str] = DEFAULT_FALLBACK_ANSWER,
     ):
         self._codex_client = codex_client
@@ -35,7 +35,7 @@ class CodexTool:
         cls,
         access_key: str,
         *,
-        project_id: Optional[int] = None,
+        project_id: Optional[str] = None,
         fallback_answer: Optional[str] = DEFAULT_FALLBACK_ANSWER,
     ) -> CodexTool:
         """Creates a CodexTool from an access key. The project ID that the CodexTool will use is the one that is associated with the access key."""
@@ -50,7 +50,7 @@ class CodexTool:
         cls,
         codex_client: Codex,
         *,
-        project_id: Optional[int] = None,
+        project_id: Optional[str] = None,
         fallback_answer: Optional[str] = DEFAULT_FALLBACK_ANSWER,
     ) -> CodexTool:
         """Creates a CodexTool from a Codex client.
