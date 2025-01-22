@@ -25,7 +25,7 @@ classifiers = [
   "Programming Language :: Python :: Implementation :: PyPy",
 ]
 dependencies = [
-  "codex-sdk @ git+ssh://git@github.com/cleanlab/codex-python.git@65e466e57f61cacd16af61a3c506a9907380d9fe", # TODO: update this once we've published SDK
+  "codex-sdk @ git+ssh://git@github.com/cleanlab/codex-python.git@8121c341af5ecca80a946ae3ba7e0f74036ca8d9", # TODO: update this once we've published SDK
   "pydantic>=1.9.0, <3",
 ]
 

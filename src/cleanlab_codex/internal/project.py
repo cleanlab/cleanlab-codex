@@ -36,7 +36,7 @@ def query_project(
     read_only: bool = False,
 ) -> tuple[Optional[str], Optional[Entry]]:
     if client.access_key is not None:
-        project_id = client.projects.access_keys.retrieve_project_id()
+        project_id = client.projects.access_keys.retrieve_project_id().project_id
     elif project_id is None:
         raise MissingProjectIdError
 
