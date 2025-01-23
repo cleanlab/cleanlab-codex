@@ -47,4 +47,3 @@ jobs:
       - name: setup git url rewrite
         run: git config --global url."https://${{ secrets.GH_USERNAME }}:${{ secrets.CLEANLAB_BOT_PAT }}@github.com".insteadOf ssh://git@github.com
       - run: hatch test -v --cover --include python=$(echo ${{ matrix.python }})
-      - run: hatch run coverage:report

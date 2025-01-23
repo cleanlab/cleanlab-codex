@@ -53,8 +53,20 @@ extra-dependencies = [
   "llama-index-core",
 ]
 
+[tool.hatch.envs.hatch-test.env-vars]
+COVERAGE_FAIL_UNDER = ""
+
+[tool.hatch.envs.hatch-test.overrides]
+matrix.python.env-vars = [ { key = "COVERAGE_FAIL_UNDER", value = "--fail-under=90", if = [ "3.13" ] } ]
+
+[tool.hatch.envs.hatch-test.scripts]
+run = "pytest{env:HATCH_TEST_ARGS:} {args}"
+run-cov = "coverage run -m pytest{env:HATCH_TEST_ARGS:} {args}"
+cov-combine = "coverage combine"
+cov-report = "coverage report {env:COVERAGE_FAIL_UNDER}"
+
 [tool.coverage.run]
-source_pkgs = ["cleanlab_codex", "tests"]
+source_pkgs = ["cleanlab_codex", "tests"] 
 branch = true
 parallel = true
 omit = [
