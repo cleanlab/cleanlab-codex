@@ -8,22 +8,23 @@ are provided below as examples that can be adapted for specific needs.
 def is_bad_response(response: str) -> bool:
     """
     Default implementation that checks for common fallback phrases from LLM assistants.
-    
+
     NOTE: YOU SHOULD MODIFY THIS METHOD YOURSELF.
     """
     return basic_validator(response)
-    
+
+
 def basic_validator(response: str) -> bool:
     """Basic implementation that checks for common fallback phrases from LLM assistants.
 
     Args:
         response: The response from the assistant
-        
+
     Returns:
         bool: True if the response appears to be a fallback/inadequate response
     """
     partial_fallback_responses = [
-        "Based on the available information", 
+        "Based on the available information",
         "I cannot provide a complete answer to this question",
         # Add more substrings here to improve the recall of the check
     ]
@@ -31,6 +32,7 @@ def basic_validator(response: str) -> bool:
         partial_fallback_response.lower() in response.lower()
         for partial_fallback_response in partial_fallback_responses
     )
+
 
 # Alternative Implementations
 # ---------------------------
