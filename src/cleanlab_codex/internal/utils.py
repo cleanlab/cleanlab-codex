@@ -11,6 +11,10 @@ def is_access_key(key: str) -> bool:
 
 def init_codex_client(key: str) -> _Codex:
     if is_access_key(key):
-        return _Codex(access_key=key)
+        client = _Codex(access_key=key)
+        client.projects.access_keys.retrieve_project_id()  # check if the access key is valid
+        return client
 
-    return _Codex(api_key=key)
+    client = _Codex(api_key=key)
+    client.users.myself.api_key.retrieve()  # check if the api key is valid
+    return client
