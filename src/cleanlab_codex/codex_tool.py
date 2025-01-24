@@ -105,6 +105,17 @@ class CodexTool:
             required_properties=self._tool_requirements,
         )
 
+    def to_smolagents_tool(self) -> Any:
+        """Converts the tool to a smolagents tool."""
+        from cleanlab_codex.utils.smolagents import CodexTool as SmolagentsCodexTool
+
+        return SmolagentsCodexTool(
+            query=self.query,
+            tool_name=self._tool_name,
+            tool_description=self._tool_description,
+            inputs=self._tool_properties,
+        )
+
     def to_llamaindex_tool(self) -> Any:
         """Converts the tool to a LlamaIndex FunctionTool."""
         from llama_index.core.tools import FunctionTool
