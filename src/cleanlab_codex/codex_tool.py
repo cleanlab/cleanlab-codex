@@ -125,9 +125,7 @@ class CodexTool:
         Returns:
             The answer to the question if available. If no answer is available, the fallback answer is returned if provided, otherwise None is returned.
         """
-        return self._codex_client.query(
-            question, project_id=self._project_id, fallback_answer=self._fallback_answer
-        )[0]
+        return self._codex_client.query(question, project_id=self._project_id, fallback_answer=self._fallback_answer)[0]
 
     def to_openai_tool(self) -> dict[str, Any]:
         """Converts the tool to an [OpenAI tool](https://platform.openai.com/docs/guides/function-calling#defining-functions)."""
