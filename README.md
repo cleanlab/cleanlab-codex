@@ -1,7 +1,4 @@
-# Cleanlab Codex
-
-[![PyPI - Version](https://img.shields.io/pypi/v/cleanlab-codex.svg)](https://pypi.org/project/cleanlab-codex)
-[![PyPI - Python Version](https://img.shields.io/pypi/pyversions/cleanlab-codex.svg)](https://pypi.org/project/cleanlab-codex)
+# Cleanlab Codex [![Build Status](https://github.com/cleanlab/cleanlab-codex/workflows/CI/badge.svg)](https://github.com/cleanlab/cleanlab-codex/actions?query=workflow%3ACI) [![PyPI - Version](https://img.shields.io/pypi/v/cleanlab-codex.svg)](https://pypi.org/project/cleanlab-codex) [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/cleanlab-codex.svg)](https://pypi.org/project/cleanlab-codex)
 
 -----
 
