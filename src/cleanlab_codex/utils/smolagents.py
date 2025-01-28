@@ -3,7 +3,7 @@ from typing import Callable, Dict, Optional
 from smolagents import Tool  # type: ignore
 
 
-class CodexTool(Tool):
+class CodexTool(Tool):  # type: ignore[misc]
     def __init__(
         self,
         query: Callable[[str], Optional[str]],
