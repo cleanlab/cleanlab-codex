@@ -22,7 +22,7 @@ FAKE_PROJECT_DESCRIPTION = "Test Description"
 DEFAULT_PROJECT_CONFIG = ProjectConfig()
 
 
-def test_list_organizations(mock_client: MagicMock):
+def test_list_organizations(mock_client: MagicMock) -> None:
     mock_client.users.myself.organizations.list.return_value = UserOrganizationsSchema(
         organizations=[
             Organization(
@@ -40,7 +40,7 @@ def test_list_organizations(mock_client: MagicMock):
     assert organizations[0].user_id == FAKE_USER_ID
 
 
-def test_create_project(mock_client: MagicMock):
+def test_create_project(mock_client: MagicMock) -> None:
     mock_client.projects.create.return_value = ProjectReturnSchema(
         id=FAKE_PROJECT_ID,
         config=Config(),
@@ -62,7 +62,7 @@ def test_create_project(mock_client: MagicMock):
     assert project_id == FAKE_PROJECT_ID
 
 
-def test_add_entries(mock_client: MagicMock):
+def test_add_entries(mock_client: MagicMock) -> None:
     answered_entry_create = EntryCreate(
         question="What is the capital of France?",
         answer="Paris",
@@ -82,7 +82,7 @@ def test_add_entries(mock_client: MagicMock):
         assert call.kwargs["answer"] == entry.get("answer")
 
 
-def test_create_project_access_key(mock_client: MagicMock):
+def test_create_project_access_key(mock_client: MagicMock) -> None:
     codex = Codex("")
     access_key_name = "Test Access Key"
     access_key_description = "Test Access Key Description"
@@ -94,7 +94,7 @@ def test_create_project_access_key(mock_client: MagicMock):
     )
 
 
-def test_query_no_project_id(mock_client: MagicMock):
+def test_query_no_project_id(mock_client: MagicMock) -> None:
     mock_client.access_key = None
     codex = Codex("")
 
@@ -102,7 +102,7 @@ def test_query_no_project_id(mock_client: MagicMock):
         codex.query("What is the capital of France?")
 
 
-def test_query_read_only(mock_client: MagicMock):
+def test_query_read_only(mock_client: MagicMock) -> None:
     mock_client.access_key = None
     mock_client.projects.entries.query.return_value = None
 
@@ -115,7 +115,7 @@ def test_query_read_only(mock_client: MagicMock):
     assert res == (None, None)
 
 
-def test_query_question_found_fallback_answer(mock_client: MagicMock):
+def test_query_question_found_fallback_answer(mock_client: MagicMock) -> None:
     unanswered_entry = Entry(
         id=str(uuid.uuid4()),
         created_at=datetime.now(),
@@ -128,7 +128,7 @@ def test_query_question_found_fallback_answer(mock_client: MagicMock):
     assert res == (None, unanswered_entry)
 
 
-def test_query_question_not_found_fallback_answer(mock_client: MagicMock):
+def test_query_question_not_found_fallback_answer(mock_client: MagicMock) -> None:
     mock_client.projects.entries.query.return_value = None
     mock_client.projects.entries.add_question.return_value = None
 
@@ -137,7 +137,7 @@ def test_query_question_not_found_fallback_answer(mock_client: MagicMock):
     assert res == ("Paris", None)
 
 
-def test_query_answer_found(mock_client: MagicMock):
+def test_query_answer_found(mock_client: MagicMock) -> None:
     answered_entry = Entry(
         id=str(uuid.uuid4()),
         created_at=datetime.now(),
