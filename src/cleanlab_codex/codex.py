@@ -40,7 +40,7 @@ class Codex:
         """List the organizations the authenticated user is a member of.
 
         Returns:
-            list[[Organization]]: A list of organizations the authenticated user is a member of. See [`Organization`](/reference/python/codex_types#class-organization) for more information.
+            list[Organization]: A list of organizations the authenticated user is a member of. See [`Organization`](/reference/python/codex_types#class-organization) for more information.
 
         Raises:
             AuthenticationError: If the client is not authenticated with a user-level API Key.
