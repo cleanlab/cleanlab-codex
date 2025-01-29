@@ -43,6 +43,7 @@ extra-dependencies = [
   "pytest",
   "llama-index-core",
   "smolagents",
+  "langchain",
 ]
 [tool.hatch.envs.types.scripts]
 check = "mypy --strict --install-types --non-interactive {args:src/cleanlab_codex tests}"
