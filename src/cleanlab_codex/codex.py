@@ -15,7 +15,7 @@ class Codex:
     A client to interact with Cleanlab Codex.
     """
 
-    def __init__(self, key: str):
+    def __init__(self, key: str | None = None):
         """Initialize the Codex client.
 
         Args:
