@@ -135,7 +135,7 @@ class CodexTool:
 
     def to_langchain_tool(self) -> Any:
         """Converts the tool to a Langchain tool."""
-        from langchain.tools import StructuredTool
+        from langchain_core.tools.structured import StructuredTool
 
         from cleanlab_codex.utils.langchain import create_args_schema
 

@@ -41,7 +41,7 @@ def test_to_langchain_tool(mock_client: MagicMock) -> None:  # noqa: ARG001
 
 def test_to_aws_converse_tool(mock_client: MagicMock) -> None:  # noqa: ARG001
     tool = CodexTool.from_access_key("")
-    aws_converse_tool = tool.to_llamaindex_tool()
+    aws_converse_tool = tool.to_aws_converse_tool()
     assert "toolSpec" in aws_converse_tool
     assert (
         aws_converse_tool["toolSpec"].get("name") == tool.tool_name
