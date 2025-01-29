@@ -25,7 +25,7 @@ classifiers = [
   "Programming Language :: Python :: Implementation :: PyPy",
 ]
 dependencies = [
-  "codex-sdk==0.1.0a8",
+  "codex-sdk==0.1.0a9",
   "pydantic>=1.9.0, <3",
 ]
 
