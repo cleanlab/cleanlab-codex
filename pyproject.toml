@@ -45,7 +45,7 @@ extra-dependencies = [
   "smolagents",
 ]
 [tool.hatch.envs.types.scripts]
-check = "mypy --install-types --non-interactive {args:src/cleanlab_codex tests}"
+check = "mypy --strict --install-types --non-interactive {args:src/cleanlab_codex tests}"
 [tool.hatch.metadata]
 allow-direct-references = true
 
@@ -68,7 +68,7 @@ cov-combine = "coverage combine"
 cov-report = "coverage report {env:COVERAGE_FAIL_UNDER}"
 
 [tool.coverage.run]
-source_pkgs = ["cleanlab_codex", "tests"] 
+source_pkgs = ["cleanlab_codex", "tests"]
 branch = true
 parallel = true
 omit = [
