@@ -24,10 +24,10 @@ def format_as_aws_converse_tool(
     required_properties: List[str],
 ) -> Dict[str, Any]:
     return Tool(
-        function=ToolSpec(
+        toolSpec=ToolSpec(
             name=tool_name,
             description=tool_description,
-            parameters={
+            inputSchema={
                 "json": FunctionParameters(properties=tool_properties, required=required_properties)
             },
         )
