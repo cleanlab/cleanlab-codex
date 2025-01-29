@@ -2,7 +2,7 @@ name: Build and publish package
 on:
   push:
     tags:
-      - 'v*'
+      - 'v*.*.*'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -79,5 +79,4 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           files: dist/*
-          body: ${{ steps.extract-release-notes.outputs.release-notes }}
-          draft: true
+          body: ${{ steps.extract-release-notes.outputs.release_notes }}
