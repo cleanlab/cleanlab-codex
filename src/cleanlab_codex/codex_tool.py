@@ -132,3 +132,33 @@ class CodexTool:
                 tool_properties=self._tool_properties,
             ),
         )
+
+
+    def to_langchain_tool(self) -> Any:
+        """Converts the tool to a Langchain tool."""
+        from langchain_core.tools import tool
+        
+        @tool
+        def query(question: str) -> Optional[str]:
+            """Asks an all-knowing advisor this question in cases where it cannot be answered from the provided Context. If the answer is not available, this returns a fallback answer or None.
+
+            Args:
+                question: The question to ask the advisor. This should be the same as the original user question, except in cases where the user question is missing information that could be additionally clarified.
+
+            Returns:
+                The answer to the question, or None if the answer is not available.
+            """
+            return self.query(question)
+        
+        return query
+
+    def to_aws_converse_api_tool(self) -> Any:
+        """Converts the tool to an AWS Converse API tool."""
+        from cleanlab_codex.utils.aws import format_as_aws_converse_tool
+
+        return format_as_aws_converse_tool(
+            tool_name=self._tool_name,
+            tool_description=self._tool_description,
+            tool_properties=self._tool_properties,
+            required_properties=self._tool_requirements,
+        )

@@ -4,27 +4,17 @@ from typing import Any, Dict, List, Literal
 
 from pydantic import BaseModel
 
+from cleanlab_codex.utils.types import FunctionParameters
 
-class Property(BaseModel):
-    type: Literal["string", "number", "integer", "boolean", "array", "object"]
-    description: str
-
-
-class FunctionParameters(BaseModel):
-    type: Literal["object"] = "object"
-    properties: Dict[str, Property]
-    required: List[str]
+class Tool(BaseModel):
+    type: Literal["function"] = "function"
+    function: Function
 
 
 class Function(BaseModel):
     name: str
     description: str
     parameters: FunctionParameters
-
-
-class Tool(BaseModel):
-    type: Literal["function"] = "function"
-    function: Function
 
 
 def format_as_openai_tool(
