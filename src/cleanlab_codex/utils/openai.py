@@ -6,6 +6,7 @@ from pydantic import BaseModel
 
 from cleanlab_codex.utils.types import FunctionParameters
 
+
 class Tool(BaseModel):
     type: Literal["function"] = "function"
     function: Function

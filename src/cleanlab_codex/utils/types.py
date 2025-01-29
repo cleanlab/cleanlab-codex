@@ -12,4 +12,3 @@ class FunctionParameters(BaseModel):
     type: Literal["object"] = "object"
     properties: Dict[str, Property]
     required: List[str]
-

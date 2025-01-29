@@ -92,9 +92,7 @@ class CodexTool:
         Returns:
             The answer to the question, or None if the answer is not available.
         """
-        return self._codex_client.query(
-            question, project_id=self._project_id, fallback_answer=self._fallback_answer
-        )[0]
+        return self._codex_client.query(question, project_id=self._project_id, fallback_answer=self._fallback_answer)[0]
 
     def to_openai_tool(self) -> dict[str, Any]:
         """Converts the tool to an OpenAI tool."""

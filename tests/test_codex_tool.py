@@ -2,8 +2,8 @@ import sys
 from unittest.mock import MagicMock
 
 import pytest
-from llama_index.core.tools import FunctionTool
 from langchain_core.tools.structured import StructuredTool
+from llama_index.core.tools import FunctionTool
 
 from cleanlab_codex.codex_tool import CodexTool
 
@@ -33,9 +33,7 @@ def test_to_langchain_tool(mock_client: MagicMock) -> None:  # noqa: ARG001
     assert callable(langchain_tool)
     assert hasattr(langchain_tool, "name")
     assert hasattr(langchain_tool, "description")
-    assert (
-        langchain_tool.name == tool.tool_name
-    ), f"Expected tool name 'test_tool', got '{langchain_tool.name}'."
+    assert langchain_tool.name == tool.tool_name, f"Expected tool name 'test_tool', got '{langchain_tool.name}'."
     assert (
         langchain_tool.description == tool.tool_description
     ), f"Expected description 'A tool for testing.', got '{langchain_tool.description}'."
@@ -51,9 +49,7 @@ def test_to_aws_converse_tool(mock_client: MagicMock) -> None:  # noqa: ARG001
     assert (
         aws_converse_tool["toolSpec"].get("description") == tool.tool_description
     ), f"Expected description '{tool.tool_description}', got '{aws_converse_tool['toolSpec'].get('description')}'"
-    assert (
-        "inputSchema" in aws_converse_tool["toolSpec"]
-    ), "inputSchema key is missing in toolSpec"
+    assert "inputSchema" in aws_converse_tool["toolSpec"], "inputSchema key is missing in toolSpec"
 
     input_schema = aws_converse_tool["toolSpec"]["inputSchema"]
     assert "json" in input_schema

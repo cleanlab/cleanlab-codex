@@ -1,11 +1,12 @@
-from pydantic import BaseModel, Field
-from typing import Any, Callable, Dict
+from __future__ import annotations
+
 from inspect import signature
+from typing import Any, Callable, Dict
+
+from pydantic import BaseModel, Field
 
 
-def create_args_schema(
-    name: str, func: Callable[..., Any], tool_properties: Dict[str, Any]
-) -> type[BaseModel]:
+def create_args_schema(name: str, func: Callable[..., Any], tool_properties: Dict[str, Any]) -> type[BaseModel]:
     """
     Creates a pydantic BaseModel for langchain's args_schema.
 
