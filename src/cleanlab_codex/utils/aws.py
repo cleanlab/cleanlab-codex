@@ -7,29 +7,28 @@ from pydantic import BaseModel
 from cleanlab_codex.utils.types import FunctionParameters
 
 
-class Function(BaseModel):
+class ToolSpec(BaseModel):
     name: str
     description: str
-    parameters: Dict[str, FunctionParameters]
+    inputSchema: Dict[str, FunctionParameters]
 
 
 class Tool(BaseModel):
-    type: Literal["function"] = "function"
-    function: Function
+    toolSpec: ToolSpec
 
 
 def format_as_aws_converse_tool(
     tool_name: str,
     tool_description: str,
-    input_properties: Dict[str, Any],
+    tool_properties: Dict[str, Any],
     required_properties: List[str],
 ) -> Dict[str, Any]:
     return Tool(
-        function=Function(
+        function=ToolSpec(
             name=tool_name,
             description=tool_description,
             parameters={
-                "json": FunctionParameters(properties=input_properties, required=required_properties)
+                "json": FunctionParameters(properties=tool_properties, required=required_properties)
             },
         )
     ).model_dump()
