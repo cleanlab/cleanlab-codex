@@ -2,7 +2,7 @@ name: Build and publish package
 on:
   push:
     tags:
-      - 'v*'
+      - 'v*.*.*'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -70,6 +70,8 @@ jobs:
       - name: Extract release notes
         id: extract-release-notes
         uses: ffurrer2/extract-release-notes@v2
+      - run: |
+          echo "Release notes: ${{ steps.extract-release-notes.outputs.release_notes }}"
       - name: Download artifacts
         uses: actions/download-artifact@v4
         with:
@@ -79,5 +81,5 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           files: dist/*
-          body: ${{ steps.extract-release-notes.outputs.release-notes }}
+          body: ${{ steps.extract-release-notes.outputs.release_notes }}
           draft: true
