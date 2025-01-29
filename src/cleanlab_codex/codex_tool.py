@@ -92,7 +92,9 @@ class CodexTool:
         Returns:
             The answer to the question, or None if the answer is not available.
         """
-        return self._codex_client.query(question, project_id=self._project_id, fallback_answer=self._fallback_answer)[0]
+        return self._codex_client.query(
+            question, project_id=self._project_id, fallback_answer=self._fallback_answer
+        )[0]
 
     def to_openai_tool(self) -> dict[str, Any]:
         """Converts the tool to an OpenAI tool."""
@@ -133,26 +135,24 @@ class CodexTool:
             ),
         )
 
-
     def to_langchain_tool(self) -> Any:
         """Converts the tool to a Langchain tool."""
-        from langchain_core.tools import tool
-        
-        @tool
-        def query(question: str) -> Optional[str]:
-            """Asks an all-knowing advisor this question in cases where it cannot be answered from the provided Context. If the answer is not available, this returns a fallback answer or None.
+        from langchain.tools import StructuredTool
 
-            Args:
-                question: The question to ask the advisor. This should be the same as the original user question, except in cases where the user question is missing information that could be additionally clarified.
+        from cleanlab_codex.utils.langchain import create_args_schema
 
-            Returns:
-                The answer to the question, or None if the answer is not available.
-            """
-            return self.query(question)
-        
-        return query
+        return StructuredTool.from_function(
+            func=self.query,
+            name=self._tool_name,
+            description=self._tool_description,
+            args_schema=create_args_schema(
+                name=self._tool_name,
+                func=self.query,
+                tool_properties=self._tool_properties,
+            ),
+        )
 
-    def to_aws_converse_api_tool(self) -> Any:
+    def to_aws_converse_tool(self) -> Any:
         """Converts the tool to an AWS Converse API tool."""
         from cleanlab_codex.utils.aws import format_as_aws_converse_tool
 
