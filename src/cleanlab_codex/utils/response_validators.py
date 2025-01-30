@@ -1,82 +1,91 @@
-"""
-This module provides validation functions for checking if an LLM response is inadequate/unhelpful.
-The default implementation checks for common fallback phrases, but alternative implementations
-are provided below as examples that can be adapted for specific needs.
-"""
+# """
+# This module provides validation functions for checking if an LLM response is unhelpful.
+# """
+
+# from typing import Optional, TYPE_CHECKING
+
+# if TYPE_CHECKING:
+#     try:
+#         from cleanlab_studio.studio.trustworthy_language_model import TLM  # noqa: F401
+#     except ImportError:
+#         raise ImportError("The 'cleanlab_studio' library is required to run this validator. Please install it with `pip install cleanlab-studio`.")
 
 
-def is_bad_response(response: str) -> bool:
-    """
-    Default implementation that checks for common fallback phrases from LLM assistants.
+# def is_bad_response(response: str, fallback_answer: str, threshold: int = 70) -> bool:
+#     """Use partial ratio to match a fallback_answer to the response, indicating how unhelpful the response is.
+#     If the partial ratio is greater than or equal to the threshold, return True.
+#     """
+#     try:
+#         from thefuzz import fuzz
+#     except ImportError:
+#         raise ImportError("The 'thefuzz' library is required to run this validator. Please install it with `pip install thefuzz`.")
 
-    NOTE: YOU SHOULD MODIFY THIS METHOD YOURSELF.
-    """
-    return basic_validator(response)
+#     partial_ratio = fuzz.partial_ratio(fallback_answer.lower(), response.lower())
+#     return partial_ratio >= threshold
 
+# def is_bad_response_contains_phrase(response: str, fallback_responses: list[str]) -> bool:
+#     """Check whether the response matches a fallback phrase, indicating the response is not helpful.
 
-def basic_validator(response: str) -> bool:
-    """Basic implementation that checks for common fallback phrases from LLM assistants.
+#     Args:
+#         response: The response from the assistant
+#         fallback_responses: A list of fallback phrases to check against the response.
 
-    Args:
-        response: The response from the assistant
+#     Returns:
+#         bool: True if the response appears to be a fallback/inadequate response
+#     """
+#     return any(
+#         phrase.lower() in response.lower()
+#         for phrase in fallback_responses
+#     )
 
-    Returns:
-        bool: True if the response appears to be a fallback/inadequate response
-    """
-    partial_fallback_responses = [
-        "Based on the available information",
-        "I cannot provide a complete answer to this question",
-        # Add more substrings here to improve the recall of the check
-    ]
-    return any(
-        partial_fallback_response.lower() in response.lower()
-        for partial_fallback_response in partial_fallback_responses
-    )
+# def is_bad_response_untrustworthy(response: str, context: str, query: str, tlm: TLM, threshold: float = 0.5) -> bool:
+#     """
+#     Check whether the response is untrustworthy based on the TLM score.
+    
+#     Args:
+#         response: The response from the assistant
+#         context: The context of the query
+#         query: The user query
+#         tlm: The TLM model to use
+#         threshold: The threshold for the TLM score. If the score is less than this threshold, the response is considered untrustworthy.
 
+#     Returns:
+#         bool: True if the response is untrustworthy
+#     """
+#     prompt = f"Context: {context}\n\n Query: {query}\n\n Query: {query}"
+#     resp = tlm.get_trustworthiness_score(prompt, response)
+#     score = resp['trustworthiness_score']
+#     return score < threshold
 
-# Alternative Implementations
-# ---------------------------
-# The following implementations are provided as examples and inspiration.
-# They should be adapted to your specific needs.
+# # TLM Binary Classification
+# def is_bad_response_unhelpful(response: str, tlm: TLM, query: Optional[str] = None, trustworthiness_score_threshold: Optional[float] = None) -> bool:
+#     """
+#     Check whether the response is unhelpful based on the TLM score. A query may optionally be provided to help the TLM determine if the response is helpful to answer the given query.
+    
+#     Args:
+#         response: The response from the assistant
+#         tlm: The TLM model to use
+#         query: The user query
+#         trustworthiness_score_threshold: The threshold for the TLM score. If the score is less than this threshold, the response is considered unhelpful.
 
-
-# Fuzzy String Matching
-"""
-from thefuzz import fuzz
-
-def fuzzy_match_validator(response: str, fallback_answer: str, threshold: int = 70) -> bool:
-    partial_ratio = fuzz.partial_ratio(fallback_answer.lower(), response.lower())
-    return partial_ratio >= threshold
-"""
-
-# TLM Score Thresholding
-"""
-from cleanlab_studio import Studio
-
-studio = Studio("<API_KEY>")
-tlm = studio.TLM()
-
-def tlm_score_validator(response: str, context: str, query: str, tlm: TLM, threshold: float = 0.5) -> bool:
-    prompt = f"Context: {context}\n\n Query: {query}\n\n Query: {query}"
-    resp = tlm.get_trustworthiness_score(prompt, response)
-    score = resp['trustworthiness_score']
-    return score < threshold
-"""
-
-# TLM Binary Classification
-"""
-from typing import Optional
-
-from cleanlab_studio import Studio
-
-studio = Studio("<API_KEY>")
-tlm = studio.TLM()
-
-def tlm_binary_validator(response: str, tlm: TLM, query: Optional[str] = None) -> bool:
-    if query is None:
-        prompt = f"Here is a response from an AI assistant: {response}\n\n Is it helpful? Answer Yes/No only."
-    else:
-        prompt = f"Here is a response from an AI assistant: {response}\n\n Considering the following query: {query}\n\n Is the response helpful? Answer Yes/No only."
-    output = tlm.prompt(prompt)
-    return output["response"].lower() == "no"
-"""
+#     Returns:
+#         bool: True if the response is unhelpful
+#     """
+#     if query is None:
+#         prompt = (
+#             "Consider the following AI Assistant Response.\n\n"
+#             f"AI Assistant Response: {response}\n\n"
+#             "Is the AI Assistant Response helpful? Answer Yes/No only."
+#         )
+#     else:
+#         prompt = (
+#             "Consider the following User Query and AI Assistant Response.\n\n"
+#             f"User Query: {query}\n\n"
+#             f"AI Assistant Response: {response}\n\n"
+#             "Is the AI Assistant Response helpful? Answer Yes/No only."
+#         )
+#     output = tlm.prompt(prompt, constrain_outputs=["Yes", "No"])
+#     response_marked_unhelpful = output["response"].lower() == "no"
+#     # TODO: Decide if we should keep the trustworthiness score threshold.
+#     is_trustworthy = trustworthiness_score_threshold is None or (output["trustworthiness_score"] > trustworthiness_score_threshold)
+#     return response_marked_unhelpful and is_trustworthy
