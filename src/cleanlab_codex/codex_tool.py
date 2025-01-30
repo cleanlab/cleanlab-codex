@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any, ClassVar, Optional
 
-from cleanlab_codex.codex import Codex
+from cleanlab_codex.client import Client
 
 
 class CodexTool:
@@ -21,7 +21,7 @@ class CodexTool:
 
     def __init__(
         self,
-        codex_client: Codex,
+        codex_client: Client,
         *,
         project_id: Optional[str] = None,
         fallback_answer: Optional[str] = DEFAULT_FALLBACK_ANSWER,
@@ -40,7 +40,7 @@ class CodexTool:
     ) -> CodexTool:
         """Creates a CodexTool from an access key. The project ID that the CodexTool will use is the one that is associated with the access key."""
         return cls(
-            codex_client=Codex(key=access_key),
+            codex_client=Client(api_key=access_key),
             project_id=project_id,
             fallback_answer=fallback_answer,
         )
@@ -48,7 +48,7 @@ class CodexTool:
     @classmethod
     def from_client(
         cls,
-        codex_client: Codex,
+        codex_client: Client,
         *,
         project_id: Optional[str] = None,
         fallback_answer: Optional[str] = DEFAULT_FALLBACK_ANSWER,
