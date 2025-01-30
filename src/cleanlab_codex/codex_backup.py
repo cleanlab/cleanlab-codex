@@ -4,7 +4,7 @@ from functools import wraps
 from typing import Any, Callable, Optional
 
 from cleanlab_codex.codex import Codex
-from cleanlab_codex.utils.response_validators import is_bad_response
+from cleanlab_codex.validation import is_bad_response
 
 
 def handle_backup_default(backup_response: str, decorated_instance: Any) -> None:  # noqa: ARG001
