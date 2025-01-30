@@ -1,5 +1,8 @@
-from typing import Callable, Dict, Optional
+from __future__ import annotations
 
+from typing import Optional
+
+from beartype.typing import Callable, Dict
 from smolagents import Tool  # type: ignore
 
 

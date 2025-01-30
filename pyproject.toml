@@ -27,6 +27,7 @@ classifiers = [
 dependencies = [
   "codex-sdk==0.1.0a9",
   "pydantic>=1.9.0, <3",
+  "beartype>=0.17.0",
 ]
 
 [project.urls]
@@ -42,7 +43,6 @@ extra-dependencies = [
   "mypy>=1.0.0",
   "pytest",
   "llama-index-core",
-  "smolagents",
 ]
 [tool.hatch.envs.types.scripts]
 check = "mypy --strict --install-types --non-interactive {args:src/cleanlab_codex tests}"
@@ -98,4 +98,9 @@ html = "coverage html"
 xml = "coverage xml"
 
 [tool.ruff.lint]
-ignore = ["FA100", "UP007", "UP006"]
+ignore = [
+  "TCH001", # this package does runtime type checking
+  "TCH002",
+  "TCH003",
+  "UP007", # we cannot use the PEP 604 syntax because we support Python 3.8 and do runtime type checking
+]

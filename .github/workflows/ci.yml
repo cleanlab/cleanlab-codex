@@ -10,13 +10,16 @@ on:
 
 jobs:
   typecheck:
-    name: Type check
+    name: "Type check: Python ${{ matrix.python }}"
     runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        python: ["3.8", "3.9", "3.10", "3.11", "3.12", "3.13"]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.13"
+          python-version: ${{ matrix.python }}
       - uses: pypa/hatch@install
       - run: hatch run types:check
   fmt:
@@ -30,7 +33,7 @@ jobs:
       - uses: pypa/hatch@install
       - run: hatch fmt --check
   test:
-    name: Test
+    name: "Test: Python ${{ matrix.python }}"
     runs-on: ubuntu-22.04
     strategy:
       matrix:

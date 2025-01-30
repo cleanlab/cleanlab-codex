@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import Any, ClassVar, Optional
 
+from beartype.typing import Dict, List
+
 from cleanlab_codex.codex import Codex
 
 
@@ -10,13 +12,13 @@ class CodexTool:
 
     _tool_name = "ask_advisor"
     _tool_description = "Asks an all-knowing advisor this query in cases where it cannot be answered from the provided Context. If the answer is avalible, this returns None."
-    _tool_properties: ClassVar[dict[str, Any]] = {
+    _tool_properties: ClassVar[Dict[str, Any]] = {
         "question": {
             "type": "string",
             "description": "The question to ask the advisor. This should be the same as the original user question, except in cases where the user question is missing information that could be additionally clarified.",
         }
     }
-    _tool_requirements: ClassVar[list[str]] = ["question"]
+    _tool_requirements: ClassVar[List[str]] = ["question"]
     DEFAULT_FALLBACK_ANSWER = "Based on the available information, I cannot provide a complete answer to this question."
 
     def __init__(
@@ -94,7 +96,7 @@ class CodexTool:
         """
         return self._codex_client.query(question, project_id=self._project_id, fallback_answer=self._fallback_answer)[0]
 
-    def to_openai_tool(self) -> dict[str, Any]:
+    def to_openai_tool(self) -> Dict[str, Any]:
         """Converts the tool to an OpenAI tool."""
         from cleanlab_codex.utils import format_as_openai_tool
 

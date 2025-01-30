@@ -1,5 +1,30 @@
 # Development
 
+## Guidelines
+
+### Typing
+
+This project uses [mypy][mypy] for static type checking as well as [beartype][beartype] for runtime type checking.
+
+The combination of using beartype and supporting Python 3.8+ leads to some [challenges][beartype-pep585] related to [PEP 585][pep-585] deprecations. For this reason, this package:
+
+- Imports from `beartype.typing` all types that are deprecated in PEP 585 (e.g., `List` and `Callable`)
+- Imports directly from `typing` all other types (e.g., `Optional` and `Literal`)
+    - These symbols are also available in `beartype.typing`, but we import them directly from `typing` because Ruff (our [linter](#formatting-and-linting)) has special treatment of these imports. For example, Ruff will complain about `Literal["foo"]` if we import `Literal` from `beartype.typing`.
+
+Relatedly, this package also cannot use [PEP 604][pep-604] syntax:
+
+- Instead of using types like `A | B`, use `Union[A, B]`
+- Instead of using types like `A | None`, use `Optional[A]`
+
+[mypy]: https://mypy-lang.org/
+[beartype]: https://github.com/beartype/beartype
+[beartype-pep585]: https://beartype.readthedocs.io/en/latest/api_roar/#pep-585-deprecations
+[pep-585]: https://peps.python.org/pep-0585/
+[pep-604]: https://peps.python.org/pep-0604/
+
+## Tooling
+
 This project uses the [Hatch] project manager ([installation instructions][hatch-install]).
 
 Hatch automatically manages dependencies and runs testing, type checking, and other operations in isolated [environments][hatch-environments].
@@ -8,7 +33,7 @@ Hatch automatically manages dependencies and runs testing, type checking, and ot
 [hatch-install]: https://hatch.pypa.io/latest/install/
 [hatch-environments]: https://hatch.pypa.io/latest/environment/
 
-## Testing
+### Testing
 
 You can run the tests on your local machine with:
 
@@ -20,7 +45,7 @@ The [`test` command][hatch-test] supports options such as `-c` for measuring tes
 
 [hatch-test]: https://hatch.pypa.io/latest/tutorials/testing/overview/
 
-## Type checking
+### Type checking
 
 You can run the [mypy static type checker][mypy] with:
 
@@ -28,9 +53,7 @@ You can run the [mypy static type checker][mypy] with:
 hatch run types:check
 ```
 
-[mypy]: https://mypy-lang.org/
-
-## Formatting and linting
+### Formatting and linting
 
 You can run the [Ruff][ruff] formatter and linter with:
 
@@ -43,7 +66,7 @@ This will automatically make [safe fixes][fix-safety] to your code. If you want 
 [ruff]: https://github.com/astral-sh/ruff
 [fix-safety]: https://docs.astral.sh/ruff/linter/#fix-safety
 
-## Pre-commit
+### Pre-commit
 
 You can install the pre-commit hooks to automatically run type checking, formatting, and linting on every commit.
 
@@ -61,7 +84,7 @@ pre-commit install
 
 [pipx]: https://pipx.pypa.io/
 
-## Packaging
+### Packaging
 
 You can use [`hatch build`][hatch-build] to create build artifacts, a [source distribution ("sdist")][sdist] and a [built distribution ("wheel")][bdist].
 
@@ -73,7 +96,7 @@ You can use [`hatch publish`][hatch-publish] if you want to manually publish bui
 [hatch-publish]: https://hatch.pypa.io/latest/publish/
 [pypi]: https://pypi.org/
 
-### Automated releases
+#### Automated releases
 
 Automated releases are handled by the [release workflow][release-workflow] which is triggered by pushing a new tag to the repository. To create a new release:
 
@@ -88,7 +111,7 @@ Automated releases are handled by the [release workflow][release-workflow] which
 [hatch-version]: https://hatch.pypa.io/latest/version/#updating
 [changelog]: CHANGELOG.md
 
-## Continuous integration
+### Continuous integration
 
 Testing, type checking, and formatting/linting is [checked in CI][ci].
 

@@ -1,13 +1,13 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Optional
+from typing import Optional
+
+from beartype.typing import List, Tuple
 
 from cleanlab_codex.internal.project import create_project, query_project
 from cleanlab_codex.internal.utils import init_codex_client
-
-if TYPE_CHECKING:
-    from cleanlab_codex.types.entry import Entry, EntryCreate
-    from cleanlab_codex.types.organization import Organization
+from cleanlab_codex.types.entry import Entry, EntryCreate
+from cleanlab_codex.types.organization import Organization
 
 
 class Codex:
@@ -15,7 +15,7 @@ class Codex:
     A client to interact with Cleanlab Codex.
     """
 
-    def __init__(self, key: str | None = None):
+    def __init__(self, key: Optional[str] = None):
         """Initialize the Codex client.
 
         Args:
@@ -30,11 +30,11 @@ class Codex:
         self.key = key
         self._client = init_codex_client(key)
 
-    def list_organizations(self) -> list[Organization]:
+    def list_organizations(self) -> List[Organization]:
         """List the organizations the authenticated user is a member of.
 
         Returns:
-            list[Organization]: A list of organizations the authenticated user is a member of.
+            List[Organization]: A list of organizations the authenticated user is a member of.
 
         Raises:
             AuthenticationError: If the client is not authenticated with a user-level API Key.
@@ -59,11 +59,11 @@ class Codex:
             description=description,
         )
 
-    def add_entries(self, entries: list[EntryCreate], project_id: str) -> None:
+    def add_entries(self, entries: List[EntryCreate], project_id: str) -> None:
         """Add a list of entries to the Codex project.
 
         Args:
-            entries (list[EntryCreate]): The entries to add to the Codex project.
+            entries (List[EntryCreate]): The entries to add to the Codex project.
             project_id (int): The ID of the project to add the entries to.
 
         Raises:
@@ -102,12 +102,12 @@ class Codex:
         project_id: Optional[str] = None,  # TODO: update to uuid once project IDs are changed to UUIDs
         fallback_answer: Optional[str] = None,
         read_only: bool = False,
-    ) -> tuple[Optional[str], Optional[Entry]]:
+    ) -> Tuple[Optional[str], Optional[Entry]]:
         """Query Codex to check if the Codex project contains an answer to this question and add the question to the Codex project for SME review if it does not.
 
         Args:
             question (str): The question to ask the Codex API.
-            project_id (:obj:`int`, optional): The ID of the project to query.
+            project_id (:obj:`str`, optional): The ID of the project to query.
                 If the client is authenticated with a user-level API Key, this is required.
                 If the client is authenticated with a project-level Access Key, this is optional. The client will use the Access Key's project ID by default.
             fallback_answer (:obj:`str`, optional): Optional fallback answer to return if Codex is unable to answer the question.
@@ -115,7 +115,7 @@ class Codex:
                 This can be useful for testing purposes before when setting up your project configuration.
 
         Returns:
-            tuple[Optional[str], Optional[Entry]]: A tuple representing the answer for the query and the existing or new entry in the Codex project.
+            Tuple[Optional[str], Optional[Entry]]: A tuple representing the answer for the query and the existing or new entry in the Codex project.
                 If Codex is able to answer the question, the first element will be the answer returned by Codex and the second element will be the existing entry in the Codex project.
                 If Codex is unable to answer the question, the first element will be `fallback_answer` if provided, otherwise None, and the second element will be a new entry in the Codex project.
         """
