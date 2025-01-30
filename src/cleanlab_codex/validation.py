@@ -32,23 +32,6 @@ def is_bad_response(response: str, fallback_answer: str, threshold: int = 70) ->
     partial_ratio = fuzz.partial_ratio(fallback_answer.lower(), response.lower())
     return partial_ratio >= threshold
 
-def is_bad_response_contains_phrase(response: str, fallback_responses: list[str]) -> bool:
-    """Check if a response is unhelpful by looking for known fallback phrases.
-
-    Uses simple substring matching to check if the response contains any known fallback phrases
-    that indicate the response is unhelpful (e.g. "I cannot help with that", "I don't know").
-    Returns True if any fallback phrase is found in the response.
-
-    Args:
-        response: The response to check from the assistant
-        fallback_responses: List of known fallback phrases that indicate an unhelpful response.
-                          The check is case-insensitive.
-
-    Returns:
-        bool: True if the response contains any fallback phrase, False otherwise
-    """
-    return any(phrase.lower() in response.lower() for phrase in fallback_responses)
-
 def is_bad_response_untrustworthy(
     response: str,
     context: str,
