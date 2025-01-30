@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any, ClassVar, Optional
 
 from cleanlab_codex.client import Client
+from cleanlab_codex.project import Project
 
 
 class CodexTool:
@@ -39,8 +40,9 @@ class CodexTool:
         fallback_answer: Optional[str] = DEFAULT_FALLBACK_ANSWER,
     ) -> CodexTool:
         """Creates a CodexTool from an access key. The project ID that the CodexTool will use is the one that is associated with the access key."""
+        project = Project.from_access_key(access_key)
         return cls(
-            codex_client=Client(api_key=access_key),
+            codex_client=project.client,
             project_id=project_id,
             fallback_answer=fallback_answer,
         )
@@ -53,7 +55,7 @@ class CodexTool:
         project_id: Optional[str] = None,
         fallback_answer: Optional[str] = DEFAULT_FALLBACK_ANSWER,
     ) -> CodexTool:
-        """Creates a CodexTool from a Codex client.
+        """Creates a CodexTool from a Codex Client.
         If the Codex client is initialized with a project access key, the CodexTool will use the project ID that is associated with the access key.
         If the Codex client is initialized with a user API key, a project ID must be provided.
         """
