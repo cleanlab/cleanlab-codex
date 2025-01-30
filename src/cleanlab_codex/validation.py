@@ -27,7 +27,7 @@ def is_bad_response(response: str, fallback_answer: str, threshold: int = 70) ->
     try:
         from thefuzz import fuzz
     except ImportError:
-        raise ImportError("The 'thefuzz' library is required to run this validator. Please install it with `pip install thefuzz`.")
+        raise ImportError("The 'thefuzz' library is required. Please install it with `pip install thefuzz`.")
 
     partial_ratio = fuzz.partial_ratio(fallback_answer.lower(), response.lower())
     return partial_ratio >= threshold
@@ -79,7 +79,7 @@ def is_bad_response_untrustworthy(
     """
     prompt = prompt_template.format(context=context, query=query)
     resp = tlm.get_trustworthiness_score(prompt, response)
-    score = resp['trustworthiness_score']
+    score: float = resp['trustworthiness_score']
     return score < threshold
 
 # TLM Binary Classification
