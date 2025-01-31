@@ -4,7 +4,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from cleanlab_codex.project import MissingProjectIdError, Project
+from cleanlab_codex.project import MissingProjectError, Project
 from cleanlab_codex.types.entry import Entry, EntryCreate
 from cleanlab_codex.types.project import ProjectConfig
 
@@ -51,9 +51,9 @@ def test_create_access_key(mock_client: MagicMock) -> None:
 
 def test_create_nonexistent_project_id(mock_client: MagicMock) -> None:
     mock_client.projects.retrieve.return_value = None
-    
-    with pytest.raises(MissingProjectIdError):
-        project = Project(mock_client, FAKE_PROJECT_ID)
+
+    with pytest.raises(MissingProjectError):
+        Project(mock_client, FAKE_PROJECT_ID)
 
 
 def test_query_read_only(mock_client: MagicMock) -> None:

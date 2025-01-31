@@ -1,9 +1,11 @@
 from __future__ import annotations
 
-from typing import Any, ClassVar, Optional
+from typing import TYPE_CHECKING, Any, ClassVar, Optional
 
-from cleanlab_codex.client import Client
 from cleanlab_codex.project import Project
+
+if TYPE_CHECKING:
+    from cleanlab_codex.client import Client
 
 
 class CodexTool:
@@ -36,7 +38,6 @@ class CodexTool:
         cls,
         access_key: str,
         *,
-        project_id: Optional[str] = None,
         fallback_answer: Optional[str] = DEFAULT_FALLBACK_ANSWER,
     ) -> CodexTool:
         """Creates a CodexTool from an access key. The project ID that the CodexTool will use is the one that is associated with the access key."""

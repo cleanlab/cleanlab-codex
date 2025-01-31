@@ -59,3 +59,22 @@ def test_create_project(mock_client_from_api_key: MagicMock) -> None:
         description=FAKE_PROJECT_DESCRIPTION,
     )
     assert project.project_id == FAKE_PROJECT_ID
+
+
+def test_get_project(mock_client_from_api_key: MagicMock) -> None:
+    mock_client_from_api_key.projects.retrieve.return_value = ProjectReturnSchema(
+        id=FAKE_PROJECT_ID,
+        config=Config(),
+        created_at=datetime.now(),
+        created_by_user_id=FAKE_USER_ID,
+        name=FAKE_PROJECT_NAME,
+        organization_id=FAKE_ORGANIZATION_ID,
+        updated_at=datetime.now(),
+        description=FAKE_PROJECT_DESCRIPTION,
+    )
+
+    project = Client("").get_project(FAKE_PROJECT_ID)
+    assert project.project_id == FAKE_PROJECT_ID
+
+    assert mock_client_from_api_key.projects.retrieve.call_count == 1
+    assert mock_client_from_api_key.projects.retrieve.call_args[0][0] == FAKE_PROJECT_ID

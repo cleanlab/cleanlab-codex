@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Optional
 
-from cleanlab_codex.internal.utils import client_from_api_key, client_from_access_key, init_codex_client
+from cleanlab_codex.internal.utils import client_from_api_key
 from cleanlab_codex.project import Project
 
 if TYPE_CHECKING:
@@ -57,8 +57,5 @@ class Client:
 
         Returns:
             list[Organization]: A list of organizations the authenticated user is a member of.
-
-        Raises:
-            AuthenticationError: If the client is not authenticated with a user-level API Key.
         """
         return self._client.users.myself.organizations.list().organizations

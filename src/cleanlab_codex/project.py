@@ -13,11 +13,11 @@ if TYPE_CHECKING:
     from cleanlab_codex.types.entry import Entry, EntryCreate
 
 
-class MissingProjectIdError(Exception):
-    """Raised when the project ID is not provided."""
+class MissingProjectError(Exception):
+    """Raised when the project ID does not match any existing project."""
 
     def __str__(self) -> str:
-        return "project_id is required when authenticating with a user-level API Key"
+        return "valid project ID or access key is required to authenticate access"
 
 
 class Project:
@@ -29,8 +29,7 @@ class Project:
         self._project = sdk_client.projects.retrieve(project_id)
 
         if self._project is None:
-            raise MissingProjectIdError
-
+            raise MissingProjectError
 
     @classmethod
     def from_access_key(cls, access_key: str):
@@ -46,7 +45,7 @@ class Project:
         project_id = sdk_client.projects.access_keys.retrieve_project_id().project_id
 
         if project_id is None:
-            raise MissingProjectIdError
+            raise MissingProjectError
 
         return Project(sdk_client, project_id)
 
