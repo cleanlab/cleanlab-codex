@@ -3,12 +3,12 @@ This module provides validation functions for checking if an LLM response is unh
 """
 from __future__ import annotations
 
-from typing import Callable, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Callable, Optional
 
 from cleanlab_codex.utils.prompt import default_format_prompt
 
 if TYPE_CHECKING:
-    from cleanlab_studio.studio.trustworthy_language_model import TLM
+    from cleanlab_studio.studio.trustworthy_language_model import TLM  # type: ignore
 
 
 DEFAULT_FALLBACK_ANSWER = "Based on the available information, I cannot provide a complete answer to this question."
@@ -54,7 +54,7 @@ def is_bad_response(
         ),
         lambda: is_unhelpful_response(response, tlm, query, trustworthiness_score_threshold=unhelpful_trustworthiness_threshold)
     ]
-    
+
     return any(check() for check in validation_checks)
 
 
@@ -74,7 +74,7 @@ def is_fallback_response(response: str, fallback_answer: str = DEFAULT_FALLBACK_
         bool: True if the response is too similar to the fallback answer, False otherwise
     """
     try:
-        from thefuzz import fuzz
+        from thefuzz import fuzz  # type: ignore
     except ImportError:
         raise ImportError("The 'thefuzz' library is required. Please install it with `pip install thefuzz`.")
 
@@ -113,7 +113,7 @@ def is_untrustworthy_response(
         from cleanlab_studio.studio.trustworthy_language_model import TLM  # noqa: F401
     except ImportError:
         raise ImportError("The 'cleanlab_studio' library is required. Please install it with `pip install cleanlab-studio`.")
-    
+
     prompt = format_prompt(query, context)
     resp = tlm.get_trustworthiness_score(prompt, response)
     score: float = resp['trustworthiness_score']
@@ -145,7 +145,7 @@ def is_unhelpful_response(response: str, tlm: TLM, query: Optional[str] = None, 
         from cleanlab_studio.studio.trustworthy_language_model import TLM  # noqa: F401
     except ImportError:
         raise ImportError("The 'cleanlab_studio' library is required. Please install it with `pip install cleanlab-studio`.")
-    
+
     # The question and expected "unhelpful" response are linked:
     # - When asking "is helpful?" -> "no" means unhelpful
     # - When asking "is unhelpful?" -> "yes" means unhelpful
@@ -159,13 +159,13 @@ def is_unhelpful_response(response: str, tlm: TLM, query: Optional[str] = None, 
         "Answer Yes/No only."
     )
     expected_unhelpful_response = "yes"
-    
+
     prompt = (
-        "Consider the following" + 
+        "Consider the following" +
         (f" User Query and AI Assistant Response.\n\nUser Query: {query}\n\n" if query else " AI Assistant Response.\n\n") +
         f"AI Assistant Response: {response}\n\n{question}"
     )
-    
+
     output = tlm.prompt(prompt, constrain_outputs=["Yes", "No"])
     response_marked_unhelpful = output["response"].lower() == expected_unhelpful_response
     is_trustworthy = trustworthiness_score_threshold is None or (output["trustworthiness_score"] > trustworthiness_score_threshold)

@@ -17,4 +17,4 @@ def default_format_prompt(query: str, context: str) -> str:
         "Context:\n{context}\n\n"
         "Query: {query}"
     )
-    return template.format(context=context, query=query) 
+    return template.format(context=context, query=query)
