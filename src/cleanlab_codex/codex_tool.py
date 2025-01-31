@@ -128,7 +128,8 @@ class CodexTool:
         return self._codex_client.query(question, project_id=self._project_id, fallback_answer=self._fallback_answer)[0]
 
     def to_openai_tool(self) -> dict[str, Any]:
-        """Converts the tool to an [OpenAI tool](https://platform.openai.com/docs/guides/function-calling#defining-functions)."""
+        """Converts the tool to the expected format for an [OpenAI function tool](https://platform.openai.com/docs/guides/function-calling).
+        See more information on defining functions for OpenAI tool calls [here](https://platform.openai.com/docs/guides/function-calling#defining-functions)."""
         from cleanlab_codex.utils import format_as_openai_tool
 
         return format_as_openai_tool(
