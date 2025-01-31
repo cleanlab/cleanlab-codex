@@ -1,5 +1,7 @@
 # ruff: noqa: DTZ005
 
+from __future__ import annotations
+
 import uuid
 from datetime import datetime
 from unittest.mock import MagicMock
@@ -86,6 +88,9 @@ def test_create_project_access_key(mock_client: MagicMock) -> None:
     codex = Codex("")
     access_key_name = "Test Access Key"
     access_key_description = "Test Access Key Description"
+    access_key = MagicMock()
+    access_key.token.__class__ = str
+    mock_client.projects.access_keys.create.return_value = access_key
     codex.create_project_access_key(FAKE_PROJECT_ID, access_key_name, access_key_description)
     mock_client.projects.access_keys.create.assert_called_once_with(
         project_id=FAKE_PROJECT_ID,

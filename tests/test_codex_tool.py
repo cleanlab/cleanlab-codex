@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import sys
 from unittest.mock import MagicMock
 
@@ -34,3 +36,10 @@ def test_to_smolagents_tool(mock_client: MagicMock) -> None:  # noqa: ARG001
     assert isinstance(smolagents_tool, Tool)
     assert smolagents_tool.name == tool.tool_name
     assert smolagents_tool.description == tool.tool_description
+
+
+def test_bad_argument_type() -> None:
+    from beartype.roar import BeartypeException
+
+    with pytest.raises(BeartypeException):
+        CodexTool("asdf")  # type: ignore

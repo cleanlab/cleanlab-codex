@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import re
+from typing import Optional
 
 from codex import Codex as _Codex
 
@@ -19,7 +20,7 @@ def is_access_key(key: str) -> bool:
     return re.match(ACCESS_KEY_PATTERN, key) is not None
 
 
-def init_codex_client(key: str | None = None) -> _Codex:
+def init_codex_client(key: Optional[str] = None) -> _Codex:
     if key is None:
         if api_key := os.getenv("CODEX_API_KEY"):
             return _client_from_api_key(api_key)

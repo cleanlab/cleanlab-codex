@@ -1,12 +1,9 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Optional
+from beartype.typing import Optional, Tuple
+from codex import Codex as _Codex
 
-if TYPE_CHECKING:
-    from codex import Codex as _Codex
-
-    from cleanlab_codex.types.entry import Entry
-
+from cleanlab_codex.types.entry import Entry
 from cleanlab_codex.types.project import ProjectConfig
 
 
@@ -34,7 +31,7 @@ def query_project(
     project_id: Optional[str] = None,
     fallback_answer: Optional[str] = None,
     read_only: bool = False,
-) -> tuple[Optional[str], Optional[Entry]]:
+) -> Tuple[Optional[str], Optional[Entry]]:
     if client.access_key is not None:
         project_id = client.projects.access_keys.retrieve_project_id().project_id
     elif project_id is None:
