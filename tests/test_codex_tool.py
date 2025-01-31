@@ -7,9 +7,9 @@ from llama_index.core.tools import FunctionTool
 from cleanlab_codex.codex_tool import CodexTool
 
 
-def test_to_openai_tool(mock_client: MagicMock) -> None:
+def test_to_openai_tool(mock_client_from_access_key: MagicMock) -> None:
     with patch("cleanlab_codex.codex_tool.Project") as mock_project:
-        mock_project.from_access_key.return_value = MagicMock(client=mock_client, id="test_project_id")
+        mock_project.from_access_key.return_value = MagicMock(client=mock_client_from_access_key, id="test_project_id")
 
         tool = CodexTool.from_access_key("sk-test-123")
         openai_tool = tool.to_openai_tool()
@@ -19,9 +19,9 @@ def test_to_openai_tool(mock_client: MagicMock) -> None:
         assert openai_tool.get("function", {}).get("parameters", {}).get("type") == "object"
 
 
-def test_to_llamaindex_tool(mock_client: MagicMock) -> None:
+def test_to_llamaindex_tool(mock_client_from_access_key: MagicMock) -> None:
     with patch("cleanlab_codex.codex_tool.Project") as mock_project:
-        mock_project.from_access_key.return_value = MagicMock(client=mock_client, id="test_project_id")
+        mock_project.from_access_key.return_value = MagicMock(client=mock_client_from_access_key, id="test_project_id")
 
         tool = CodexTool.from_access_key("sk-test-123")
         llama_index_tool = tool.to_llamaindex_tool()
@@ -32,11 +32,11 @@ def test_to_llamaindex_tool(mock_client: MagicMock) -> None:
 
 
 @pytest.mark.skipif(sys.version_info < (3, 10), reason="requires python3.10 or higher")
-def test_to_smolagents_tool(mock_client: MagicMock) -> None:
+def test_to_smolagents_tool(mock_client_from_access_key: MagicMock) -> None:
     from smolagents import Tool  # type: ignore
 
     with patch("cleanlab_codex.codex_tool.Project") as mock_project:
-        mock_project.from_access_key.return_value = MagicMock(client=mock_client, id="test_project_id")
+        mock_project.from_access_key.return_value = MagicMock(client=mock_client_from_access_key, id="test_project_id")
 
         tool = CodexTool.from_access_key("sk-test-123")
         smolagents_tool = tool.to_smolagents_tool()
