@@ -43,7 +43,7 @@ class CodexTool:
         project = Project.from_access_key(access_key)
         return cls(
             codex_client=project.client,
-            project_id=project_id,
+            project_id=project.project_id,
             fallback_answer=fallback_answer,
         )
 

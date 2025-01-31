@@ -17,10 +17,12 @@ FAKE_ORGANIZATION_ID = "Test Organization"
 FAKE_PROJECT_NAME = "Test Project"
 FAKE_PROJECT_DESCRIPTION = "Test Description"
 DEFAULT_PROJECT_CONFIG = ProjectConfig()
+DUMMY_ACCESS_KEY = "sk-1-EMOh6UrRo7exTEbEi8_azzACAEdtNiib2LLa1IGo6kA"
+DUMMY_API_KEY = "GP0FzPfA7wYy5L64luII2YaRT2JoSXkae7WEo7dH6Bw"
 
 
-def test_list_organizations(mock_client: MagicMock) -> None:
-    mock_client.users.myself.organizations.list.return_value = UserOrganizationsSchema(
+def test_list_organizations(mock_client_from_api_key: MagicMock) -> None:
+    mock_client_from_api_key.users.myself.organizations.list.return_value = UserOrganizationsSchema(
         organizations=[
             Organization(
                 organization_id=FAKE_ORGANIZATION_ID,
@@ -37,8 +39,8 @@ def test_list_organizations(mock_client: MagicMock) -> None:
     assert organizations[0].user_id == FAKE_USER_ID
 
 
-def test_create_project(mock_client: MagicMock) -> None:
-    mock_client.projects.create.return_value = ProjectReturnSchema(
+def test_create_project(mock_client_from_api_key: MagicMock) -> None:
+    mock_client_from_api_key.projects.create.return_value = ProjectReturnSchema(
         id=FAKE_PROJECT_ID,
         config=Config(),
         created_at=datetime.now(),
@@ -50,7 +52,7 @@ def test_create_project(mock_client: MagicMock) -> None:
     )
     codex = Client("", organization_id=FAKE_ORGANIZATION_ID)
     project = codex.create_project(FAKE_PROJECT_NAME, FAKE_PROJECT_DESCRIPTION)
-    mock_client.projects.create.assert_called_once_with(
+    mock_client_from_api_key.projects.create.assert_called_once_with(
         config=DEFAULT_PROJECT_CONFIG,
         organization_id=FAKE_ORGANIZATION_ID,
         name=FAKE_PROJECT_NAME,

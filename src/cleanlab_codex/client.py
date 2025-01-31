@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Optional
 
-from cleanlab_codex.internal.utils import init_codex_client
+from cleanlab_codex.internal.utils import client_from_api_key, client_from_access_key, init_codex_client
 from cleanlab_codex.project import Project
 
 if TYPE_CHECKING:
@@ -13,19 +13,19 @@ from cleanlab_codex.types.project import ProjectConfig
 
 class Client:
     def __init__(self, api_key: str, organization_id: Optional[str] = None):
-        """Initialize the Codex client.
+        """Initialize user-level access to the Codex SDK.
 
         Args:
-            api_key (str): The key to authenticate with Cleanlab Codex. Can either be a user-level API Key or a project-level Access Key. (TODO: link to docs on what these are).
-            organization_id (str): The ID of the organization to create the project in. If not provided, the user's default organization will be used.
+            api_key (str): The API key for authenticating the user. (TODO: link to docs on what this means)
+            organization_id (str): The ID of the organization to create projects in. If not provided, the user's default organization will be used.
         Returns:
             Client: The authenticated Codex Client.
 
         Raises:
-            AuthenticationError: If the key is invalid.
+            AuthenticationError: If the API key is invalid.
         """
         self.api_key = api_key
-        self._client = init_codex_client(api_key)
+        self._client = client_from_api_key(api_key)
 
         self.organization_id = organization_id if organization_id else self.list_organizations()[0].organization_id
 

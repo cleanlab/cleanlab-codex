@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import TYPE_CHECKING, Optional
 
-from cleanlab_codex.internal.utils import init_codex_client
+from cleanlab_codex.internal.utils import client_from_access_key
 
 if TYPE_CHECKING:
     from datetime import datetime
@@ -34,7 +34,15 @@ class Project:
 
     @classmethod
     def from_access_key(cls, access_key: str):
-        sdk_client = init_codex_client(access_key)
+        """Initialize project-level access to the Codex SDK.
+
+        Args:
+            access_key (str): The access key for authenticating the project. (TODO: link to docs on what this means).
+
+        Returns:
+            Project: The project associated with the access key.
+        """
+        sdk_client = client_from_access_key(access_key)
         project_id = sdk_client.projects.access_keys.retrieve_project_id().project_id
 
         if project_id is None:

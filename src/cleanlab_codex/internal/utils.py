@@ -20,27 +20,36 @@ def is_access_key(key: str) -> bool:
 
 
 def init_codex_client(key: str | None = None) -> _Codex:
+    """
+    Initialize a Codex SDK client using an API key or access key.
+
+    Args:
+        key (str | None): The API key or access key to use to authenticate the client. If not provided, the client will be authenticated using the `CODEX_API_KEY` or `CODEX_ACCESS_KEY` environment variables.
+
+    Returns:
+        _Codex: The initialized Codex client.
+    """
     if key is None:
         if api_key := os.getenv("CODEX_API_KEY"):
-            return _client_from_api_key(api_key)
+            return client_from_api_key(api_key)
         if access_key := os.getenv("CODEX_ACCESS_KEY"):
-            return _client_from_access_key(access_key)
+            return client_from_access_key(access_key)
 
         raise MissingAuthKeyError
 
     if is_access_key(key):
-        return _client_from_access_key(key)
+        return client_from_access_key(key)
 
-    return _client_from_api_key(key)
+    return client_from_api_key(key)
 
 
-def _client_from_api_key(key: str) -> _Codex:
+def client_from_api_key(key: str) -> _Codex:
     client = _Codex(api_key=key)
     client.users.myself.api_key.retrieve()  # check if the api key is valid
     return client
 
 
-def _client_from_access_key(key: str) -> _Codex:
+def client_from_access_key(key: str) -> _Codex:
     client = _Codex(access_key=key)
     client.projects.access_keys.retrieve_project_id()  # check if the access key is valid
     return client
