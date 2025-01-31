@@ -21,7 +21,7 @@ class Codex:
     This client can be used to programmatically set up Codex projects. The [`query`](#method-query) method can also be used directly if none of our existing abstractions are sufficient for your use case.
     """
 
-    def __init__(self, key: str):
+    def __init__(self, key: str | None = None):
         """Initialize the Codex client.
 
         Args:

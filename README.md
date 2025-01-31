@@ -2,8 +2,7 @@
 
 # Cleanlab Codex - Closing the AI Knowledge Gap
 
-[![PyPI - Version](https://img.shields.io/pypi/v/cleanlab-codex.svg)](https://pypi.org/project/cleanlab-codex)
-[![PyPI - Python Version](https://img.shields.io/pypi/pyversions/cleanlab-codex.svg)](https://pypi.org/project/cleanlab-codex)
+[![Build Status](https://github.com/cleanlab/cleanlab-codex/actions/workflows/ci.yml/badge.svg)](https://github.com/cleanlab/cleanlab-codex/actions/workflows/ci.yml) [![PyPI - Version](https://img.shields.io/pypi/v/cleanlab-codex.svg)](https://pypi.org/project/cleanlab-codex) [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/cleanlab-codex.svg)](https://pypi.org/project/cleanlab-codex)
 
 Codex enables you to seamlessly leverage knowledge from Subject Matter Experts (SMEs) to improve your RAG/Agentic applications.
 
