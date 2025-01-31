@@ -91,7 +91,8 @@ class CodexBackup:
                 assistant_response = chat_method(decorated_instance, user_message)
 
                 # Return original response if it's adequate
-                if not is_bad_response(assistant_response):
+                # TODO: Update usage of is_bad_response
+                if not is_bad_response(assistant_response, self._fallback_answer):
                     return assistant_response
 
                 # Query Codex for a backup response
