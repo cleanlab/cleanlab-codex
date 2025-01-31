@@ -32,7 +32,7 @@ class Project:
             raise MissingProjectError
 
     @classmethod
-    def from_access_key(cls, access_key: str):
+    def from_access_key(cls, access_key: str) -> Project:
         """Initialize project-level access to the Codex SDK.
 
         Args:
@@ -49,7 +49,7 @@ class Project:
 
         return Project(sdk_client, project_id)
 
-    def create_access_key(self, name: str, description: str | None = None, expiration: datetime | None = None):
+    def create_access_key(self, name: str, description: str | None = None, expiration: datetime | None = None) -> str:
         """Create a new access key for this project.
 
         Args:

@@ -3,11 +3,11 @@ from datetime import datetime, timezone
 from unittest.mock import MagicMock
 
 import pytest
+from codex.types.project_return_schema import Config
+from codex.types.projects.access_key_retrieve_project_id_response import AccessKeyRetrieveProjectIDResponse
 
 from cleanlab_codex.project import MissingProjectError, Project
 from cleanlab_codex.types.entry import Entry, EntryCreate
-from codex.types.project_return_schema import Config
-from codex.types.projects.access_key_retrieve_project_id_response import AccessKeyRetrieveProjectIDResponse
 
 FAKE_PROJECT_ID = str(uuid.uuid4())
 FAKE_USER_ID = "Test User"
@@ -19,8 +19,10 @@ DUMMY_ACCESS_KEY = "sk-1-EMOh6UrRo7exTEbEi8_azzACAEdtNiib2LLa1IGo6kA"
 
 
 def test_from_access_key(mock_client_from_access_key: MagicMock) -> None:
-    mock_client_from_access_key.projects.access_keys.retrieve_project_id.return_value = AccessKeyRetrieveProjectIDResponse(
-        project_id=FAKE_PROJECT_ID,
+    mock_client_from_access_key.projects.access_keys.retrieve_project_id.return_value = (
+        AccessKeyRetrieveProjectIDResponse(
+            project_id=FAKE_PROJECT_ID,
+        )
     )
     project = Project.from_access_key(DUMMY_ACCESS_KEY)
     assert project.project_id == FAKE_PROJECT_ID
