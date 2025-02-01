@@ -1,9 +1,10 @@
+import pytest
 from unittest.mock import MagicMock
 
 from cleanlab_codex.codex_backup import CodexBackup
 
 # TODO: Remove this skip once we update codex_backup.py
-import pytest; pytest.skip(allow_module_level=True)
+pytest.skip(allow_module_level=True)
 
 
 MOCK_BACKUP_RESPONSE = "This is a test response"
