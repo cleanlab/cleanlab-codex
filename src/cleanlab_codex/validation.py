@@ -85,8 +85,8 @@ def is_fallback_response(
         error_msg = "The 'thefuzz' library is required. Please install it with `pip install thefuzz`."
         raise ImportError(error_msg) from e
 
-    partial_ratio = fuzz.partial_ratio(fallback_answer.lower(), response.lower())
-    return partial_ratio >= threshold
+    partial_ratio: int = fuzz.partial_ratio(fallback_answer.lower(), response.lower())
+    return bool(partial_ratio >= threshold)
 
 
 def is_untrustworthy_response(
