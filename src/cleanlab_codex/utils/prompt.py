@@ -2,13 +2,14 @@
 Utility functions for RAG (Retrieval Augmented Generation) operations.
 """
 
+
 def default_format_prompt(query: str, context: str) -> str:
     """Default function for formatting RAG prompts.
-    
+
     Args:
         query: The user's question
         context: The context/documents to use for answering
-        
+
     Returns:
         str: A formatted prompt combining the query and context
     """
