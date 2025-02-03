@@ -4,7 +4,7 @@ from unittest.mock import MagicMock, Mock
 
 import pytest
 from codex import AuthenticationError
-from codex.types.project_return_schema import Config
+from codex.types.project_create_params import Config
 from codex.types.projects.access_key_retrieve_project_id_response import AccessKeyRetrieveProjectIDResponse
 
 from cleanlab_codex.project import MissingProjectError, Project
@@ -26,6 +26,27 @@ def test_from_access_key(mock_client_from_access_key: MagicMock) -> None:
         )
     )
     project = Project.from_access_key(DUMMY_ACCESS_KEY)
+    assert project.project_id == FAKE_PROJECT_ID
+
+
+def test_from_access_key_missing_project(mock_client_from_access_key: MagicMock) -> None:
+    """Test from_access_key when project_id is None"""
+    mock_client_from_access_key.projects.access_keys.retrieve_project_id.side_effect = Exception("project ID not found")
+    with pytest.raises(MissingProjectError):
+        Project.from_access_key(DUMMY_ACCESS_KEY)
+
+
+def test_create_project(mock_client_from_access_key: MagicMock) -> None:
+    """Test creating a new project"""
+    mock_client_from_access_key.projects.create.return_value.id = FAKE_PROJECT_ID
+    mock_client_from_access_key.organization_id = FAKE_ORGANIZATION_ID
+    project = Project.create(mock_client_from_access_key, FAKE_PROJECT_NAME, FAKE_PROJECT_DESCRIPTION)
+    mock_client_from_access_key.projects.create.assert_called_once_with(
+        config=DEFAULT_PROJECT_CONFIG,
+        organization_id=FAKE_ORGANIZATION_ID,
+        name=FAKE_PROJECT_NAME,
+        description=FAKE_PROJECT_DESCRIPTION,
+    )
     assert project.project_id == FAKE_PROJECT_ID
 
 
@@ -135,6 +156,26 @@ def test_query_question_not_found_fallback_answer(mock_client_from_access_key: M
     assert res == ("Paris", None)
 
 
+def test_query_add_question_when_not_found(mock_client_from_access_key: MagicMock) -> None:
+    """Test that query adds question when not found and not read_only"""
+    mock_client_from_access_key.projects.entries.query.return_value = None
+    new_entry = Entry(
+        id=str(uuid.uuid4()),
+        created_at=datetime.now(tz=timezone.utc),
+        question="What is the capital of France?",
+        answer=None,
+    )
+    mock_client_from_access_key.projects.entries.add_question.return_value = new_entry
+
+    project = Project(mock_client_from_access_key, FAKE_PROJECT_ID)
+    res = project.query("What is the capital of France?")
+
+    mock_client_from_access_key.projects.entries.add_question.assert_called_once_with(
+        FAKE_PROJECT_ID, question="What is the capital of France?"
+    )
+    assert res == (None, new_entry)
+
+
 def test_query_answer_found(mock_client_from_access_key: MagicMock) -> None:
     answered_entry = Entry(
         id=str(uuid.uuid4()),
@@ -146,3 +187,10 @@ def test_query_answer_found(mock_client_from_access_key: MagicMock) -> None:
     project = Project(mock_client_from_access_key, FAKE_PROJECT_ID)
     res = project.query("What is the capital of France?")
     assert res == ("Paris", answered_entry)
+
+
+def test_add_entries_empty_list(mock_client_from_access_key: MagicMock) -> None:
+    """Test adding an empty list of entries"""
+    project = Project(mock_client_from_access_key, FAKE_PROJECT_ID)
+    project.add_entries([])
+    mock_client_from_access_key.projects.entries.create.assert_not_called()

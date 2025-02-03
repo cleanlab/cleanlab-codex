@@ -57,10 +57,11 @@ class Project:
             Project: The project associated with the access key.
         """
         sdk_client = client_from_access_key(access_key)
-        project_id = sdk_client.projects.access_keys.retrieve_project_id().project_id
 
-        if project_id is None:
-            raise MissingProjectError
+        try:
+            project_id = sdk_client.projects.access_keys.retrieve_project_id().project_id
+        except Exception as e:
+            raise MissingProjectError from e
 
         return Project(sdk_client, project_id)
 
@@ -74,6 +75,9 @@ class Project:
 
         Returns:
             Project: The created project.
+
+        Raises:
+            AuthenticationError: If the client is not authenticated with a user-level API key.
         """
         project_id = sdk_client.projects.create(
             config=ProjectConfig(),
