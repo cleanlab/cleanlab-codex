@@ -66,7 +66,7 @@ class Project:
         return Project(sdk_client, project_id)
 
     @classmethod
-    def create(cls, sdk_client: _Codex, name: str, description: str | None = None) -> Project:
+    def create(cls, sdk_client: _Codex, organization_id: str, name: str, description: str | None = None) -> Project:
         """Create a new Codex project for the authenticated user.
 
         Args:
@@ -81,7 +81,7 @@ class Project:
         """
         project_id = sdk_client.projects.create(
             config=ProjectConfig(),
-            organization_id=sdk_client.organization_id,  # type: ignore[attr-defined]
+            organization_id=organization_id,
             name=name,
             description=description,
         ).id

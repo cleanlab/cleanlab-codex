@@ -40,7 +40,9 @@ def test_create_project(mock_client_from_access_key: MagicMock) -> None:
     """Test creating a new project"""
     mock_client_from_access_key.projects.create.return_value.id = FAKE_PROJECT_ID
     mock_client_from_access_key.organization_id = FAKE_ORGANIZATION_ID
-    project = Project.create(mock_client_from_access_key, FAKE_PROJECT_NAME, FAKE_PROJECT_DESCRIPTION)
+    project = Project.create(
+        mock_client_from_access_key, FAKE_ORGANIZATION_ID, FAKE_PROJECT_NAME, FAKE_PROJECT_DESCRIPTION
+    )
     mock_client_from_access_key.projects.create.assert_called_once_with(
         config=DEFAULT_PROJECT_CONFIG,
         organization_id=FAKE_ORGANIZATION_ID,

@@ -25,7 +25,9 @@ class Client:
         self.api_key = api_key
         self._client = client_from_api_key(api_key)
 
-        self.organization_id = organization_id if organization_id else self.list_organizations()[0].organization_id
+        self.organization_id = (
+            organization_id if organization_id is not None else self.list_organizations()[0].organization_id
+        )
 
     def get_project(self, project_id: str) -> Project:
         return Project(self._client, project_id)
@@ -41,7 +43,7 @@ class Client:
             Project: The created project.
         """
 
-        return Project.create(self._client, name, description)
+        return Project.create(self._client, self.organization_id, name, description)
 
     def list_organizations(self) -> list[Organization]:
         """List the organizations the authenticated user is a member of.

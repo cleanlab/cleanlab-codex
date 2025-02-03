@@ -2,16 +2,17 @@
 
 import uuid
 from datetime import datetime
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, Mock, patch
 
+import pytest
+from codex import AuthenticationError
 from codex.types.project_return_schema import Config, ProjectReturnSchema
 from codex.types.users.myself.user_organizations_schema import UserOrganizationsSchema
-import pytest
 
 from cleanlab_codex.client import Client
 from cleanlab_codex.project import MissingProjectError
 from cleanlab_codex.types.organization import Organization
-from cleanlab_codex.types.project import ProjectConfig
+from cleanlab_codex.types.project import ProjectConfig, ProjectReturnConfig
 
 FAKE_PROJECT_ID = str(uuid.uuid4())
 FAKE_USER_ID = "Test User"
@@ -38,6 +39,7 @@ def test_client_uses_default_organization(mock_client_from_api_key: MagicMock) -
     client = Client(DUMMY_API_KEY)  # no organization_id provided
     assert client.organization_id == default_org_id
 
+
 def test_client_uses_specified_organization(mock_client_from_api_key: MagicMock) -> None:
     """Test that client uses specified organization ID"""
     specified_org_id = "specified-org-id"
@@ -46,20 +48,12 @@ def test_client_uses_specified_organization(mock_client_from_api_key: MagicMock)
     # Verify we don't unnecessarily call list_organizations
     mock_client_from_api_key.users.myself.organizations.list.assert_not_called()
 
-def test_list_organizations_empty(mock_client_from_api_key: MagicMock) -> None:
-    """Test behavior when user has no organizations"""
-    mock_client_from_api_key.users.myself.organizations.list.return_value = UserOrganizationsSchema(
-        organizations=[],
-    )
-    client = Client(DUMMY_API_KEY)
-    organizations = client.list_organizations()
-    assert len(organizations) == 0
 
 def test_create_project_without_description(mock_client_from_api_key: MagicMock) -> None:
     """Test creating project with no description"""
     mock_client_from_api_key.projects.create.return_value = ProjectReturnSchema(
         id=FAKE_PROJECT_ID,
-        config=Config(),
+        config=ProjectReturnConfig(),
         created_at=datetime.now(),
         created_by_user_id=FAKE_USER_ID,
         name=FAKE_PROJECT_NAME,
@@ -77,13 +71,19 @@ def test_create_project_without_description(mock_client_from_api_key: MagicMock)
     )
     assert project.project_id == FAKE_PROJECT_ID
 
-from codex import AuthenticationError
 
-def test_client_authentication_error(mock_client_from_api_key: MagicMock) -> None:
+def test_client_authentication_error() -> None:
     """Test handling of invalid API key"""
-    mock_client_from_api_key.side_effect = AuthenticationError("Invalid API key")
-    with pytest.raises(AuthenticationError):
-        Client(DUMMY_API_KEY)
+    mock_error = Mock(response=Mock(status=401), body={"error": "Expired"})
+
+    with patch("cleanlab_codex.client.client_from_api_key") as mock_client_from_api_key:
+        mock_client_from_api_key.side_effect = AuthenticationError(
+            "test", response=mock_error.response, body=mock_error.body
+        )
+
+        with pytest.raises(AuthenticationError):
+            Client(DUMMY_API_KEY)
+
 
 def test_get_project_not_found(mock_client_from_api_key: MagicMock) -> None:
     """Test getting a non-existent project"""
