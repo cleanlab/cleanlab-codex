@@ -8,8 +8,6 @@ from cleanlab_codex.project import Project
 if TYPE_CHECKING:
     from cleanlab_codex.types.organization import Organization
 
-from cleanlab_codex.types.project import ProjectConfig
-
 
 class Client:
     def __init__(self, api_key: str, organization_id: Optional[str] = None):
@@ -43,14 +41,7 @@ class Client:
             Project: The created project.
         """
 
-        project_id = self._client.projects.create(
-            config=ProjectConfig(),
-            organization_id=self.organization_id,
-            name=name,
-            description=description,
-        ).id
-
-        return Project(self._client, project_id)
+        return Project.create(self._client, name, description)
 
     def list_organizations(self) -> list[Organization]:
         """List the organizations the authenticated user is a member of.

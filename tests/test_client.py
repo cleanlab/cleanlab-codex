@@ -49,6 +49,7 @@ def test_create_project(mock_client_from_api_key: MagicMock) -> None:
         updated_at=datetime.now(),
         description=FAKE_PROJECT_DESCRIPTION,
     )
+    mock_client_from_api_key.organization_id = FAKE_ORGANIZATION_ID
     codex = Client("", organization_id=FAKE_ORGANIZATION_ID)
     project = codex.create_project(FAKE_PROJECT_NAME, FAKE_PROJECT_DESCRIPTION)
     mock_client_from_api_key.projects.create.assert_called_once_with(

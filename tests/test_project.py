@@ -1,8 +1,9 @@
 import uuid
 from datetime import datetime, timezone
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, Mock
 
 import pytest
+from codex import AuthenticationError
 from codex.types.project_return_schema import Config
 from codex.types.projects.access_key_retrieve_project_id_response import AccessKeyRetrieveProjectIDResponse
 
@@ -48,6 +49,24 @@ def test_add_entries(mock_client_from_access_key: MagicMock) -> None:
         assert call.kwargs["answer"] == entry.get("answer")
 
 
+def test_add_entries_no_access_key(mock_client_from_access_key: MagicMock) -> None:
+    mock_error = Mock(response=Mock(status=401), body={"error": "Unauthorized"})
+
+    mock_client_from_access_key.projects.entries.create.side_effect = AuthenticationError(
+        "test", response=mock_error.response, body=mock_error.body
+    )
+
+    answered_entry_create = EntryCreate(
+        question="What is the capital of France?",
+        answer="Paris",
+    )
+
+    project = Project.from_access_key(DUMMY_ACCESS_KEY)
+
+    with pytest.raises(AuthenticationError, match="See cleanlab_codex.Client.get_project"):
+        project.add_entries([answered_entry_create])
+
+
 def test_create_access_key(mock_client_from_access_key: MagicMock) -> None:
     project = Project(mock_client_from_access_key, FAKE_PROJECT_ID)
     access_key_name = "Test Access Key"
@@ -59,6 +78,19 @@ def test_create_access_key(mock_client_from_access_key: MagicMock) -> None:
         description=access_key_description,
         expires_at=None,
     )
+
+
+def test_create_access_key_no_access_key(mock_client_from_access_key: MagicMock) -> None:
+    mock_error = Mock(response=Mock(status=401), body={"error": "Unauthorized"})
+
+    mock_client_from_access_key.projects.access_keys.create.side_effect = AuthenticationError(
+        "test", response=mock_error.response, body=mock_error.body
+    )
+
+    project = Project.from_access_key(DUMMY_ACCESS_KEY)
+
+    with pytest.raises(AuthenticationError, match="See cleanlab_codex.Client.get_project"):
+        project.create_access_key("test")
 
 
 def test_create_nonexistent_project_id(mock_client_from_access_key: MagicMock) -> None:

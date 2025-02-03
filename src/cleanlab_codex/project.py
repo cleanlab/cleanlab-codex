@@ -3,7 +3,10 @@ from __future__ import annotations
 from datetime import datetime
 from typing import TYPE_CHECKING, Optional
 
+from codex import AuthenticationError
+
 from cleanlab_codex.internal.utils import client_from_access_key
+from cleanlab_codex.types.project import ProjectConfig
 
 if TYPE_CHECKING:
     from datetime import datetime
@@ -11,6 +14,18 @@ if TYPE_CHECKING:
     from codex import Codex as _Codex
 
     from cleanlab_codex.types.entry import Entry, EntryCreate
+
+ERROR_CREATE_ACCESS_KEY = (
+    "Failed to create access key. Please ensure you have the necessary permissions"
+    "and are using a user-level API key, not a project access key."
+    "See cleanlab_codex.Client.get_project."
+)
+
+ERROR_ADD_ENTRIES = (
+    "Failed to add entries. Please ensure you have the necessary permissions"
+    "and are using a user-level API key, not a project access key."
+    "See cleanlab_codex.Client.get_project."
+)
 
 
 class MissingProjectError(Exception):
@@ -49,6 +64,26 @@ class Project:
 
         return Project(sdk_client, project_id)
 
+    @classmethod
+    def create(cls, sdk_client: _Codex, name: str, description: str | None = None) -> Project:
+        """Create a new Codex project for the authenticated user.
+
+        Args:
+            name (str): The name of the project.
+            description (:obj:`str`, optional): The description of the project.
+
+        Returns:
+            Project: The created project.
+        """
+        project_id = sdk_client.projects.create(
+            config=ProjectConfig(),
+            organization_id=sdk_client.organization_id,
+            name=name,
+            description=description,
+        ).id
+
+        return Project(sdk_client, project_id)
+
     def create_access_key(self, name: str, description: str | None = None, expiration: datetime | None = None) -> str:
         """Create a new access key for this project.
 
@@ -58,10 +93,16 @@ class Project:
 
         Returns:
             str: The access key token.
+
+        Raises:
+            AuthenticationError: If the client is not authenticated with a user-level API Key.
         """
-        return self.sdk_client.projects.access_keys.create(
-            project_id=self.project_id, name=name, description=description, expires_at=expiration
-        ).token
+        try:
+            return self.sdk_client.projects.access_keys.create(
+                project_id=self.project_id, name=name, description=description, expires_at=expiration
+            ).token
+        except AuthenticationError as e:
+            raise AuthenticationError(ERROR_CREATE_ACCESS_KEY, response=e.response, body=e.body) from e
 
     def add_entries(self, entries: list[EntryCreate]) -> None:
         """Add a list of entries to this Codex project.
@@ -72,11 +113,14 @@ class Project:
         Raises:
             AuthenticationError: If the client is not authenticated with a user-level API Key.
         """
-        # TODO: implement batch creation of entries in backend and update this function
-        for entry in entries:
-            self.sdk_client.projects.entries.create(
-                self.project_id, question=entry["question"], answer=entry.get("answer")
-            )
+        try:
+            # TODO: implement batch creation of entries in backend and update this function
+            for entry in entries:
+                self.sdk_client.projects.entries.create(
+                    self.project_id, question=entry["question"], answer=entry.get("answer")
+                )
+        except AuthenticationError as e:
+            raise AuthenticationError(ERROR_ADD_ENTRIES, response=e.response, body=e.body) from e
 
     def query(
         self,
