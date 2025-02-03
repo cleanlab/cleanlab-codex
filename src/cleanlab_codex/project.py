@@ -81,7 +81,7 @@ class Project:
         """
         project_id = sdk_client.projects.create(
             config=ProjectConfig(),
-            organization_id=sdk_client.organization_id,
+            organization_id=sdk_client.organization_id,  # type: ignore[attr-defined]
             name=name,
             description=description,
         ).id

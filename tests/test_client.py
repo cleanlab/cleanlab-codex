@@ -6,8 +6,10 @@ from unittest.mock import MagicMock
 
 from codex.types.project_return_schema import Config, ProjectReturnSchema
 from codex.types.users.myself.user_organizations_schema import UserOrganizationsSchema
+import pytest
 
 from cleanlab_codex.client import Client
+from cleanlab_codex.project import MissingProjectError
 from cleanlab_codex.types.organization import Organization
 from cleanlab_codex.types.project import ProjectConfig
 
@@ -18,6 +20,77 @@ FAKE_PROJECT_NAME = "Test Project"
 FAKE_PROJECT_DESCRIPTION = "Test Description"
 DEFAULT_PROJECT_CONFIG = ProjectConfig()
 DUMMY_API_KEY = "GP0FzPfA7wYy5L64luII2YaRT2JoSXkae7WEo7dH6Bw"
+
+
+def test_client_uses_default_organization(mock_client_from_api_key: MagicMock) -> None:
+    """Test that client uses first organization when none specified"""
+    default_org_id = "default-org-id"
+    mock_client_from_api_key.users.myself.organizations.list.return_value = UserOrganizationsSchema(
+        organizations=[
+            Organization(
+                organization_id=default_org_id,
+                created_at=datetime.now(),
+                updated_at=datetime.now(),
+                user_id=FAKE_USER_ID,
+            )
+        ],
+    )
+    client = Client(DUMMY_API_KEY)  # no organization_id provided
+    assert client.organization_id == default_org_id
+
+def test_client_uses_specified_organization(mock_client_from_api_key: MagicMock) -> None:
+    """Test that client uses specified organization ID"""
+    specified_org_id = "specified-org-id"
+    client = Client(DUMMY_API_KEY, organization_id=specified_org_id)
+    assert client.organization_id == specified_org_id
+    # Verify we don't unnecessarily call list_organizations
+    mock_client_from_api_key.users.myself.organizations.list.assert_not_called()
+
+def test_list_organizations_empty(mock_client_from_api_key: MagicMock) -> None:
+    """Test behavior when user has no organizations"""
+    mock_client_from_api_key.users.myself.organizations.list.return_value = UserOrganizationsSchema(
+        organizations=[],
+    )
+    client = Client(DUMMY_API_KEY)
+    organizations = client.list_organizations()
+    assert len(organizations) == 0
+
+def test_create_project_without_description(mock_client_from_api_key: MagicMock) -> None:
+    """Test creating project with no description"""
+    mock_client_from_api_key.projects.create.return_value = ProjectReturnSchema(
+        id=FAKE_PROJECT_ID,
+        config=Config(),
+        created_at=datetime.now(),
+        created_by_user_id=FAKE_USER_ID,
+        name=FAKE_PROJECT_NAME,
+        organization_id=FAKE_ORGANIZATION_ID,
+        updated_at=datetime.now(),
+        description=None,
+    )
+    client = Client(DUMMY_API_KEY, organization_id=FAKE_ORGANIZATION_ID)
+    project = client.create_project(FAKE_PROJECT_NAME)  # no description
+    mock_client_from_api_key.projects.create.assert_called_once_with(
+        config=DEFAULT_PROJECT_CONFIG,
+        organization_id=FAKE_ORGANIZATION_ID,
+        name=FAKE_PROJECT_NAME,
+        description=None,
+    )
+    assert project.project_id == FAKE_PROJECT_ID
+
+from codex import AuthenticationError
+
+def test_client_authentication_error(mock_client_from_api_key: MagicMock) -> None:
+    """Test handling of invalid API key"""
+    mock_client_from_api_key.side_effect = AuthenticationError("Invalid API key")
+    with pytest.raises(AuthenticationError):
+        Client(DUMMY_API_KEY)
+
+def test_get_project_not_found(mock_client_from_api_key: MagicMock) -> None:
+    """Test getting a non-existent project"""
+    mock_client_from_api_key.projects.retrieve.return_value = None
+    client = Client(DUMMY_API_KEY)
+    with pytest.raises(MissingProjectError):
+        client.get_project("non-existent-id")
 
 
 def test_list_organizations(mock_client_from_api_key: MagicMock) -> None:
