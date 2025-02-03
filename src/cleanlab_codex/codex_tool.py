@@ -108,7 +108,7 @@ class CodexTool:
 
     @property
     def fallback_answer(self) -> Optional[str]:
-        """The fallback answer to use if the Codex project cannot answer the question. This will be returned from by the tool if the Codex project does not have an answer to the question."""
+        """The fallback answer to use if the Codex project cannot answer the question. This will be returned by the tool if the Codex project does not have an answer to the question."""
         return self._fallback_answer
 
     @fallback_answer.setter
