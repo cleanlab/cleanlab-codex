@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING as _TYPE_CHECKING
 from typing import Optional
 
+from cleanlab_codex.internal.organization import list_organizations
 from cleanlab_codex.internal.project import create_project, query_project
 from cleanlab_codex.internal.utils import init_codex_client
 
@@ -45,7 +46,7 @@ class Codex:
         Raises:
             AuthenticationError: If the client is not authenticated with a user-level API Key.
         """
-        return self._client.users.myself.organizations.list().organizations
+        return list_organizations(self._client)
 
     def create_project(self, name: str, organization_id: str, description: Optional[str] = None) -> str:
         """Create a new Codex project.

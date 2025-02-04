@@ -5,8 +5,7 @@ from typing import TYPE_CHECKING, Optional
 if TYPE_CHECKING:
     from codex import Codex as _Codex
 
-    from cleanlab_codex.types.entry import Entry
-
+from cleanlab_codex.types.entry import Entry
 from cleanlab_codex.types.project import ProjectConfig
 
 
@@ -40,7 +39,7 @@ def query_project(
     elif project_id is None:
         raise MissingProjectIdError
 
-    query_res = client.projects.entries.query(project_id, question=question)
+    query_res = Entry.model_validate(client.projects.entries.query(project_id, question=question))
     if query_res is not None:
         if query_res.answer is not None:
             return query_res.answer, query_res
@@ -48,7 +47,7 @@ def query_project(
         return fallback_answer, query_res
 
     if not read_only:
-        created_entry = client.projects.entries.add_question(project_id, question=question)
+        created_entry = Entry.model_validate(client.projects.entries.add_question(project_id, question=question))
         return fallback_answer, created_entry
 
     return fallback_answer, None
