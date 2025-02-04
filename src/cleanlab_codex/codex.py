@@ -41,7 +41,7 @@ class Codex:
         """List the organizations the authenticated user is a member of.
 
         Returns:
-            list[Organization]: A list of organizations the authenticated user is a member of. See [`Organization`](/reference/python/codex_types#class-organization) for more information.
+            list[Organization]: A list of organizations the authenticated user is a member of. See [`Organization`](/reference/python/types.organization#class-organization) for more information.
 
         Raises:
             AuthenticationError: If the client is not authenticated with a user-level API Key.
@@ -70,7 +70,7 @@ class Codex:
         """Add a list of entries to the Codex project.
 
         Args:
-            entries (list[EntryCreate]): The entries to add to the Codex project. See [`EntryCreate`](/reference/python/codex_types#class-entrycreate).
+            entries (list[EntryCreate]): The entries to add to the Codex project. See [`EntryCreate`](/reference/python/types.entry#class-entrycreate).
             project_id (int): The ID of the project to add the entries to.
 
         Raises:
@@ -123,8 +123,8 @@ class Codex:
 
         Returns:
             tuple[Optional[str], Optional[Entry]]: A tuple representing the answer for the query and the existing or new entry in the Codex project.
-                If Codex is able to answer the question, the first element will be the answer returned by Codex and the second element will be the existing [`Entry`](/reference/python/codex_types#class-entry) in the Codex project.
-                If Codex is unable to answer the question, the first element will be `fallback_answer` if provided, otherwise None. The second element will be a new [`Entry`](/reference/python/codex_types#class-entry) in the Codex project.
+                If Codex is able to answer the question, the first element will be the answer returned by Codex and the second element will be the existing [`Entry`](/reference/python/types.entry#class-entry) in the Codex project.
+                If Codex is unable to answer the question, the first element will be `fallback_answer` if provided, otherwise None. The second element will be a new [`Entry`](/reference/python/types.entry#class-entry) in the Codex project.
         """
         return query_project(
             client=self._client,

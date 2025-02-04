@@ -11,7 +11,7 @@ class CodexTool:
     """A tool that connects to a Codex project to answer questions."""
 
     _tool_name = "ask_advisor"
-    _tool_description = "Asks an all-knowing advisor this query in cases where it cannot be answered from the provided Context. If the answer is avalible, this returns None."
+    _tool_description = "Asks an all-knowing advisor this query in cases where it cannot be answered from the provided Context. If the answer is available, this returns None."
     _tool_properties: ClassVar[dict[str, Any]] = {
         "question": {
             "type": "string",
