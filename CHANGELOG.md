@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Replaced the Codex class with Client (for authentication via API key) and Project (for authentication via access key).
+- Replaced the Codex class with Client and Project.
 
 ## [0.0.1a1] - 2025-01-29
 
