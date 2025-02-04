@@ -26,7 +26,10 @@ def test_from_access_key(mock_client_from_access_key: MagicMock) -> None:
         )
     )
     project = Project.from_access_key(DUMMY_ACCESS_KEY)
-    assert project.project_id == FAKE_PROJECT_ID
+    assert project.id == FAKE_PROJECT_ID
+    # should not call retrieve with an access key
+    assert mock_client_from_access_key.projects.retrieve.call_count == 0
+    assert mock_client_from_access_key.projects.access_keys.retrieve_project_id.call_count == 1
 
 
 def test_from_access_key_missing_project(mock_client_from_access_key: MagicMock) -> None:
@@ -49,7 +52,8 @@ def test_create_project(mock_client_from_api_key: MagicMock) -> None:
         name=FAKE_PROJECT_NAME,
         description=FAKE_PROJECT_DESCRIPTION,
     )
-    assert project.project_id == FAKE_PROJECT_ID
+    assert project.id == FAKE_PROJECT_ID
+    assert mock_client_from_api_key.projects.retrieve.call_count == 0
 
 
 def test_add_entries(mock_client_from_api_key: MagicMock) -> None:
@@ -121,6 +125,7 @@ def test_init_nonexistent_project_id(mock_client_from_access_key: MagicMock) -> 
 
     with pytest.raises(MissingProjectError):
         Project(mock_client_from_access_key, FAKE_PROJECT_ID)
+    assert mock_client_from_access_key.projects.retrieve.call_count == 1
 
 
 def test_query_read_only(mock_client_from_access_key: MagicMock) -> None:

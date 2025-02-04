@@ -50,6 +50,4 @@ def client_from_access_key(key: str | None = None) -> _Codex:
     if not (key := key or os.getenv("CODEX_ACCESS_KEY")):
         raise MissingAuthKeyError
 
-    client = _Codex(access_key=key)
-    client.projects.access_keys.retrieve_project_id()  # check if the access key is valid
-    return client
+    return _Codex(access_key=key)

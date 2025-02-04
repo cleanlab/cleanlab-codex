@@ -69,7 +69,7 @@ def test_create_project_without_description(mock_client_from_api_key: MagicMock)
         name=FAKE_PROJECT_NAME,
         description=None,
     )
-    assert project.project_id == FAKE_PROJECT_ID
+    assert project.id == FAKE_PROJECT_ID
 
 
 def test_client_authentication_error() -> None:
@@ -91,6 +91,7 @@ def test_get_project_not_found(mock_client_from_api_key: MagicMock) -> None:
     client = Client(DUMMY_API_KEY)
     with pytest.raises(MissingProjectError):
         client.get_project("non-existent-id")
+    assert mock_client_from_api_key.projects.retrieve.call_count == 1
 
 
 def test_list_organizations(mock_client_from_api_key: MagicMock) -> None:
@@ -131,7 +132,8 @@ def test_create_project(mock_client_from_api_key: MagicMock) -> None:
         name=FAKE_PROJECT_NAME,
         description=FAKE_PROJECT_DESCRIPTION,
     )
-    assert project.project_id == FAKE_PROJECT_ID
+    assert project.id == FAKE_PROJECT_ID
+    assert mock_client_from_api_key.projects.retrieve.call_count == 0
 
 
 def test_get_project(mock_client_from_api_key: MagicMock) -> None:
@@ -147,7 +149,7 @@ def test_get_project(mock_client_from_api_key: MagicMock) -> None:
     )
 
     project = Client("").get_project(FAKE_PROJECT_ID)
-    assert project.project_id == FAKE_PROJECT_ID
+    assert project.id == FAKE_PROJECT_ID
 
     assert mock_client_from_api_key.projects.retrieve.call_count == 1
     assert mock_client_from_api_key.projects.retrieve.call_args[0][0] == FAKE_PROJECT_ID

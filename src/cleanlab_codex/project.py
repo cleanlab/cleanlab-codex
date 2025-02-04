@@ -36,15 +36,18 @@ class MissingProjectError(Exception):
 
 
 class Project:
-    def __init__(self, sdk_client: _Codex, project_id: str):
-        self.sdk_client = sdk_client
-        self.project_id = project_id
+    def __init__(self, sdk_client: _Codex, project_id: str, *, retrieve_project: bool = True):
+        self._sdk_client = sdk_client
+        self._id = project_id
 
         # make sure the project exists
-        self._project = sdk_client.projects.retrieve(project_id)
-
-        if self._project is None:
+        if retrieve_project and sdk_client.projects.retrieve(project_id) is None:
             raise MissingProjectError
+
+    @property
+    def id(self) -> str:
+        """Get the project ID."""
+        return self._id
 
     @classmethod
     def from_access_key(cls, access_key: str) -> Project:
@@ -63,7 +66,7 @@ class Project:
         except Exception as e:
             raise MissingProjectError from e
 
-        return Project(sdk_client, project_id)
+        return Project(sdk_client, project_id, retrieve_project=False)
 
     @classmethod
     def create(cls, sdk_client: _Codex, organization_id: str, name: str, description: str | None = None) -> Project:
@@ -86,7 +89,7 @@ class Project:
             description=description,
         ).id
 
-        return Project(sdk_client, project_id)
+        return Project(sdk_client, project_id, retrieve_project=False)
 
     def create_access_key(self, name: str, description: str | None = None, expiration: datetime | None = None) -> str:
         """Create a new access key for this project.
@@ -102,8 +105,8 @@ class Project:
             AuthenticationError: If the client is not authenticated with a user-level API Key.
         """
         try:
-            return self.sdk_client.projects.access_keys.create(
-                project_id=self.project_id, name=name, description=description, expires_at=expiration
+            return self._sdk_client.projects.access_keys.create(
+                project_id=self.id, name=name, description=description, expires_at=expiration
             ).token
         except AuthenticationError as e:
             raise AuthenticationError(ERROR_CREATE_ACCESS_KEY, response=e.response, body=e.body) from e
@@ -120,8 +123,8 @@ class Project:
         try:
             # TODO: implement batch creation of entries in backend and update this function
             for entry in entries:
-                self.sdk_client.projects.entries.create(
-                    self.project_id, question=entry["question"], answer=entry.get("answer")
+                self._sdk_client.projects.entries.create(
+                    self.id, question=entry["question"], answer=entry.get("answer")
                 )
         except AuthenticationError as e:
             raise AuthenticationError(ERROR_ADD_ENTRIES, response=e.response, body=e.body) from e
@@ -146,7 +149,7 @@ class Project:
                 If Codex is able to answer the question, the first element will be the answer returned by Codex and the second element will be the existing entry in the Codex project.
                 If Codex is unable to answer the question, the first element will be `fallback_answer` if provided, otherwise None, and the second element will be a new entry in the Codex project.
         """
-        query_res = self.sdk_client.projects.entries.query(self.project_id, question=question)
+        query_res = self._sdk_client.projects.entries.query(self.id, question=question)
         if query_res is not None:
             if query_res.answer is not None:
                 return query_res.answer, query_res
@@ -154,7 +157,7 @@ class Project:
             return fallback_answer, query_res
 
         if not read_only:
-            created_entry = self.sdk_client.projects.entries.add_question(self.project_id, question=question)
+            created_entry = self._sdk_client.projects.entries.add_question(self.id, question=question)
             return fallback_answer, created_entry
 
         return fallback_answer, None

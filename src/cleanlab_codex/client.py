@@ -25,9 +25,14 @@ class Client:
         self.api_key = api_key
         self._client = client_from_api_key(api_key)
 
-        self.organization_id = (
+        self._organization_id = (
             organization_id if organization_id is not None else self.list_organizations()[0].organization_id
         )
+
+    @property
+    def organization_id(self) -> str:
+        """Get the organization ID."""
+        return self._organization_id
 
     def get_project(self, project_id: str) -> Project:
         """Get a project by ID. Must be accessible by the authenticated user.
@@ -51,7 +56,7 @@ class Client:
             Project: The created project.
         """
 
-        return Project.create(self._client, self.organization_id, name, description)
+        return Project.create(self._client, self._organization_id, name, description)
 
     def list_organizations(self) -> list[Organization]:
         """List the organizations the authenticated user is a member of.
