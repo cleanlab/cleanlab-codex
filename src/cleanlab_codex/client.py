@@ -15,7 +15,7 @@ class Client:
 
         Args:
             api_key (str): The API key for authenticating the user. (TODO: link to docs on what this means)
-            organization_id (str): The ID of the organization to create projects in. If not provided, the user's default organization will be used.
+            organization_id (str): The ID of the organization the client should use. If not provided, the user's default organization will be used.
         Returns:
             Client: The authenticated Codex Client.
 
