@@ -16,14 +16,14 @@ if TYPE_CHECKING:
     from cleanlab_codex.types.entry import Entry, EntryCreate
 
 ERROR_CREATE_ACCESS_KEY = (
-    "Failed to create access key. Please ensure you have the necessary permissions"
-    "and are using a user-level API key, not a project access key."
+    "Failed to create access key. Please ensure you have the necessary permissions "
+    "and are using a user-level API key, not a project access key. "
     "See cleanlab_codex.Client.get_project."
 )
 
 ERROR_ADD_ENTRIES = (
-    "Failed to add entries. Please ensure you have the necessary permissions"
-    "and are using a user-level API key, not a project access key."
+    "Failed to add entries. Please ensure you have the necessary permissions "
+    "and are using a user-level API key, not a project access key. "
     "See cleanlab_codex.Client.get_project."
 )
 
@@ -36,12 +36,12 @@ class MissingProjectError(Exception):
 
 
 class Project:
-    def __init__(self, sdk_client: _Codex, project_id: str, *, retrieve_project: bool = True):
+    def __init__(self, sdk_client: _Codex, project_id: str, *, verify_existence: bool = True):
         self._sdk_client = sdk_client
         self._id = project_id
 
         # make sure the project exists
-        if retrieve_project and sdk_client.projects.retrieve(project_id) is None:
+        if verify_existence and sdk_client.projects.retrieve(project_id) is None:
             raise MissingProjectError
 
     @property
@@ -66,7 +66,7 @@ class Project:
         except Exception as e:
             raise MissingProjectError from e
 
-        return Project(sdk_client, project_id, retrieve_project=False)
+        return Project(sdk_client, project_id, verify_existence=False)
 
     @classmethod
     def create(cls, sdk_client: _Codex, organization_id: str, name: str, description: str | None = None) -> Project:
@@ -89,7 +89,7 @@ class Project:
             description=description,
         ).id
 
-        return Project(sdk_client, project_id, retrieve_project=False)
+        return Project(sdk_client, project_id, verify_existence=False)
 
     def create_access_key(self, name: str, description: str | None = None, expiration: datetime | None = None) -> str:
         """Create a new access key for this project.
