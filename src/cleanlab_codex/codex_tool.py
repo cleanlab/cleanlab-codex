@@ -142,7 +142,7 @@ class CodexTool:
     def to_smolagents_tool(self) -> Any:
         """Converts the tool to a [smolagents tool](https://huggingface.co/docs/smolagents/reference/tools#smolagents.Tool).
 
-        Note: You must have the [`smolagents` library installed](https://github.com/huggingface/smolagents/tree/main?tab=readme-ov-file#quick-demo) to use this method.
+        Note: You must have the [`smolagents` library installed](https://github.com/huggingface/smolagents) to use this method.
         """
         from cleanlab_codex.utils.smolagents import CodexTool as SmolagentsCodexTool
 
