@@ -22,11 +22,10 @@ class CodexTool:
     def __init__(
         self,
         project: Project,
+        *,
         fallback_answer: Optional[str] = DEFAULT_FALLBACK_ANSWER,
     ):
         self._project = project
-        self._codex_client = project.sdk_client
-        self._project_id = project.project_id
         self._fallback_answer = fallback_answer
 
     @classmethod

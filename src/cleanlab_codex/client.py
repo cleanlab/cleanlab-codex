@@ -30,6 +30,14 @@ class Client:
         )
 
     def get_project(self, project_id: str) -> Project:
+        """Get a project by ID. Must be accessible by the authenticated user.
+
+        Args:
+            project_id (str): The ID of the project to get.
+
+        Returns:
+            Project: The project.
+        """
         return Project(self._client, project_id)
 
     def create_project(self, name: str, description: Optional[str] = None) -> Project:

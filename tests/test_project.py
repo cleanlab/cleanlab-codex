@@ -36,14 +36,14 @@ def test_from_access_key_missing_project(mock_client_from_access_key: MagicMock)
         Project.from_access_key(DUMMY_ACCESS_KEY)
 
 
-def test_create_project(mock_client_from_access_key: MagicMock) -> None:
+def test_create_project(mock_client_from_api_key: MagicMock) -> None:
     """Test creating a new project"""
-    mock_client_from_access_key.projects.create.return_value.id = FAKE_PROJECT_ID
-    mock_client_from_access_key.organization_id = FAKE_ORGANIZATION_ID
+    mock_client_from_api_key.projects.create.return_value.id = FAKE_PROJECT_ID
+    mock_client_from_api_key.organization_id = FAKE_ORGANIZATION_ID
     project = Project.create(
-        mock_client_from_access_key, FAKE_ORGANIZATION_ID, FAKE_PROJECT_NAME, FAKE_PROJECT_DESCRIPTION
+        mock_client_from_api_key, FAKE_ORGANIZATION_ID, FAKE_PROJECT_NAME, FAKE_PROJECT_DESCRIPTION
     )
-    mock_client_from_access_key.projects.create.assert_called_once_with(
+    mock_client_from_api_key.projects.create.assert_called_once_with(
         config=DEFAULT_PROJECT_CONFIG,
         organization_id=FAKE_ORGANIZATION_ID,
         name=FAKE_PROJECT_NAME,
@@ -52,7 +52,7 @@ def test_create_project(mock_client_from_access_key: MagicMock) -> None:
     assert project.project_id == FAKE_PROJECT_ID
 
 
-def test_add_entries(mock_client_from_access_key: MagicMock) -> None:
+def test_add_entries(mock_client_from_api_key: MagicMock) -> None:
     answered_entry_create = EntryCreate(
         question="What is the capital of France?",
         answer="Paris",
@@ -60,11 +60,11 @@ def test_add_entries(mock_client_from_access_key: MagicMock) -> None:
     unanswered_entry_create = EntryCreate(
         question="What is the capital of Germany?",
     )
-    project = Project(mock_client_from_access_key, FAKE_PROJECT_ID)
+    project = Project(mock_client_from_api_key, FAKE_PROJECT_ID)
     project.add_entries([answered_entry_create, unanswered_entry_create])
 
     for call, entry in zip(
-        mock_client_from_access_key.projects.entries.create.call_args_list,
+        mock_client_from_api_key.projects.entries.create.call_args_list,
         [answered_entry_create, unanswered_entry_create],
     ):
         assert call.args[0] == FAKE_PROJECT_ID
@@ -90,12 +90,12 @@ def test_add_entries_no_access_key(mock_client_from_access_key: MagicMock) -> No
         project.add_entries([answered_entry_create])
 
 
-def test_create_access_key(mock_client_from_access_key: MagicMock) -> None:
-    project = Project(mock_client_from_access_key, FAKE_PROJECT_ID)
+def test_create_access_key(mock_client_from_api_key: MagicMock) -> None:
+    project = Project(mock_client_from_api_key, FAKE_PROJECT_ID)
     access_key_name = "Test Access Key"
     access_key_description = "Test Access Key Description"
     project.create_access_key(access_key_name, access_key_description)
-    mock_client_from_access_key.projects.access_keys.create.assert_called_once_with(
+    mock_client_from_api_key.projects.access_keys.create.assert_called_once_with(
         project_id=FAKE_PROJECT_ID,
         name=access_key_name,
         description=access_key_description,
@@ -116,7 +116,7 @@ def test_create_access_key_no_access_key(mock_client_from_access_key: MagicMock)
         project.create_access_key("test")
 
 
-def test_create_nonexistent_project_id(mock_client_from_access_key: MagicMock) -> None:
+def test_init_nonexistent_project_id(mock_client_from_access_key: MagicMock) -> None:
     mock_client_from_access_key.projects.retrieve.return_value = None
 
     with pytest.raises(MissingProjectError):
