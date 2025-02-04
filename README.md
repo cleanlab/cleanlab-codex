@@ -43,23 +43,13 @@ response = rag(question, system_prompt, [framework_specific_codex_tool])
 
 ## Why Codex?
 - **Identify Knowledge Gaps**: Codex captures knowledge gaps in your application so that you can easily identify which questions require expert input.
-- **Efficiently Leverage SMEs**: Codex ensures the SMEs see the most critical knowledge gaps first.   <!-- not sure if we should include this rn since it's not implemented yet -->
+- **Efficiently Leverage SMEs**: Codex ensures the SMEs see the most critical knowledge gaps first.
 - **Easy Integration**: Integrate Codex into your RAG/Agentic application with just a few lines of code.
 - **Immediate Impact**: SME responses instantly enhance your AI applications.
-
-## How does Codex interact with my AI application?
-<!-- TODO: add architecture diagram w/ brief explanation -->
-
-
-## What impact will I see?
-<!-- TODO: benchmarks -->
 
 ## Documentation
 
 Comprehensive documentation along with tutorials and examples can be found [here](https://help.cleanlab.ai/codex).
-
-## Contributing
-<!-- TODO: add contributing section or consider leaving out for now -->
 
 ## License
 
