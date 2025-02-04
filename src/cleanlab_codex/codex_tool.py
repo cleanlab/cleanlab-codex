@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any, ClassVar, Optional
 
-from cleanlab_codex.codex import Codex
+from cleanlab_codex.project import Project
 
 
 class CodexTool:
@@ -21,13 +21,11 @@ class CodexTool:
 
     def __init__(
         self,
-        codex_client: Codex,
+        project: Project,
         *,
-        project_id: Optional[str] = None,
         fallback_answer: Optional[str] = DEFAULT_FALLBACK_ANSWER,
     ):
-        self._codex_client = codex_client
-        self._project_id = project_id
+        self._project = project
         self._fallback_answer = fallback_answer
 
     @classmethod
@@ -35,31 +33,12 @@ class CodexTool:
         cls,
         access_key: str,
         *,
-        project_id: Optional[str] = None,
         fallback_answer: Optional[str] = DEFAULT_FALLBACK_ANSWER,
     ) -> CodexTool:
         """Creates a CodexTool from an access key. The project ID that the CodexTool will use is the one that is associated with the access key."""
+        project = Project.from_access_key(access_key)
         return cls(
-            codex_client=Codex(key=access_key),
-            project_id=project_id,
-            fallback_answer=fallback_answer,
-        )
-
-    @classmethod
-    def from_client(
-        cls,
-        codex_client: Codex,
-        *,
-        project_id: Optional[str] = None,
-        fallback_answer: Optional[str] = DEFAULT_FALLBACK_ANSWER,
-    ) -> CodexTool:
-        """Creates a CodexTool from a Codex client.
-        If the Codex client is initialized with a project access key, the CodexTool will use the project ID that is associated with the access key.
-        If the Codex client is initialized with a user API key, a project ID must be provided.
-        """
-        return cls(
-            codex_client=codex_client,
-            project_id=project_id,
+            project=project,
             fallback_answer=fallback_answer,
         )
 
@@ -84,15 +63,15 @@ class CodexTool:
         self._fallback_answer = value
 
     def query(self, question: str) -> Optional[str]:
-        """Asks an all-knowing advisor this question in cases where it cannot be answered from the provided Context. If the answer is not available, this returns a fallback answer or None.
+        """Asks an all-knowing advisor this question in cases where it cannot be answered from the provided Context.
 
         Args:
             question: The question to ask the advisor. This should be the same as the original user question, except in cases where the user question is missing information that could be additionally clarified.
 
         Returns:
-            The answer to the question, or None if the answer is not available.
+            The answer to the question. If the answer is not available, this returns a fallback answer or None.
         """
-        return self._codex_client.query(question, project_id=self._project_id, fallback_answer=self._fallback_answer)[0]
+        return self._project.query(question, fallback_answer=self._fallback_answer)[0]
 
     def to_openai_tool(self) -> dict[str, Any]:
         """Converts the tool to an OpenAI tool."""
