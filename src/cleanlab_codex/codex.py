@@ -18,7 +18,7 @@ class Codex:
     """
     Client for interacting with Cleanlab Codex. In order to use this client, make sure you have an account at [codex.cleanlab.ai](https://codex.cleanlab.ai).
 
-    We recommend using the [Web UI](https://codex.cleanlab.ai) to [set up Codex projects](TODO: link to docs) and then using one of our abstractions around the client such as [`CodexTool`](/reference/python/codex_tool) to integrate Codex into your RAG/Agentic system.
+    We recommend using the [Web UI](https://codex.cleanlab.ai) to [set up Codex projects](/codex/sme_tutorials/getting_started) and then using one of our abstractions around the client such as [`CodexTool`](/reference/python/codex_tool) to integrate Codex into your RAG/Agentic system.
     This client can be used to programmatically set up Codex projects. The [`query`](#method-query) method can also be used directly if none of our existing abstractions are sufficient for your use case.
     """
 
