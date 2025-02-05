@@ -25,7 +25,7 @@ classifiers = [
   "Programming Language :: Python :: Implementation :: PyPy",
 ]
 dependencies = [
-  "codex-sdk @ git+ssh://git@github.com/cleanlab/codex-python.git@8121c341af5ecca80a946ae3ba7e0f74036ca8d9", # TODO: update this once we've published SDK
+  "codex-sdk==0.1.0a9",
   "pydantic>=1.9.0, <3",
 ]
 
@@ -47,7 +47,7 @@ extra-dependencies = [
   "thefuzz",
 ]
 [tool.hatch.envs.types.scripts]
-check = "mypy --install-types --non-interactive {args:src/cleanlab_codex tests}"
+check = "mypy --strict --install-types --non-interactive {args:src/cleanlab_codex tests}"
 [tool.hatch.metadata]
 allow-direct-references = true
 
@@ -72,7 +72,7 @@ cov-combine = "coverage combine"
 cov-report = "coverage report {env:COVERAGE_FAIL_UNDER}"
 
 [tool.coverage.run]
-source_pkgs = ["cleanlab_codex", "tests"] 
+source_pkgs = ["cleanlab_codex", "tests"]
 branch = true
 parallel = true
 omit = [
