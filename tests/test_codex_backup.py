@@ -1,5 +1,6 @@
-import pytest
 from unittest.mock import MagicMock
+
+import pytest
 
 from cleanlab_codex.codex_backup import CodexBackup
 

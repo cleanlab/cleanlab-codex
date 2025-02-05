@@ -19,48 +19,84 @@ DEFAULT_TRUSTWORTHINESS_THRESHOLD = 0.5
 
 def is_bad_response(
     response: str,
-    context: str,
-    tlm: TLM,  # TODO: Make this optional
+    *,
+    context: Optional[str] = None,
     query: Optional[str] = None,
+    tlm: Optional[TLM] = None,
     # is_fallback_response args
     fallback_answer: str = DEFAULT_FALLBACK_ANSWER,
     partial_ratio_threshold: int = DEFAULT_PARTIAL_RATIO_THRESHOLD,
     # is_untrustworthy_response args
     trustworthiness_threshold: float = DEFAULT_TRUSTWORTHINESS_THRESHOLD,
+    format_prompt: Callable[[str, str], str] = default_format_prompt,
     # is_unhelpful_response args
     unhelpful_trustworthiness_threshold: Optional[float] = None,
 ) -> bool:
     """Run a series of checks to determine if a response is bad. If any of the checks pass, return True.
 
-    Checks:
-    - Is the response too similar to a known fallback answer?
-    - Is the response untrustworthy?
-    - Is the response unhelpful?
+    This function runs three possible validation checks:
+    1. Fallback check: Detects if response is too similar to known fallback answers.
+    2. Untrustworthy check: Evaluates response trustworthiness given context and query.
+    3. Unhelpful check: Evaluates if response is helpful for the given query.
 
     Args:
-        response: The response to check. See `is_fallback_response`, `is_untrustworthy_response`, and `is_unhelpful_response`.
-        context: The context/documents to use for answering. See `is_untrustworthy_response`.
-        tlm: The TLM model to use for evaluation. See `is_untrustworthy_response` and `is_unhelpful_response`.
-        query: The user's question (optional). See `is_untrustworthy_response` and `is_unhelpful_response`.
-        fallback_answer: The fallback answer to compare against. See `is_fallback_response`.
-        partial_ratio_threshold: The threshold for detecting fallback responses. See `is_fallback_response`.
-        trustworthiness_threshold: The threshold for detecting untrustworthy responses. See `is_untrustworthy_response`.
-        unhelpful_trustworthiness_threshold: The threshold for detecting unhelpful responses. See `is_unhelpful_response`.
+        response: The response to check.
+        context: Optional context/documents used for answering. Required for untrustworthy check.
+        query: Optional user question. Required for untrustworthy and unhelpful checks.
+        tlm: Optional TLM model for evaluation. Required for untrustworthy and unhelpful checks.
+        
+        # Fallback check parameters
+        fallback_answer: Known unhelpful response to compare against.
+        partial_ratio_threshold: Similarity threshold (0-100). Higher values require more similarity.
+        
+        # Untrustworthy check parameters
+        trustworthiness_threshold: Score threshold (0.0-1.0). Lower values allow less trustworthy responses.
+        format_prompt: Function to format (query, context) into a prompt string.
+        
+        # Unhelpful check parameters
+        unhelpful_trustworthiness_threshold: Optional confidence threshold (0.0-1.0) for unhelpful classification.
+
+    Returns:
+        bool: True if any validation check fails, False if all pass.
     """
-    validation_checks = [
-        lambda: is_fallback_response(response, fallback_answer, threshold=partial_ratio_threshold),
-        lambda: (
-            is_untrustworthy_response(response, context, query, tlm, threshold=trustworthiness_threshold)
-            if query is not None
-            else False
-        ),
-        lambda: is_unhelpful_response(
-            response, tlm, query, trustworthiness_score_threshold=unhelpful_trustworthiness_threshold
-        ),
-    ]
+
+    validation_checks = []
+
+    # All required inputs are available for checking fallback responses
+    validation_checks.append(
+        lambda: is_fallback_response(response, fallback_answer, threshold=partial_ratio_threshold)
+    )
+
+    can_run_untrustworthy_check = all(x is not None for x in (query, context, tlm))
+    if can_run_untrustworthy_check:
+        assert tlm is not None
+        assert query is not None
+        assert context is not None
+        validation_checks.append(
+            lambda: is_untrustworthy_response(
+                response=response,
+                context=context,
+                query=query,
+                tlm=tlm,
+                threshold=trustworthiness_threshold,
+                format_prompt=format_prompt,
+            )
+        )
+
+    can_run_unhelpful_check = query is not None and tlm is not None
+    if can_run_unhelpful_check:
+        assert tlm is not None
+        assert query is not None
+        validation_checks.append(
+            lambda: is_unhelpful_response(
+                response=response,
+                tlm=tlm,
+                query=query,
+                trustworthiness_score_threshold=unhelpful_trustworthiness_threshold,
+            )
+        )
 
     return any(check() for check in validation_checks)
-
 
 def is_fallback_response(
     response: str, fallback_answer: str = DEFAULT_FALLBACK_ANSWER, threshold: int = DEFAULT_PARTIAL_RATIO_THRESHOLD
@@ -71,8 +107,8 @@ def is_fallback_response(
     Returns True if the response is similar enough to be considered unhelpful.
 
     Args:
-        response: The response to check
-        fallback_answer: A known unhelpful/fallback response to compare against
+        response: The response to check.
+        fallback_answer: A known unhelpful/fallback response to compare against.
         threshold: Similarity threshold (0-100). Higher values require more similarity.
                   Default 70 means responses that are 70% or more similar are considered bad.
 
@@ -97,7 +133,7 @@ def is_untrustworthy_response(
     threshold: float = DEFAULT_TRUSTWORTHINESS_THRESHOLD,
     format_prompt: Callable[[str, str], str] = default_format_prompt,
 ) -> bool:
-    """Check if a response is untrustworthy based on TLM's evaluation.
+    """Check if a response is untrustworthy.
 
     Uses TLM to evaluate whether a response is trustworthy given the context and query.
     Returns True if TLM's trustworthiness score falls below the threshold, indicating
@@ -109,7 +145,7 @@ def is_untrustworthy_response(
         query: The user's question or request
         tlm: The TLM model to use for evaluation
         threshold: Score threshold (0.0-1.0). Lower values allow less trustworthy responses.
-                  Default 0.6, meaning responses with scores less than 0.6 are considered untrustworthy.
+                  Default 0.5, meaning responses with scores less than 0.5 are considered untrustworthy.
         format_prompt: Function that takes (query, context) and returns a formatted prompt string.
                       Users should provide their RAG app's own prompt formatting function here
                       to match how their LLM is prompted.
@@ -118,19 +154,22 @@ def is_untrustworthy_response(
         bool: True if the response is deemed untrustworthy by TLM, False otherwise
     """
     try:
-        from cleanlab_studio.studio.trustworthy_language_model import TLM  # noqa: F401
+        from cleanlab_studio import Studio  # type: ignore # noqa: F401
     except ImportError as e:
         error_msg = "The 'cleanlab_studio' library is required. Please install it with `pip install cleanlab-studio`."
         raise ImportError(error_msg) from e
 
     prompt = format_prompt(query, context)
-    resp = tlm.get_trustworthiness_score(prompt, response)
-    score: float = resp["trustworthiness_score"]
+    result = tlm.get_trustworthiness_score(prompt, response)
+    score: float = result["trustworthiness_score"]
     return score < threshold
 
 
 def is_unhelpful_response(
-    response: str, tlm: TLM, query: Optional[str] = None, trustworthiness_score_threshold: Optional[float] = None
+    response: str,
+    query: str,
+    tlm: TLM,
+    trustworthiness_score_threshold: Optional[float] = None,
 ) -> bool:
     """Check if a response is unhelpful by asking TLM to evaluate it.
 
@@ -153,7 +192,7 @@ def is_unhelpful_response(
               False otherwise
     """
     try:
-        from cleanlab_studio.studio.trustworthy_language_model import TLM  # noqa: F401
+        from cleanlab_studio import Studio  # type: ignore # noqa: F401
     except ImportError as e:
         error_msg = "The 'cleanlab_studio' library is required. Please install it with `pip install cleanlab-studio`."
         raise ImportError(error_msg) from e
@@ -173,13 +212,10 @@ def is_unhelpful_response(
     expected_unhelpful_response = "yes"
 
     prompt = (
-        "Consider the following"
-        + (
-            f" User Query and AI Assistant Response.\n\nUser Query: {query}\n\n"
-            if query
-            else " AI Assistant Response.\n\n"
-        )
-        + f"AI Assistant Response: {response}\n\n{question}"
+        "Consider the following User Query and AI Assistant Response.\n\n"
+        f"User Query: {query}\n\n"
+        f"AI Assistant Response: {response}\n\n"
+        f"{question}"
     )
 
     output = tlm.prompt(prompt, constrain_outputs=["Yes", "No"])

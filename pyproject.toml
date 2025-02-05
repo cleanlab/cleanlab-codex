@@ -55,6 +55,8 @@ allow-direct-references = true
 extra-dependencies = [
   "llama-index-core",
   "smolagents; python_version >= '3.10'",
+  "cleanlab-studio",
+  "thefuzz",
 ]
 
 [tool.hatch.envs.hatch-test.env-vars]
