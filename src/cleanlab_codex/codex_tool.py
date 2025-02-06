@@ -111,3 +111,37 @@ class CodexTool:
                 tool_properties=self._tool_properties,
             ),
         )
+
+    def to_langchain_tool(self) -> Any:
+        """Converts the tool to a [LangChain tool](https://python.langchain.com/docs/concepts/tools/).
+
+        Note: You must have the [`langchain` library installed](https://python.langchain.com/docs/concepts/architecture/) to use this method.
+        """
+        from langchain_core.tools.structured import StructuredTool
+
+        from cleanlab_codex.utils.langchain import create_args_schema
+
+        return StructuredTool.from_function(
+            func=self.query,
+            name=self._tool_name,
+            description=self._tool_description,
+            args_schema=create_args_schema(
+                name=self._tool_name,
+                func=self.query,
+                tool_properties=self._tool_properties,
+            ),
+        )
+
+    def to_aws_converse_tool(self) -> Any:
+        """Converts the tool to an [AWS Converse API tool](https://docs.aws.amazon.com/bedrock/latest/userguide/tool-use-inference-call.html).
+
+        Note: You must have the [`boto3` library installed](https://boto3.amazonaws.com/v1/documentation/api/latest/guide/quickstart.html) (AWS SDK for Python) to use this method.
+        """
+        from cleanlab_codex.utils.aws import format_as_aws_converse_tool
+
+        return format_as_aws_converse_tool(
+            tool_name=self._tool_name,
+            tool_description=self._tool_description,
+            tool_properties=self._tool_properties,
+            required_properties=self._tool_requirements,
+        )
