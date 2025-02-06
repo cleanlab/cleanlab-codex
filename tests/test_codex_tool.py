@@ -32,46 +32,54 @@ def test_to_llamaindex_tool(mock_client_from_access_key: MagicMock) -> None:
         assert llama_index_tool.fn == tool.query
 
 
-def test_to_langchain_tool(mock_client: MagicMock) -> None:  # noqa: ARG001
-    tool = CodexTool.from_access_key("")
-    langchain_tool = tool.to_langchain_tool()
-    assert isinstance(langchain_tool, StructuredTool)
-    assert callable(langchain_tool)
-    assert hasattr(langchain_tool, "name")
-    assert hasattr(langchain_tool, "description")
-    assert langchain_tool.name == tool.tool_name, f"Expected tool name '{tool.tool_name}', got '{langchain_tool.name}'."
-    assert (
-        langchain_tool.description == tool.tool_description
-    ), f"Expected description '{tool.tool_description}', got '{langchain_tool.description}'."
+def test_to_langchain_tool(mock_client_from_access_key: MagicMock) -> None:
+    with patch("cleanlab_codex.codex_tool.Project") as mock_project:
+        mock_project.from_access_key.return_value = MagicMock(client=mock_client_from_access_key, id="test_project_id")
+
+        tool = CodexTool.from_access_key("sk-test-123")
+        langchain_tool = tool.to_langchain_tool()
+        assert isinstance(langchain_tool, StructuredTool)
+        assert callable(langchain_tool)
+        assert hasattr(langchain_tool, "name")
+        assert hasattr(langchain_tool, "description")
+        assert (
+            langchain_tool.name == tool.tool_name
+        ), f"Expected tool name '{tool.tool_name}', got '{langchain_tool.name}'."
+        assert (
+            langchain_tool.description == tool.tool_description
+        ), f"Expected description '{tool.tool_description}', got '{langchain_tool.description}'."
 
 
-def test_to_aws_converse_tool(mock_client: MagicMock) -> None:  # noqa: ARG001
-    tool = CodexTool.from_access_key("")
-    aws_converse_tool = tool.to_aws_converse_tool()
-    assert "toolSpec" in aws_converse_tool
-    assert (
-        aws_converse_tool["toolSpec"].get("name") == tool.tool_name
-    ), f"Expected name '{tool.tool_name}', got '{aws_converse_tool['toolSpec'].get('name')}'"
-    assert (
-        aws_converse_tool["toolSpec"].get("description") == tool.tool_description
-    ), f"Expected description '{tool.tool_description}', got '{aws_converse_tool['toolSpec'].get('description')}'"
-    assert "inputSchema" in aws_converse_tool["toolSpec"], "inputSchema key is missing in toolSpec"
+def test_to_aws_converse_tool(mock_client_from_access_key: MagicMock) -> None:
+    with patch("cleanlab_codex.codex_tool.Project") as mock_project:
+        mock_project.from_access_key.return_value = MagicMock(client=mock_client_from_access_key, id="test_project_id")
 
-    input_schema = aws_converse_tool["toolSpec"]["inputSchema"]
-    assert "json" in input_schema
+        tool = CodexTool.from_access_key("sk-test-123")
+        aws_converse_tool = tool.to_aws_converse_tool()
+        assert "tool_spec" in aws_converse_tool
+        assert (
+            aws_converse_tool["tool_spec"].get("name") == tool.tool_name
+        ), f"Expected name '{tool.tool_name}', got '{aws_converse_tool['tool_spec'].get('name')}'"
+        assert (
+            aws_converse_tool["tool_spec"].get("description") == tool.tool_description
+        ), f"Expected description '{tool.tool_description}', got '{aws_converse_tool['tool_spec'].get('description')}'"
+        assert "input_schema" in aws_converse_tool["tool_spec"], "input_schema key is missing in tool_spec"
 
-    json_schema = input_schema["json"]
-    assert json_schema.get("type") == "object"
-    assert "properties" in json_schema
+        input_schema = aws_converse_tool["tool_spec"]["input_schema"]
+        assert "json" in input_schema
 
-    properties = json_schema["properties"]
-    assert "question" in properties
+        json_schema = input_schema["json"]
+        assert json_schema.get("type") == "object"
+        assert "properties" in json_schema
 
-    question_property = properties["question"]
-    assert question_property.get("type") == "string"
-    assert "description" in question_property
-    assert "required" in json_schema
-    assert "question" in json_schema["required"]
+        properties = json_schema["properties"]
+        assert "question" in properties
+
+        question_property = properties["question"]
+        assert question_property.get("type") == "string"
+        assert "description" in question_property
+        assert "required" in json_schema
+        assert "question" in json_schema["required"]
 
 
 @pytest.mark.skipif(sys.version_info < (3, 10), reason="requires python3.10 or higher")
