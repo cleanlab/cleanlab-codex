@@ -29,4 +29,4 @@ def format_as_aws_converse_tool(
             description=tool_description,
             inputSchema={"json": FunctionParameters(properties=tool_properties, required=required_properties)},
         )
-    ).model_dump()
+    ).model_dump(by_alias=True)
