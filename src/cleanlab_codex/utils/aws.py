@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from cleanlab_codex.utils.types import FunctionParameters
 
@@ -10,11 +10,11 @@ from cleanlab_codex.utils.types import FunctionParameters
 class ToolSpec(BaseModel):
     name: str
     description: str
-    inputSchema: Dict[str, FunctionParameters]  # noqa: N815
+    input_schema: Dict[str, FunctionParameters] = Field(alias="inputSchema")
 
 
 class Tool(BaseModel):
-    toolSpec: ToolSpec  # noqa: N815
+    tool_spec: ToolSpec = Field(alias="toolSpec")
 
 
 def format_as_aws_converse_tool(

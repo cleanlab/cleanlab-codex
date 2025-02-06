@@ -42,7 +42,7 @@ def test_to_langchain_tool(mock_client: MagicMock) -> None:  # noqa: ARG001
     assert langchain_tool.name == tool.tool_name, f"Expected tool name '{tool.tool_name}', got '{langchain_tool.name}'."
     assert (
         langchain_tool.description == tool.tool_description
-    ), f"Expected description '{tool.description}', got '{langchain_tool.description}'."
+    ), f"Expected description '{tool.tool_description}', got '{langchain_tool.description}'."
 
 
 def test_to_aws_converse_tool(mock_client: MagicMock) -> None:  # noqa: ARG001
