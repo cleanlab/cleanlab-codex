@@ -17,6 +17,7 @@ BAD_RESPONSE = "Based on the available information, I cannot provide a complete 
 QUERY = "What is the capital of France?"
 CONTEXT = "Paris is the capital and largest city of France."
 
+
 @pytest.fixture
 def mock_tlm():
     """Create a mock TLM instance."""
@@ -26,22 +27,20 @@ def mock_tlm():
     mock.prompt.return_value = {"response": "No", "trustworthiness_score": 0.9}
     return mock
 
+
 @pytest.mark.parametrize(
-    "response,threshold,fallback_answer,expected",
+    ("response", "threshold", "fallback_answer", "expected"),
     [
         # Test threshold variations
         (GOOD_RESPONSE, 30, None, True),
         (GOOD_RESPONSE, 55, None, False),
-
         # Test default behavior (BAD_RESPONSE should be flagged)
         (BAD_RESPONSE, None, None, True),
-
         # Test default behavior for different response (GOOD_RESPONSE should not be flagged)
         (GOOD_RESPONSE, None, None, False),
-
         # Test custom fallback answer
         (GOOD_RESPONSE, 80, "This is an unhelpful response", False),
-    ]
+    ],
 )
 def test_is_fallback_response(response, threshold, fallback_answer, expected):
     """Test fallback response detection."""
@@ -58,97 +57,87 @@ def test_is_untrustworthy_response(mock_tlm):
     """Test untrustworthy response detection."""
     # Test trustworthy response
     mock_tlm.get_trustworthiness_score.return_value = {"trustworthiness_score": 0.8}
-    assert is_untrustworthy_response(
-        GOOD_RESPONSE, CONTEXT, QUERY, mock_tlm, threshold=0.5
-    ) is False
+    assert is_untrustworthy_response(GOOD_RESPONSE, CONTEXT, QUERY, mock_tlm, threshold=0.5) is False
 
     # Test untrustworthy response
     mock_tlm.get_trustworthiness_score.return_value = {"trustworthiness_score": 0.3}
-    assert is_untrustworthy_response(
-        BAD_RESPONSE, CONTEXT, QUERY, mock_tlm, threshold=0.5
-    ) is True
+    assert is_untrustworthy_response(BAD_RESPONSE, CONTEXT, QUERY, mock_tlm, threshold=0.5) is True
+
 
 @pytest.mark.parametrize(
-    "response,tlm_response,tlm_score,threshold,expected",
+    ("response", "tlm_response", "tlm_score", "threshold", "expected"),
     [
         # Test helpful response
         (GOOD_RESPONSE, "No", 0.9, 0.5, False),
-
         # Test unhelpful response
         (BAD_RESPONSE, "Yes", 0.9, 0.5, True),
-
         # Test unhelpful response but low trustworthiness score
         (BAD_RESPONSE, "Yes", 0.3, 0.5, False),
-
         # Test without threshold - Yes prediction
         (BAD_RESPONSE, "Yes", 0.3, None, True),
         (GOOD_RESPONSE, "Yes", 0.3, None, True),
-
         # Test without threshold - No prediction
         (BAD_RESPONSE, "No", 0.3, None, False),
         (GOOD_RESPONSE, "No", 0.3, None, False),
-    ]
+    ],
 )
 def test_is_unhelpful_response(mock_tlm, response, tlm_response, tlm_score, threshold, expected):
     """Test unhelpful response detection."""
     mock_tlm.prompt.return_value = {"response": tlm_response, "trustworthiness_score": tlm_score}
-    assert is_unhelpful_response(
-        response, QUERY, mock_tlm, trustworthiness_score_threshold=threshold
-    ) is expected
+    assert is_unhelpful_response(response, QUERY, mock_tlm, trustworthiness_score_threshold=threshold) is expected
+
 
 @pytest.mark.parametrize(
-    "response,trustworthiness_score,prompt_response,prompt_score,expected",
+    ("response", "trustworthiness_score", "prompt_response", "prompt_score", "expected"),
     [
         # Good response passes all checks
         (GOOD_RESPONSE, 0.8, "No", 0.9, False),
         # Bad response fails at least one check
         (BAD_RESPONSE, 0.3, "Yes", 0.9, True),
-    ]
+    ],
 )
-def test_is_bad_response(
-    mock_tlm,
-    response,
-    trustworthiness_score,
-    prompt_response,
-    prompt_score,
-    expected
-):
+def test_is_bad_response(mock_tlm, response, trustworthiness_score, prompt_response, prompt_score, expected):
     """Test the main is_bad_response function."""
     mock_tlm.get_trustworthiness_score.return_value = {"trustworthiness_score": trustworthiness_score}
     mock_tlm.prompt.return_value = {"response": prompt_response, "trustworthiness_score": prompt_score}
 
-    assert is_bad_response(
-        response,
-        context=CONTEXT,
-        query=QUERY,
-        tlm=mock_tlm,
-    ) is expected
+    assert (
+        is_bad_response(
+            response,
+            context=CONTEXT,
+            query=QUERY,
+            tlm=mock_tlm,
+        )
+        is expected
+    )
+
 
 @pytest.mark.parametrize(
-    "response,fuzz_ratio,prompt_response,prompt_score,query,tlm,expected",
+    ("response", "fuzz_ratio", "prompt_response", "prompt_score", "query", "tlm", "expected"),
     [
         # Test with only fallback check (no context/query/tlm)
         (BAD_RESPONSE, 90, None, None, None, None, True),
-
         # Test with fallback and unhelpful checks (no context)
         (GOOD_RESPONSE, 30, "No", 0.9, QUERY, "mock_tlm", False),
-    ]
+    ],
 )
-def test_is_bad_response_partial_inputs(mock_tlm, response, fuzz_ratio, prompt_response, prompt_score, query, tlm, expected):
+def test_is_bad_response_partial_inputs(
+    mock_tlm, response, fuzz_ratio, prompt_response, prompt_score, query, tlm, expected
+):
     """Test is_bad_response with partial inputs (some checks disabled)."""
     mock_fuzz = Mock()
     mock_fuzz.partial_ratio.return_value = fuzz_ratio
 
-    with patch.dict('sys.modules', {'thefuzz': Mock(fuzz=mock_fuzz)}):
+    with patch.dict("sys.modules", {"thefuzz": Mock(fuzz=mock_fuzz)}):
         if prompt_response is not None:
-            mock_tlm.prompt.return_value = {
-                "response": prompt_response,
-                "trustworthiness_score": prompt_score
-            }
+            mock_tlm.prompt.return_value = {"response": prompt_response, "trustworthiness_score": prompt_score}
             tlm = mock_tlm
 
-        assert is_bad_response(
-            response,
-            query=query,
-            tlm=tlm,
-        ) is expected
+        assert (
+            is_bad_response(
+                response,
+                query=query,
+                tlm=tlm,
+            )
+            is expected
+        )

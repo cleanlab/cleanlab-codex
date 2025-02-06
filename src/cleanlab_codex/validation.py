@@ -4,7 +4,7 @@ This module provides validation functions for checking if an LLM response is unh
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Callable, Optional
+from typing import TYPE_CHECKING, Callable, Optional, cast
 
 from cleanlab_codex.utils.prompt import default_format_prompt
 
@@ -44,15 +44,15 @@ def is_bad_response(
         context: Optional context/documents used for answering. Required for untrustworthy check.
         query: Optional user question. Required for untrustworthy and unhelpful checks.
         tlm: Optional TLM model for evaluation. Required for untrustworthy and unhelpful checks.
-        
+
         # Fallback check parameters
         fallback_answer: Known unhelpful response to compare against.
         partial_ratio_threshold: Similarity threshold (0-100). Higher values require more similarity.
-        
+
         # Untrustworthy check parameters
         trustworthiness_threshold: Score threshold (0.0-1.0). Lower values allow less trustworthy responses.
         format_prompt: Function to format (query, context) into a prompt string.
-        
+
         # Unhelpful check parameters
         unhelpful_trustworthiness_threshold: Optional confidence threshold (0.0-1.0) for unhelpful classification.
 
@@ -60,23 +60,19 @@ def is_bad_response(
         bool: True if any validation check fails, False if all pass.
     """
 
-    validation_checks = []
+    validation_checks: list[Callable[[], bool]] = []
 
     # All required inputs are available for checking fallback responses
-    validation_checks.append(
-        lambda: is_fallback_response(response, fallback_answer, threshold=partial_ratio_threshold)
-    )
+    validation_checks.append(lambda: is_fallback_response(response, fallback_answer, threshold=partial_ratio_threshold))
 
-    can_run_untrustworthy_check = all(x is not None for x in (query, context, tlm))
+    can_run_untrustworthy_check = query is not None and context is not None and tlm is not None
     if can_run_untrustworthy_check:
-        assert tlm is not None
-        assert query is not None
-        assert context is not None
+        # The if condition guarantees these are not None
         validation_checks.append(
             lambda: is_untrustworthy_response(
                 response=response,
-                context=context,
-                query=query,
+                context=cast(str, context),
+                query=cast(str, query),
                 tlm=tlm,
                 threshold=trustworthiness_threshold,
                 format_prompt=format_prompt,
@@ -85,18 +81,17 @@ def is_bad_response(
 
     can_run_unhelpful_check = query is not None and tlm is not None
     if can_run_unhelpful_check:
-        assert tlm is not None
-        assert query is not None
         validation_checks.append(
             lambda: is_unhelpful_response(
                 response=response,
+                query=cast(str, query),
                 tlm=tlm,
-                query=query,
                 trustworthiness_score_threshold=unhelpful_trustworthiness_threshold,
             )
         )
 
     return any(check() for check in validation_checks)
+
 
 def is_fallback_response(
     response: str, fallback_answer: str = DEFAULT_FALLBACK_ANSWER, threshold: int = DEFAULT_PARTIAL_RATIO_THRESHOLD
@@ -192,7 +187,7 @@ def is_unhelpful_response(
               False otherwise
     """
     try:
-        from cleanlab_studio import Studio  # type: ignore # noqa: F401
+        from cleanlab_studio import Studio  # noqa: F401
     except ImportError as e:
         error_msg = "The 'cleanlab_studio' library is required. Please install it with `pip install cleanlab-studio`."
         raise ImportError(error_msg) from e
