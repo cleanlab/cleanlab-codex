@@ -6,13 +6,14 @@ from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 from codex import AuthenticationError
-from codex.types.project_return_schema import Config, ProjectReturnSchema
+from codex.types.project_return_schema import Config as ProjectReturnConfig
+from codex.types.project_return_schema import ProjectReturnSchema
 from codex.types.users.myself.user_organizations_schema import UserOrganizationsSchema
 
 from cleanlab_codex.client import Client
 from cleanlab_codex.project import MissingProjectError
 from cleanlab_codex.types.organization import Organization
-from cleanlab_codex.types.project import ProjectConfig, ProjectReturnConfig
+from cleanlab_codex.types.project import ProjectConfig
 
 FAKE_PROJECT_ID = str(uuid.uuid4())
 FAKE_USER_ID = "Test User"
@@ -88,7 +89,7 @@ def test_client_authentication_error() -> None:
 def test_get_project_not_found(mock_client_from_api_key: MagicMock) -> None:
     """Test getting a non-existent project"""
     mock_client_from_api_key.projects.retrieve.return_value = None
-    client = Client(DUMMY_API_KEY)
+    client = Client(DUMMY_API_KEY, organization_id=FAKE_ORGANIZATION_ID)
     with pytest.raises(MissingProjectError):
         client.get_project("non-existent-id")
     assert mock_client_from_api_key.projects.retrieve.call_count == 1
@@ -105,7 +106,7 @@ def test_list_organizations(mock_client_from_api_key: MagicMock) -> None:
             )
         ],
     )
-    client = Client("")
+    client = Client(DUMMY_API_KEY)
     organizations = client.list_organizations()
     assert len(organizations) == 1
     assert organizations[0].organization_id == FAKE_ORGANIZATION_ID
@@ -115,7 +116,7 @@ def test_list_organizations(mock_client_from_api_key: MagicMock) -> None:
 def test_create_project(mock_client_from_api_key: MagicMock) -> None:
     mock_client_from_api_key.projects.create.return_value = ProjectReturnSchema(
         id=FAKE_PROJECT_ID,
-        config=Config(),
+        config=ProjectReturnConfig(),
         created_at=datetime.now(),
         created_by_user_id=FAKE_USER_ID,
         name=FAKE_PROJECT_NAME,
@@ -124,7 +125,7 @@ def test_create_project(mock_client_from_api_key: MagicMock) -> None:
         description=FAKE_PROJECT_DESCRIPTION,
     )
     mock_client_from_api_key.organization_id = FAKE_ORGANIZATION_ID
-    codex = Client("", organization_id=FAKE_ORGANIZATION_ID)
+    codex = Client(DUMMY_API_KEY, organization_id=FAKE_ORGANIZATION_ID)
     project = codex.create_project(FAKE_PROJECT_NAME, FAKE_PROJECT_DESCRIPTION)
     mock_client_from_api_key.projects.create.assert_called_once_with(
         config=DEFAULT_PROJECT_CONFIG,
@@ -139,7 +140,7 @@ def test_create_project(mock_client_from_api_key: MagicMock) -> None:
 def test_get_project(mock_client_from_api_key: MagicMock) -> None:
     mock_client_from_api_key.projects.retrieve.return_value = ProjectReturnSchema(
         id=FAKE_PROJECT_ID,
-        config=Config(),
+        config=ProjectReturnConfig(),
         created_at=datetime.now(),
         created_by_user_id=FAKE_USER_ID,
         name=FAKE_PROJECT_NAME,
@@ -148,7 +149,7 @@ def test_get_project(mock_client_from_api_key: MagicMock) -> None:
         description=FAKE_PROJECT_DESCRIPTION,
     )
 
-    project = Client("").get_project(FAKE_PROJECT_ID)
+    project = Client(DUMMY_API_KEY, organization_id=FAKE_ORGANIZATION_ID).get_project(FAKE_PROJECT_ID)
     assert project.id == FAKE_PROJECT_ID
 
     assert mock_client_from_api_key.projects.retrieve.call_count == 1

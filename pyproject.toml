@@ -86,6 +86,7 @@ exclude_lines = [
   "no cov",
   "if __name__ == .__main__.:",
   "if TYPE_CHECKING:",
+  "if _TYPE_CHECKING:",
 ]
 
 [tool.hatch.envs.coverage]
