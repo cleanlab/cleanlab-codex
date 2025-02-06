@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING as _TYPE_CHECKING
 from typing import Optional
 
 from cleanlab_codex.internal.organization import list_organizations
-from cleanlab_codex.internal.utils import client_from_api_key
+from cleanlab_codex.internal.sdk_client import client_from_api_key
 from cleanlab_codex.project import Project
 
 if _TYPE_CHECKING:

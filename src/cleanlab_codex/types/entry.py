@@ -3,32 +3,26 @@
 from codex.types.projects.entry import Entry as _Entry
 from codex.types.projects.entry_create_params import EntryCreateParams
 
-
-class EntryCreate(EntryCreateParams):
-    """
-    Input type for creating a new Entry in a Codex project. Use this class to add a new Question-Answer pair to a project.
-
-    ```python
-    class EntryCreate:
-        question: str
-        answer: Optional[str] = None
-    ```
-    """
+from cleanlab_codex.internal.utils import generate_class_docstring
 
 
-class Entry(_Entry):
-    """
-    Type representing an Entry in a Codex project. This is the complete data structure returned from the Codex API, including system-generated fields like ID and timestamps.
+class EntryCreate(EntryCreateParams): ...
 
-    ```python
-    class Entry:
-        id: str
-        question: str
-        answer: Optional[str] = None
-        created_at: datetime
-        answer_at: Optional[datetime] = None
-    ```
-    """
 
+EntryCreate.__doc__ = f"""
+Input type for creating a new Entry in a Codex project. Use this class to add a new Question-Answer pair to a project.
+
+{generate_class_docstring(EntryCreateParams, name=EntryCreate.__name__)}
+"""
+
+
+class Entry(_Entry): ...
+
+
+Entry.__doc__ = f"""
+Type representing an Entry in a Codex project. This is the complete data structure returned from the Codex API, including system-generated fields like ID and timestamps.
+
+{generate_class_docstring(_Entry, name=Entry.__name__)}
+"""
 
 __all__ = ["EntryCreate", "Entry"]

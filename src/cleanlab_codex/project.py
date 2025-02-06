@@ -9,7 +9,7 @@ from typing import Optional
 from codex import AuthenticationError
 
 from cleanlab_codex.internal.project import query_project
-from cleanlab_codex.internal.utils import client_from_access_key
+from cleanlab_codex.internal.sdk_client import client_from_access_key
 from cleanlab_codex.types.project import ProjectConfig
 
 if _TYPE_CHECKING:

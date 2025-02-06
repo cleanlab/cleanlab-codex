@@ -1,53 +1,36 @@
 from __future__ import annotations
 
-import os
-import re
-
-from codex import Codex as _Codex
-
-ACCESS_KEY_PATTERN = r"^sk-.*-.*$"
+from typing_extensions import get_origin, get_type_hints, is_typeddict
 
 
-class MissingAuthKeyError(ValueError):
-    """Raised when no API key or access key is provided."""
+def generate_class_docstring(cls: type, name: str | None = None) -> str:
+    if is_typeddict(cls):
+        return docstring_from_type_hints(cls, name)
 
-    def __str__(self) -> str:
-        return "No API key or access key provided"
-
-
-def is_access_key(key: str) -> bool:
-    return re.match(ACCESS_KEY_PATTERN, key) is not None
+    return docstring_from_annotations(cls, name)
 
 
-def client_from_api_key(key: str | None = None) -> _Codex:
-    """
-    Initialize a Codex SDK client using a user-level API key.
-
-    Args:
-        key (str | None): The API key to use to authenticate the client. If not provided, the client will be authenticated using the `CODEX_API_KEY` environment variable.
-
-    Returns:
-        _Codex: The initialized Codex client.
-    """
-    if not (key := key or os.getenv("CODEX_API_KEY")):
-        raise MissingAuthKeyError
-
-    client = _Codex(api_key=key)
-    client.users.myself.api_key.retrieve()  # check if the api key is valid
-    return client
+def docstring_from_type_hints(cls: type, name: str | None = None) -> str:
+    formatted_type_hints = "\n    ".join(f"{k}: {annotation_to_str(v)}" for k, v in get_type_hints(cls).items())
+    return f"""
+```python
+class {name or cls.__name__}{is_typeddict(cls) and "(TypedDict)"}:
+    {formatted_type_hints}
+```
+"""
 
 
-def client_from_access_key(key: str | None = None) -> _Codex:
-    """
-    Initialize a Codex SDK client using a project-level access key.
+def docstring_from_annotations(cls: type, name: str | None = None) -> str:
+    formatted_annotations = "\n    ".join(f"{k}: {annotation_to_str(v)}" for k, v in cls.__annotations__.items())
+    return f"""
+```python
+class {name or cls.__name__}:
+    {formatted_annotations}
+```
+"""
 
-    Args:
-        key (str | None): The access key to use to authenticate the client. If not provided, the client will be authenticated using the `CODEX_ACCESS_KEY` environment variable.
 
-    Returns:
-        _Codex: The initialized Codex client.
-    """
-    if not (key := key or os.getenv("CODEX_ACCESS_KEY")):
-        raise MissingAuthKeyError
-
-    return _Codex(access_key=key)
+def annotation_to_str(annotation: type) -> str:
+    if get_origin(annotation) is None:
+        return annotation.__name__
+    return repr(annotation)

@@ -2,15 +2,16 @@
 
 from codex.types.project_create_params import Config
 
+from cleanlab_codex.internal.utils import generate_class_docstring
 
-class ProjectConfig(Config):
-    """
+
+class ProjectConfig(Config): ...
+
+
+ProjectConfig.__doc__ = f"""
     Type representing options that can be configured for a Codex project.
 
-    ```python
-    class ProjectConfig(TypedDict):
-        max_distance: float = 0.1
-    ```
+    {generate_class_docstring(Config, name=ProjectConfig.__name__)}
     ---
 
     #### <kbd>property</kbd> max_distance
