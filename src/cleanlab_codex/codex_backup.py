@@ -151,33 +151,32 @@ class CodexBackup:
         )
         return cache_result
 
-    def to_decorator(self):
-        """Create a decorator that uses this backup system.
+    # def to_decorator(self):
+    #     """Create a decorator that uses this backup system.
 
-        Returns a decorator that can be applied to chat methods to automatically
-        check responses and provide backups when needed.
-        """
+    #     Returns a decorator that can be applied to chat methods to automatically
+    #     check responses and provide backups when needed.
+    #     """
 
-        def decorator(chat_method):
-            @wraps(chat_method)
-            def wrapper(decorated_instance, user_message):
-                # Call the original chat method
-                result = chat_method(decorated_instance, user_message)
+    #     def decorator(chat_method):
+    #         @wraps(chat_method)
+    #         def wrapper(decorated_instance, user_message):
+    #             # Call the original chat method
+    #             result = chat_method(decorated_instance, user_message)
 
-                # Handle both single response and (response, context) tuple returns
-                if isinstance(result, tuple):
-                    assistant_response, context = result
-                else:
-                    assistant_response, context = result, None
+    #             # Handle both single response and (response, context) tuple returns
+    #             if isinstance(result, tuple):
+    #                 assistant_response, context = result
+    #             else:
+    #                 assistant_response, context = result, None
 
-                # Use the run method to handle backup logic
-                return self.run(
-                    primary_system=decorated_instance,
-                    response=assistant_response,
-                    query=user_message,
-                    context=context,
-                )
+    #             # Use the run method to handle backup logic
+    #             return self.run(
+    #                 primary_system=decorated_instance,
+    #                 response=assistant_response,
+    #                 query=user_message,
+    #                 context=context,
+    #             )
 
-            return wrapper
-
-        return decorator
+    #         return wrapper
+    #     return decorator
