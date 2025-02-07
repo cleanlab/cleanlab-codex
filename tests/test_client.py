@@ -8,11 +8,11 @@ import pytest
 from codex import AuthenticationError
 from codex.types.project_return_schema import Config as ProjectReturnConfig
 from codex.types.project_return_schema import ProjectReturnSchema
+from codex.types.users.myself.user_organizations_schema import Organization as SDKOrganization
 from codex.types.users.myself.user_organizations_schema import UserOrganizationsSchema
 
 from cleanlab_codex.client import Client
 from cleanlab_codex.project import MissingProjectError
-from cleanlab_codex.types.organization import Organization
 from cleanlab_codex.types.project import ProjectConfig
 
 FAKE_PROJECT_ID = str(uuid.uuid4())
@@ -29,7 +29,7 @@ def test_client_uses_default_organization(mock_client_from_api_key: MagicMock) -
     default_org_id = "default-org-id"
     mock_client_from_api_key.users.myself.organizations.list.return_value = UserOrganizationsSchema(
         organizations=[
-            Organization(
+            SDKOrganization(
                 organization_id=default_org_id,
                 created_at=datetime.now(),
                 updated_at=datetime.now(),
@@ -98,7 +98,7 @@ def test_get_project_not_found(mock_client_from_api_key: MagicMock) -> None:
 def test_list_organizations(mock_client_from_api_key: MagicMock) -> None:
     mock_client_from_api_key.users.myself.organizations.list.return_value = UserOrganizationsSchema(
         organizations=[
-            Organization(
+            SDKOrganization(
                 organization_id=FAKE_ORGANIZATION_ID,
                 created_at=datetime.now(),
                 updated_at=datetime.now(),
