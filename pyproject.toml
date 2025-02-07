@@ -26,7 +26,7 @@ classifiers = [
 ]
 dependencies = [
   "codex-sdk==0.1.0a9",
-  "pydantic>=1.9.0, <3",
+  "pydantic==2.10",
 ]
 
 [project.urls]

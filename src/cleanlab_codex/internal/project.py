@@ -25,16 +25,14 @@ def query_project(
 ) -> tuple[Optional[str], Optional[Entry]]:
     maybe_entry = client.projects.entries.query(project_id, question=question)
     if maybe_entry is not None:
-        entry = Entry.model_validate(maybe_entry.model_dump())
+        entry = Entry.model_validate(maybe_entry)
         if entry.answer is not None:
             return entry.answer, entry
 
         return fallback_answer, entry
 
     if not read_only:
-        created_entry = Entry.model_validate(
-            client.projects.entries.add_question(project_id, question=question).model_dump()
-        )
+        created_entry = Entry.model_validate(client.projects.entries.add_question(project_id, question=question))
         return fallback_answer, created_entry
 
     return fallback_answer, None
