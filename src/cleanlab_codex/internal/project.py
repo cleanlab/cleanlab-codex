@@ -32,7 +32,9 @@ def query_project(
         return fallback_answer, entry
 
     if not read_only:
-        created_entry = Entry.model_validate(client.projects.entries.add_question(project_id, question=question).model_dump())
+        created_entry = Entry.model_validate(
+            client.projects.entries.add_question(project_id, question=question).model_dump()
+        )
         return fallback_answer, created_entry
 
     return fallback_answer, None
