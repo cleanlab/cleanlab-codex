@@ -1,8 +1,7 @@
 from __future__ import annotations
 
 import os
-from functools import wraps
-from typing import Any, Optional, Protocol, Sequence, Union, cast, Self
+from typing import Any, Optional, Protocol, Self, Sequence, Union, cast
 
 import requests
 
@@ -96,7 +95,7 @@ class BackupHandler(Protocol):
 class CodexBackup:
     """A backup decorator that connects to a Codex project to answer questions that
     cannot be adequately answered by the existing agent.
-    
+
     Args:
         project: The Codex project to use for backup responses
         fallback_answer: The fallback answer to use if the primary system fails
@@ -159,7 +158,7 @@ class CodexBackup:
             response: The response to evaluate
             query: The original query that generated the response
             context: Optional context used to generate the response
-            
+
         Returns:
             str: Either the original response if adequate, or a backup response from Codex
         """
