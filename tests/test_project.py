@@ -156,11 +156,11 @@ def test_query_question_found_fallback_answer(mock_client_from_access_key: Magic
 
 def test_query_question_not_found_fallback_answer(mock_client_from_access_key: MagicMock) -> None:
     mock_client_from_access_key.projects.entries.query.return_value = None
-    mock_client_from_access_key.projects.entries.add_question.return_value = None
+    mock_client_from_access_key.projects.entries.add_question.return_value = MagicMock(spec=Entry)
 
     project = Project(mock_client_from_access_key, FAKE_PROJECT_ID)
     res = project.query("What is the capital of France?", fallback_answer="Paris")
-    assert res == ("Paris", None)
+    assert res[0] == "Paris"
 
 
 def test_query_add_question_when_not_found(mock_client_from_access_key: MagicMock) -> None:

@@ -3,7 +3,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from cleanlab_codex.internal.utils import (
+from cleanlab_codex.internal.sdk_client import (
     MissingAuthKeyError,
     client_from_access_key,
     client_from_api_key,
@@ -21,7 +21,7 @@ def test_is_access_key() -> None:
 
 def test_client_from_access_key() -> None:
     mock_client = MagicMock()
-    with patch("cleanlab_codex.internal.utils._Codex", autospec=True, return_value=mock_client) as mock_init:
+    with patch("cleanlab_codex.internal.sdk_client._Codex", autospec=True, return_value=mock_client) as mock_init:
         mock_client.projects.access_keys.retrieve_project_id.return_value = "test_project_id"
         client = client_from_access_key(DUMMY_ACCESS_KEY)
         mock_init.assert_called_once_with(access_key=DUMMY_ACCESS_KEY)
@@ -30,7 +30,7 @@ def test_client_from_access_key() -> None:
 
 def test_client_from_api_key() -> None:
     mock_client = MagicMock()
-    with patch("cleanlab_codex.internal.utils._Codex", autospec=True, return_value=mock_client) as mock_init:
+    with patch("cleanlab_codex.internal.sdk_client._Codex", autospec=True, return_value=mock_client) as mock_init:
         mock_client.users.myself.api_key.retrieve.return_value = "test_project_id"
         client = client_from_api_key(DUMMY_API_KEY)
         mock_init.assert_called_once_with(api_key=DUMMY_API_KEY)
@@ -51,7 +51,7 @@ def test_client_from_access_key_env_var() -> None:
     with patch.dict(os.environ, {"CODEX_ACCESS_KEY": DUMMY_ACCESS_KEY}):
         mock_client = MagicMock()
         with patch(
-            "cleanlab_codex.internal.utils._Codex",
+            "cleanlab_codex.internal.sdk_client._Codex",
             autospec=True,
             return_value=mock_client,
         ) as mock_init:
@@ -65,7 +65,7 @@ def test_client_from_api_key_env_var() -> None:
     with patch.dict(os.environ, {"CODEX_API_KEY": DUMMY_API_KEY}):
         mock_client = MagicMock()
         with patch(
-            "cleanlab_codex.internal.utils._Codex",
+            "cleanlab_codex.internal.sdk_client._Codex",
             autospec=True,
             return_value=mock_client,
         ) as mock_init:

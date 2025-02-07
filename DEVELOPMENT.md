@@ -95,3 +95,16 @@ Automated releases are handled by the [release workflow][release-workflow] which
 Testing, type checking, and formatting/linting is [checked in CI][ci].
 
 [ci]: .github/workflows/ci.yml
+
+## Style guide
+
+### Adding integrations with external libraries
+
+When adding integrations with external libraries, always use a lazy import. The external dependency should not be required to use the `cleanlab-codex` library. Wrap the lazy import in a `try`/`except` block to catch the `ImportError` and raise a `MissingDependencyError` with a helpful message. See [codex_tool.py](src/cleanlab_codex/codex_tool.py) file for examples one of which is shown below:
+
+```python
+try:
+    from cleanlab_codex.utils.smolagents import CodexTool as SmolagentsCodexTool
+except ImportError as e:
+    raise MissingDependencyError("smolagents", "https://github.com/huggingface/smolagents") from e
+```
