@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Pydantic model validation error when querying Project and listing Organizations.
+
 ## [0.0.1a3] - 2025-02-06
 
 ### Added
