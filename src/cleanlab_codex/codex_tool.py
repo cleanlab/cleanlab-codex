@@ -7,11 +7,11 @@ from typing import Any, Optional
 from typing_extensions import Annotated
 
 from cleanlab_codex.project import Project
+from cleanlab_codex.utils.errors import MissingDependencyError
 from cleanlab_codex.utils.function import (
     pydantic_model_from_function,
     required_properties_from_model,
 )
-from cleanlab_codex.utils.errors import MissingDependencyError
 
 
 class CodexTool:
@@ -29,15 +29,9 @@ class CodexTool:
     ):
         self._project = project
         self._fallback_answer = fallback_answer
-        self._tool_function_schema = pydantic_model_from_function(
-            self._tool_name, self.query
-        )
-        self._tool_properties = self._tool_function_schema.model_json_schema()[
-            "properties"
-        ]
-        self._tool_requirements = required_properties_from_model(
-            self._tool_function_schema
-        )
+        self._tool_function_schema = pydantic_model_from_function(self._tool_name, self.query)
+        self._tool_properties = self._tool_function_schema.model_json_schema()["properties"]
+        self._tool_requirements = required_properties_from_model(self._tool_function_schema)
 
     @classmethod
     def from_access_key(
@@ -132,9 +126,7 @@ class CodexTool:
         try:
             from cleanlab_codex.utils.smolagents import CodexTool as SmolagentsCodexTool
         except ImportError as e:
-            raise MissingDependencyError(
-                "smolagents", "https://github.com/huggingface/smolagents"
-            ) from e
+            raise MissingDependencyError("smolagents", "https://github.com/huggingface/smolagents") from e
 
         return SmolagentsCodexTool(
             query=self.query,
@@ -173,9 +165,7 @@ class CodexTool:
             from langchain_core.tools.structured import StructuredTool
 
         except ImportError as e:
-            raise MissingDependencyError(
-                "langchain", "https://pypi.org/project/langchain/"
-            ) from e
+            raise MissingDependencyError("langchain", "https://pypi.org/project/langchain/") from e
 
         return StructuredTool.from_function(
             func=self.query,
