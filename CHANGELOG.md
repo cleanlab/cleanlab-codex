@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.1a4] - 2025-02-07
+
 ### Fixed
 
 - Pydantic model validation error when querying Project and listing Organizations.
@@ -31,7 +33,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Pre-release of the Cleanlab Codex Python client.
 
-[Unreleased]: https://github.com/cleanlab/cleanlab-codex/compare/v0.0.1a3...HEAD
+[Unreleased]: https://github.com/cleanlab/cleanlab-codex/compare/v0.0.1a4...HEAD
+[0.0.1a4]: https://github.com/cleanlab/cleanlab-codex/compare/v0.0.1a3...v0.0.1a4
 [0.0.1a3]: https://github.com/cleanlab/cleanlab-codex/compare/v0.0.1a2...v0.0.1a3
 [0.0.1a2]: https://github.com/cleanlab/cleanlab-codex/compare/v0.0.1a1...v0.0.1a2
 [0.0.1a1]: https://github.com/cleanlab/cleanlab-codex/compare/267a93300f77c94e215d7697223931e7926cad9e...v0.0.1a1
