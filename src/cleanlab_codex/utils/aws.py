@@ -4,7 +4,7 @@ from typing import Any, Dict, List
 
 from pydantic import BaseModel, Field
 
-from cleanlab_codex.utils.types import FunctionParameters
+from cleanlab_codex.utils.function import FunctionParameters
 
 
 class ToolSpec(BaseModel):
@@ -27,6 +27,11 @@ def format_as_aws_converse_tool(
         toolSpec=ToolSpec(
             name=tool_name,
             description=tool_description,
-            inputSchema={"json": FunctionParameters(properties=tool_properties, required=required_properties)},
+            inputSchema={
+                "json": FunctionParameters(
+                    properties=tool_properties,
+                    required=required_properties,
+                )
+            },
         )
     ).model_dump(by_alias=True)

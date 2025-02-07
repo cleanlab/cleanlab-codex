@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Literal
 
 from pydantic import BaseModel
 
-from cleanlab_codex.utils.types import FunctionParameters
+from cleanlab_codex.utils.function import FunctionParameters
 
 
 class Tool(BaseModel):
@@ -28,6 +28,9 @@ def format_as_openai_tool(
         function=Function(
             name=tool_name,
             description=tool_description,
-            parameters=FunctionParameters(properties=tool_properties, required=required_properties),
+            parameters=FunctionParameters(
+                properties=tool_properties,
+                required=required_properties,
+            ),
         )
     ).model_dump()
