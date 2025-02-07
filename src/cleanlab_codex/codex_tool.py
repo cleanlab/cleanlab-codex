@@ -2,23 +2,19 @@
 
 from __future__ import annotations
 
-from typing import Any, ClassVar, Optional
+from typing import Any, Optional
+
+from typing_extensions import Annotated
 
 from cleanlab_codex.project import Project
+from cleanlab_codex.utils.function import pydantic_model_from_function, required_properties_from_model
 
 
 class CodexTool:
     """A tool that connects to a Codex project to answer questions."""
 
     _tool_name = "ask_advisor"
-    _tool_description = "Asks an all-knowing advisor this query in cases where it cannot be answered from the provided Context. If the answer is available, this returns None."
-    _tool_properties: ClassVar[dict[str, Any]] = {
-        "question": {
-            "type": "string",
-            "description": "The question to ask the advisor. This should be the same as the original user question, except in cases where the user question is missing information that could be additionally clarified.",
-        }
-    }
-    _tool_requirements: ClassVar[list[str]] = ["question"]
+    _tool_description = "Asks an all-knowing advisor this query in cases where it cannot be answered from the provided Context. If the answer is unavailable, this returns None."
     DEFAULT_FALLBACK_ANSWER = "Based on the available information, I cannot provide a complete answer to this question."
 
     def __init__(
@@ -29,6 +25,9 @@ class CodexTool:
     ):
         self._project = project
         self._fallback_answer = fallback_answer
+        self._tool_function_schema = pydantic_model_from_function(self._tool_name, self.query)
+        self._tool_properties = self._tool_function_schema.model_json_schema()["properties"]
+        self._tool_requirements = required_properties_from_model(self._tool_function_schema)
 
     @classmethod
     def from_access_key(
@@ -86,11 +85,17 @@ class CodexTool:
         """Sets the fallback answer to use if the Codex project cannot answer the question."""
         self._fallback_answer = value
 
-    def query(self, question: str) -> Optional[str]:
-        """Asks an all-knowing advisor this question in cases where it cannot be answered from the provided Context.
+    def query(
+        self,
+        question: Annotated[
+            str,
+            "The question to ask the advisor. This should be the same as the original user question, except in cases where the user question is missing information that could be additionally clarified.",
+        ],
+    ) -> Optional[str]:
+        """Asks an all-knowing advisor this question in cases where it cannot be answered from the provided Context. If the answer is unavailable, this returns a fallback answer or None.
 
         Args:
-            question: The question to ask the advisor. This should be the same as the original user question, except in cases where the user question is missing information that could be additionally clarified.
+            question (str): The question to ask the advisor. This should be the same as the original user question, except in cases where the user question is missing information that could be additionally clarified.
 
         Returns:
             The answer to the question if available. If no answer is available, this returns a fallback answer or None.
@@ -130,17 +135,11 @@ class CodexTool:
         """
         from llama_index.core.tools import FunctionTool
 
-        from cleanlab_codex.utils.llamaindex import get_function_schema
-
         return FunctionTool.from_defaults(
             fn=self.query,
             name=self._tool_name,
             description=self._tool_description,
-            fn_schema=get_function_schema(
-                name=self._tool_name,
-                func=self.query,
-                tool_properties=self._tool_properties,
-            ),
+            fn_schema=self._tool_function_schema,
         )
 
     def to_langchain_tool(self) -> Any:
@@ -150,17 +149,11 @@ class CodexTool:
         """
         from langchain_core.tools.structured import StructuredTool
 
-        from cleanlab_codex.utils.langchain import create_args_schema
-
         return StructuredTool.from_function(
             func=self.query,
             name=self._tool_name,
             description=self._tool_description,
-            args_schema=create_args_schema(
-                name=self._tool_name,
-                func=self.query,
-                tool_properties=self._tool_properties,
-            ),
+            args_schema=self._tool_function_schema,
         )
 
     def to_aws_converse_tool(self) -> Any:
