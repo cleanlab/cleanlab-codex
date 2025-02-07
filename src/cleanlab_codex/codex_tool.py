@@ -126,7 +126,7 @@ class CodexTool:
         try:
             from cleanlab_codex.utils.smolagents import CodexTool as SmolagentsCodexTool
         except ImportError as e:
-            raise MissingDependencyError("smolagents", "https://github.com/huggingface/smolagents") from e
+            raise MissingDependencyError(e.name or "smolagents", "https://github.com/huggingface/smolagents") from e
 
         return SmolagentsCodexTool(
             query=self.query,
