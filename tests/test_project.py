@@ -6,9 +6,10 @@ import pytest
 from codex import AuthenticationError
 from codex.types.project_create_params import Config
 from codex.types.projects.access_key_retrieve_project_id_response import AccessKeyRetrieveProjectIDResponse
+from codex.types.projects.entry import Entry as SDKEntry
 
 from cleanlab_codex.project import MissingProjectError, Project
-from cleanlab_codex.types.entry import Entry, EntryCreate
+from cleanlab_codex.types.entry import EntryCreate
 
 FAKE_PROJECT_ID = str(uuid.uuid4())
 FAKE_USER_ID = "Test User"
@@ -138,11 +139,12 @@ def test_query_read_only(mock_client_from_access_key: MagicMock) -> None:
         FAKE_PROJECT_ID, question="What is the capital of France?"
     )
     mock_client_from_access_key.projects.entries.add_question.assert_not_called()
-    assert res == (None, None)
+    assert res[0] is None
+    assert res[1] is None
 
 
 def test_query_question_found_fallback_answer(mock_client_from_access_key: MagicMock) -> None:
-    unanswered_entry = Entry(
+    unanswered_entry = SDKEntry(
         id=str(uuid.uuid4()),
         created_at=datetime.now(tz=timezone.utc),
         question="What is the capital of France?",
@@ -151,29 +153,32 @@ def test_query_question_found_fallback_answer(mock_client_from_access_key: Magic
     mock_client_from_access_key.projects.entries.query.return_value = unanswered_entry
     project = Project(mock_client_from_access_key, FAKE_PROJECT_ID)
     res = project.query("What is the capital of France?")
-    assert res == (None, unanswered_entry)
+    assert res[0] is None
+    assert res[1] is not None
+    assert res[1].model_dump() == unanswered_entry.model_dump()
 
 
 def test_query_question_not_found_fallback_answer(mock_client_from_access_key: MagicMock) -> None:
     mock_client_from_access_key.projects.entries.query.return_value = None
-    mock_entry = MagicMock(spec=Entry)
-    mock_entry.model_dump.return_value = {
-        "id": "fake-id",
-        "created_at": "2023-10-01T00:00:00Z",
-        "question": "What is the capital of France?",
-        "answer": None,
-    }
+    mock_entry = SDKEntry(
+        id="fake-id",
+        created_at=datetime.now(tz=timezone.utc),
+        question="What is the capital of France?",
+        answer=None,
+    )
     mock_client_from_access_key.projects.entries.add_question.return_value = mock_entry
 
     project = Project(mock_client_from_access_key, FAKE_PROJECT_ID)
     res = project.query("What is the capital of France?", fallback_answer="Paris")
     assert res[0] == "Paris"
+    assert res[1] is not None
+    assert res[1].model_dump() == mock_entry.model_dump()
 
 
 def test_query_add_question_when_not_found(mock_client_from_access_key: MagicMock) -> None:
     """Test that query adds question when not found and not read_only"""
     mock_client_from_access_key.projects.entries.query.return_value = None
-    new_entry = Entry(
+    new_entry = SDKEntry(
         id=str(uuid.uuid4()),
         created_at=datetime.now(tz=timezone.utc),
         question="What is the capital of France?",
@@ -187,11 +192,13 @@ def test_query_add_question_when_not_found(mock_client_from_access_key: MagicMoc
     mock_client_from_access_key.projects.entries.add_question.assert_called_once_with(
         FAKE_PROJECT_ID, question="What is the capital of France?"
     )
-    assert res == (None, new_entry)
+    assert res[0] is None
+    assert res[1] is not None
+    assert res[1].model_dump() == new_entry.model_dump()
 
 
 def test_query_answer_found(mock_client_from_access_key: MagicMock) -> None:
-    answered_entry = Entry(
+    answered_entry = SDKEntry(
         id=str(uuid.uuid4()),
         created_at=datetime.now(tz=timezone.utc),
         question="What is the capital of France?",
@@ -200,7 +207,9 @@ def test_query_answer_found(mock_client_from_access_key: MagicMock) -> None:
     mock_client_from_access_key.projects.entries.query.return_value = answered_entry
     project = Project(mock_client_from_access_key, FAKE_PROJECT_ID)
     res = project.query("What is the capital of France?")
-    assert res == ("Paris", answered_entry)
+    assert res[0] == answered_entry.answer
+    assert res[1] is not None
+    assert res[1].model_dump() == answered_entry.model_dump()
 
 
 def test_add_entries_empty_list(mock_client_from_access_key: MagicMock) -> None:
