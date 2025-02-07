@@ -1,5 +1,7 @@
 """Unit tests for validation module functions."""
 
+from __future__ import annotations
+
 from unittest.mock import Mock, patch
 
 import pytest
@@ -19,7 +21,7 @@ CONTEXT = "Paris is the capital and largest city of France."
 
 
 @pytest.fixture
-def mock_tlm():
+def mock_tlm() -> Mock:
     """Create a mock TLM instance."""
     mock = Mock()
     # Configure default return values
@@ -42,18 +44,18 @@ def mock_tlm():
         (GOOD_RESPONSE, 80, "This is an unhelpful response", False),
     ],
 )
-def test_is_fallback_response(response, threshold, fallback_answer, expected):
+def test_is_fallback_response(response: str, threshold: float | None, fallback_answer: str | None, expected: bool) -> None:
     """Test fallback response detection."""
-    kwargs = {}
+    kwargs: dict[str, float | str] = {}
     if threshold is not None:
         kwargs["threshold"] = threshold
     if fallback_answer is not None:
         kwargs["fallback_answer"] = fallback_answer
 
-    assert is_fallback_response(response, **kwargs) is expected
+    assert is_fallback_response(response, **kwargs) is expected  # type: ignore
 
 
-def test_is_untrustworthy_response(mock_tlm):
+def test_is_untrustworthy_response(mock_tlm: Mock) -> None:
     """Test untrustworthy response detection."""
     # Test trustworthy response
     mock_tlm.get_trustworthiness_score.return_value = {"trustworthiness_score": 0.8}
@@ -81,7 +83,7 @@ def test_is_untrustworthy_response(mock_tlm):
         (GOOD_RESPONSE, "No", 0.3, None, False),
     ],
 )
-def test_is_unhelpful_response(mock_tlm, response, tlm_response, tlm_score, threshold, expected):
+def test_is_unhelpful_response(mock_tlm: Mock, response: str, tlm_response: str, tlm_score: float, threshold: float | None, expected: bool) -> None:
     """Test unhelpful response detection."""
     mock_tlm.prompt.return_value = {"response": tlm_response, "trustworthiness_score": tlm_score}
     assert is_unhelpful_response(response, QUERY, mock_tlm, trustworthiness_score_threshold=threshold) is expected
@@ -96,7 +98,7 @@ def test_is_unhelpful_response(mock_tlm, response, tlm_response, tlm_score, thre
         (BAD_RESPONSE, 0.3, "Yes", 0.9, True),
     ],
 )
-def test_is_bad_response(mock_tlm, response, trustworthiness_score, prompt_response, prompt_score, expected):
+def test_is_bad_response(mock_tlm: Mock, response: str, trustworthiness_score: float, prompt_response: str, prompt_score: float, expected: bool) -> None:
     """Test the main is_bad_response function."""
     mock_tlm.get_trustworthiness_score.return_value = {"trustworthiness_score": trustworthiness_score}
     mock_tlm.prompt.return_value = {"response": prompt_response, "trustworthiness_score": prompt_score}
@@ -122,8 +124,8 @@ def test_is_bad_response(mock_tlm, response, trustworthiness_score, prompt_respo
     ],
 )
 def test_is_bad_response_partial_inputs(
-    mock_tlm, response, fuzz_ratio, prompt_response, prompt_score, query, tlm, expected
-):
+    mock_tlm: Mock, response: str, fuzz_ratio: int, prompt_response: str, prompt_score: float, query: str, tlm: Mock, expected: bool
+) -> None:
     """Test is_bad_response with partial inputs (some checks disabled)."""
     mock_fuzz = Mock()
     mock_fuzz.partial_ratio.return_value = fuzz_ratio

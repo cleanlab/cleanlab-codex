@@ -7,11 +7,11 @@ FALLBACK_MESSAGE = "Based on the available information, I cannot provide a compl
 TEST_MESSAGE = "Hello, world!"
 
 
-def test_codex_backup():
+def test_codex_backup() -> None:
     # Create a mock project directly
     mock_project = MagicMock()
     mock_project.query.return_value = (MOCK_BACKUP_RESPONSE,)
-    
+
 
     class MockApp:
         def chat(self, user_message: str) -> str:
@@ -33,10 +33,10 @@ def test_codex_backup():
     response = codex_backup.run(response, query=query)
     assert response == MOCK_BACKUP_RESPONSE, f"Response was {response}"
 
-def test_backup_handler():
+def test_backup_handler() -> None:
     mock_project = MagicMock()
     mock_project.query.return_value = (MOCK_BACKUP_RESPONSE,)
-    
+
     mock_handler = MagicMock()
     mock_handler.return_value = None
 
@@ -57,8 +57,8 @@ def test_backup_handler():
 
     # Handler should not be called for good responses
     assert mock_handler.call_count == 0
-    
-    
+
+
     query = FALLBACK_MESSAGE
     response = app.chat(query)
     assert response == query
