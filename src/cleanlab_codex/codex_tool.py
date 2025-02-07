@@ -126,7 +126,7 @@ class CodexTool:
         try:
             from cleanlab_codex.utils.smolagents import CodexTool as SmolagentsCodexTool
         except ImportError as e:
-            raise MissingDependencyError("smolagents", "https://github.com/huggingface/smolagents") from e
+            raise MissingDependencyError(e.name or "smolagents", "https://github.com/huggingface/smolagents") from e
 
         return SmolagentsCodexTool(
             query=self.query,
@@ -145,8 +145,9 @@ class CodexTool:
 
         except ImportError as e:
             raise MissingDependencyError(
-                "llama-index-core",
-                "https://docs.llamaindex.ai/en/stable/getting_started/installation/",
+                import_name=e.name or "llama_index",
+                package_name="llama-index-core",
+                package_url="https://docs.llamaindex.ai/en/stable/getting_started/installation/",
             ) from e
 
         return FunctionTool.from_defaults(
@@ -165,7 +166,11 @@ class CodexTool:
             from langchain_core.tools.structured import StructuredTool
 
         except ImportError as e:
-            raise MissingDependencyError("langchain", "https://pypi.org/project/langchain/") from e
+            raise MissingDependencyError(
+                import_name=e.name or "langchain",
+                package_name="langchain",
+                package_url="https://pypi.org/project/langchain/",
+            ) from e
 
         return StructuredTool.from_function(
             func=self.query,
