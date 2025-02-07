@@ -7,7 +7,11 @@ from typing import Any, Optional
 from typing_extensions import Annotated
 
 from cleanlab_codex.project import Project
-from cleanlab_codex.utils.function import pydantic_model_from_function, required_properties_from_model
+from cleanlab_codex.utils.errors import MissingDependencyError
+from cleanlab_codex.utils.function import (
+    pydantic_model_from_function,
+    required_properties_from_model,
+)
 
 
 class CodexTool:
@@ -119,7 +123,10 @@ class CodexTool:
 
         Note: You must have the [`smolagents` library installed](https://github.com/huggingface/smolagents) to use this method.
         """
-        from cleanlab_codex.utils.smolagents import CodexTool as SmolagentsCodexTool
+        try:
+            from cleanlab_codex.utils.smolagents import CodexTool as SmolagentsCodexTool
+        except ImportError as e:
+            raise MissingDependencyError("smolagents", "https://github.com/huggingface/smolagents") from e
 
         return SmolagentsCodexTool(
             query=self.query,
@@ -133,7 +140,14 @@ class CodexTool:
 
         Note: You must have the [`llama-index` library installed](https://docs.llamaindex.ai/en/stable/getting_started/installation/) to use this method.
         """
-        from llama_index.core.tools import FunctionTool
+        try:
+            from llama_index.core.tools import FunctionTool
+
+        except ImportError as e:
+            raise MissingDependencyError(
+                "llama-index-core",
+                "https://docs.llamaindex.ai/en/stable/getting_started/installation/",
+            ) from e
 
         return FunctionTool.from_defaults(
             fn=self.query,
@@ -147,7 +161,11 @@ class CodexTool:
 
         Note: You must have the [`langchain` library installed](https://python.langchain.com/docs/concepts/architecture/) to use this method.
         """
-        from langchain_core.tools.structured import StructuredTool
+        try:
+            from langchain_core.tools.structured import StructuredTool
+
+        except ImportError as e:
+            raise MissingDependencyError("langchain", "https://pypi.org/project/langchain/") from e
 
         return StructuredTool.from_function(
             func=self.query,
