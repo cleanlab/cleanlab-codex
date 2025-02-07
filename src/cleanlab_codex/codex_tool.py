@@ -92,10 +92,10 @@ class CodexTool:
             "The question to ask the advisor. This should be the same as the original user question, except in cases where the user question is missing information that could be additionally clarified.",
         ],
     ) -> Optional[str]:
-        """Asks an all-knowing advisor this question in cases where it cannot be answered from the provided Context. If the answer is not available, this returns a fallback answer or None.
+        """Asks an all-knowing advisor this question in cases where it cannot be answered from the provided Context. If the answer is unavailable, this returns a fallback answer or None.
 
         Args:
-            question: The question to ask the advisor. This should be the same as the original user question, except in cases where the user question is missing information that could be additionally clarified.
+            question (str): The question to ask the advisor. This should be the same as the original user question, except in cases where the user question is missing information that could be additionally clarified.
 
         Returns:
             The answer to the question if available. If no answer is available, this returns a fallback answer or None.
