@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import os
 from functools import wraps
-from typing import Any, Optional, Protocol, Sequence, Union, cast
+from typing import Any, Optional, Protocol, Sequence, Union, cast, Self
 
 import requests
 
@@ -38,6 +38,7 @@ class _TemporaryTLM(_TLM):
         api_base_url: Optional[str] = None,
     ):
         self.api_base_url = api_base_url.rstrip("/") if api_base_url else os.getenv("CODEX_API_BASE_URL")
+        assert self.api_base_url is not None, "CODEX_API_BASE_URL is not set"
         self._headers = {
             "X-API-Key": api_key or os.getenv("CODEX_API_KEY"),
             "Content-Type": "application/json",
@@ -95,6 +96,13 @@ class BackupHandler(Protocol):
 class CodexBackup:
     """A backup decorator that connects to a Codex project to answer questions that
     cannot be adequately answered by the existing agent.
+    
+    Args:
+        project: The Codex project to use for backup responses
+        fallback_answer: The fallback answer to use if the primary system fails
+        backup_handler: A callback function that processes Codex's response and updates the primary RAG system. This handler is called whenever Codex provides a backup response after the primary system fails. By default, the backup handler is a no-op.
+        primary_system: The existing RAG system that needs to be backed up by Codex
+        is_bad_response_kwargs: Additional keyword arguments to pass to the is_bad_response function, for detecting inadequate responses from the primary system
     """
 
     DEFAULT_FALLBACK_ANSWER = "Based on the available information, I cannot provide a complete answer to this question."
@@ -105,19 +113,44 @@ class CodexBackup:
         project: Project,
         fallback_answer: str = DEFAULT_FALLBACK_ANSWER,
         backup_handler: BackupHandler = handle_backup_default,
+        primary_system: Optional[Any] = None,
+        is_bad_response_kwargs: Optional[dict[str, Any]] = None,
     ):
-        self._tlm = _TemporaryTLM()  # TODO: Improve integration
         self._project = project
         self._fallback_answer = fallback_answer
         self._backup_handler = backup_handler
+        self._tlm = _TemporaryTLM()  # TODO: Improve integration
+        self._primary_system: Optional[Any] = primary_system
+        self._is_bad_response_kwargs = is_bad_response_kwargs
+
+    @classmethod
+    def from_project(cls, project: Project, **kwargs: Any) -> Self:
+        return cls(project=project, **kwargs)
+
+    @property
+    def primary_system(self) -> Any:
+        if self._primary_system is None:
+            raise ValueError("Primary system not set. Please set a primary system using the `add_primary_system` method.")
+        return self._primary_system
+
+    @primary_system.setter
+    def primary_system(self, primary_system: Any) -> None:
+        """Set the primary RAG system that will be used to generate responses."""
+        self._primary_system = primary_system
+
+    @property
+    def is_bad_response_kwargs(self) -> dict[str, Any]:
+        return self._is_bad_response_kwargs or {}
+
+    @is_bad_response_kwargs.setter
+    def is_bad_response_kwargs(self, is_bad_response_kwargs: dict[str, Any]) -> None:
+        self._is_bad_response_kwargs = is_bad_response_kwargs
 
     def run(
         self,
-        primary_system: Any,
         response: str,
         query: str,
         context: Optional[str] = None,
-        bad_response_kwargs: Optional[dict[str, Any]] = None,
     ) -> str:
         """Check if a response is adequate and provide a backup from Codex if needed.
 
@@ -126,18 +159,19 @@ class CodexBackup:
             response: The response to evaluate
             query: The original query that generated the response
             context: Optional context used to generate the response
-            bad_response_kwargs: Optional kwargs for response evaluation
-
+            
         Returns:
             str: Either the original response if adequate, or a backup response from Codex
         """
+
+        _is_bad_response_kwargs = self.is_bad_response_kwargs
         if not is_bad_response(
             response,
             query=query,
             context=context,
             tlm=self._tlm,
             fallback_answer=self._fallback_answer,
-            **(bad_response_kwargs or {}),
+            **_is_bad_response_kwargs,
         ):
             return response
 
@@ -145,10 +179,11 @@ class CodexBackup:
         if not cache_result:
             return response
 
-        self._backup_handler(
-            codex_response=cache_result,
-            primary_system=primary_system,
-        )
+        if self._primary_system is not None:
+            self._backup_handler(
+                codex_response=cache_result,
+                primary_system=self._primary_system,
+            )
         return cache_result
 
     # def to_decorator(self):
