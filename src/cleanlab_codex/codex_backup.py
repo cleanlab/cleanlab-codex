@@ -130,7 +130,7 @@ class CodexBackup:
         self._is_bad_response_kwargs = is_bad_response_kwargs
 
     @classmethod
-    def from_project(cls, project: Project, **kwargs: Any) -> "CodexBackup":
+    def from_project(cls, project: Project, **kwargs: Any) -> CodexBackup:
         return cls(project=project, **kwargs)
 
     @property
