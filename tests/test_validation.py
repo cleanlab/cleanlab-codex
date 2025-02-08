@@ -158,7 +158,7 @@ def test_is_bad_response_partial_inputs(
 ) -> None:
     """Test is_bad_response with partial inputs (some checks disabled)."""
     mock_fuzz = Mock()
-
+    mock_fuzz.partial_ratio.return_value = fuzz_ratio
     with patch.dict("sys.modules", {"thefuzz": Mock(fuzz=mock_fuzz)}):
         if prompt_response is not None:
             mock_tlm.prompt.return_value = {"response": prompt_response, "trustworthiness_score": prompt_score}
