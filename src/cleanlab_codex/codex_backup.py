@@ -48,6 +48,7 @@ class _TemporaryTLM(_TLM):
             "Content-Type": "application/json",
         }
         self._timeout = kwargs.get("timeout", 10)  # type: ignore
+
     def _make_request(self, endpoint: str, data: dict[str, Any]) -> dict[str, Any]:
         """Make a request to the TLM API."""
         url = f"{self.api_base_url}/api/tlm/{endpoint}"

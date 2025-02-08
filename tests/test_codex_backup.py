@@ -12,7 +12,6 @@ def test_codex_backup() -> None:
     mock_project = MagicMock()
     mock_project.query.return_value = (MOCK_BACKUP_RESPONSE,)
 
-
     class MockApp:
         def chat(self, user_message: str) -> str:
             # Just echo the user message
@@ -32,6 +31,7 @@ def test_codex_backup() -> None:
     assert response == query
     response = codex_backup.run(response, query=query)
     assert response == MOCK_BACKUP_RESPONSE, f"Response was {response}"
+
 
 def test_backup_handler() -> None:
     mock_project = MagicMock()
@@ -57,7 +57,6 @@ def test_backup_handler() -> None:
 
     # Handler should not be called for good responses
     assert mock_handler.call_count == 0
-
 
     query = FALLBACK_MESSAGE
     response = app.chat(query)
