@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import os
-from typing import TYPE_CHECKING, Any, Optional, Protocol, Self, Sequence, Union, cast
+from typing import TYPE_CHECKING, Any, Optional, Protocol, Sequence, Union, cast
 
 import requests
 
@@ -130,7 +130,7 @@ class CodexBackup:
         self._is_bad_response_kwargs = is_bad_response_kwargs
 
     @classmethod
-    def from_project(cls, project: Project, **kwargs: Any) -> Self:
+    def from_project(cls, project: Project, **kwargs: Any) -> "CodexBackup":
         return cls(project=project, **kwargs)
 
     @property
