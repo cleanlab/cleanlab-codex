@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import os
-from typing import Any, Optional, Protocol, Self, Sequence, Union, cast
+from typing import TYPE_CHECKING, Any, Optional, Protocol, Self, Sequence, Union, cast
 
 import requests
 
-from cleanlab_codex.project import Project
 from cleanlab_codex.validation import is_bad_response
+
+if TYPE_CHECKING:
+    from cleanlab_codex.project import Project
 
 
 def handle_backup_default(codex_response: str, primary_system: Any) -> None:  # noqa: ARG001
@@ -35,14 +37,17 @@ class _TemporaryTLM(_TLM):
         self,
         api_key: Optional[str] = None,
         api_base_url: Optional[str] = None,
+        **kwargs: Any,
     ):
         self.api_base_url = api_base_url.rstrip("/") if api_base_url else os.getenv("CODEX_API_BASE_URL")
-        assert self.api_base_url is not None, "CODEX_API_BASE_URL is not set"
+        if self.api_base_url is None:
+            error_message = "Please set the CODEX_API_BASE_URL environment variable or pass api_base_url to the _TemporaryTLM constructor."
+            raise ValueError(error_message)
         self._headers = {
             "X-API-Key": api_key or os.getenv("CODEX_API_KEY"),
             "Content-Type": "application/json",
         }
-
+        self._timeout = kwargs.get("timeout", 10)  # type: ignore
     def _make_request(self, endpoint: str, data: dict[str, Any]) -> dict[str, Any]:
         """Make a request to the TLM API."""
         url = f"{self.api_base_url}/api/tlm/{endpoint}"
@@ -50,6 +55,7 @@ class _TemporaryTLM(_TLM):
             url,
             json=data,
             headers=self._headers,
+            timeout=self._timeout,
         )
         response.raise_for_status()
         return cast(dict[str, Any], response.json())
@@ -129,7 +135,8 @@ class CodexBackup:
     @property
     def primary_system(self) -> Any:
         if self._primary_system is None:
-            raise ValueError("Primary system not set. Please set a primary system using the `add_primary_system` method.")
+            error_message = "Primary system not set. Please set a primary system using the `add_primary_system` method."
+            raise ValueError(error_message)
         return self._primary_system
 
     @primary_system.setter
