@@ -47,7 +47,7 @@ class _TemporaryTLM(_TLM):
             "X-API-Key": api_key or os.getenv("CODEX_API_KEY"),
             "Content-Type": "application/json",
         }
-        self._timeout = kwargs.get("timeout", 10)  # type: ignore
+        self._timeout = kwargs.get("timeout", 10)
 
     def _make_request(self, endpoint: str, data: dict[str, Any]) -> dict[str, Any]:
         """Make a request to the TLM API."""
