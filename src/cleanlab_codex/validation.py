@@ -196,10 +196,11 @@ def is_unhelpful_response(
     # - When asking "is helpful?" -> "no" means unhelpful
     # - When asking "is unhelpful?" -> "yes" means unhelpful
     question = (
-        "Is the AI Assistant Response unhelpful? "
-        "Unhelpful responses include answers that:\n"
+        "Does the AI Assistant Response seem unhelpful? "
+        "Things that are not helpful include answers that:\n"
         "- Are not useful, incomplete, incorrect, uncertain or unclear.\n"
         "- Abstain or refuse to answer the question\n"
+        "- Statements which are similar to 'I don't know', 'Sorry', or 'No information available'.\n"
         "- Leave the original question unresolved\n"
         "- Are irrelevant to the question\n"
         "Answer Yes/No only."
