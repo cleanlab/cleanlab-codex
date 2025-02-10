@@ -5,14 +5,14 @@ from typing import TYPE_CHECKING, Any, Optional, Protocol
 from cleanlab_codex.validation import is_bad_response
 
 if TYPE_CHECKING:
-    from cleanlab_codex.project import Project
     from cleanlab_studio.studio.trustworthy_language_model import TLM
+
+    from cleanlab_codex.project import Project
 
 
 def handle_backup_default(codex_response: str, primary_system: Any) -> None:  # noqa: ARG001
     """Default implementation is a no-op."""
     return None
-
 
 
 class BackupHandler(Protocol):
