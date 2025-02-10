@@ -1,77 +1,18 @@
 from __future__ import annotations
 
-import os
-from typing import TYPE_CHECKING, Any, Optional, Protocol, Sequence, Union, cast
-
-import requests
+from typing import TYPE_CHECKING, Any, Optional, Protocol
 
 from cleanlab_codex.validation import is_bad_response
 
 if TYPE_CHECKING:
     from cleanlab_codex.project import Project
+    from cleanlab_studio.studio.trustworthy_language_model import TLM
 
 
 def handle_backup_default(codex_response: str, primary_system: Any) -> None:  # noqa: ARG001
     """Default implementation is a no-op."""
     return None
 
-
-class _TLM(Protocol):
-    def get_trustworthiness_score(
-        self,
-        query: Union[str, Sequence[str]],
-        response: Union[str, Sequence[str]],
-        **kwargs: Any,
-    ) -> dict[str, Any]: ...
-
-    def prompt(
-        self,
-        prompt: Union[str, Sequence[str]],
-        /,
-        **kwargs: Any,
-    ) -> dict[str, Any]: ...
-
-
-class _TemporaryTLM(_TLM):
-    def __init__(
-        self,
-        api_key: Optional[str] = None,
-        api_base_url: Optional[str] = None,
-        **kwargs: Any,
-    ):
-        self.api_base_url = api_base_url.rstrip("/") if api_base_url else os.getenv("CODEX_API_BASE_URL")
-        if self.api_base_url is None:
-            error_message = "Please set the CODEX_API_BASE_URL environment variable or pass api_base_url to the _TemporaryTLM constructor."
-            raise ValueError(error_message)
-        self._headers = {
-            "X-API-Key": api_key or os.getenv("CODEX_API_KEY"),
-            "Content-Type": "application/json",
-        }
-        self._timeout = kwargs.get("timeout", 10)
-
-    def _make_request(self, endpoint: str, data: dict[str, Any]) -> dict[str, Any]:
-        """Make a request to the TLM API."""
-        url = f"{self.api_base_url}/api/tlm/{endpoint}"
-        response = requests.post(
-            url,
-            json=data,
-            headers=self._headers,
-            timeout=self._timeout,
-        )
-        response.raise_for_status()
-        return cast(dict[str, Any], response.json())
-
-    def get_trustworthiness_score(
-        self, query: Union[str, Sequence[str]], response: Union[str, Sequence[str]], **kwargs: Any
-    ) -> dict[str, Any]:
-        """Get trustworthiness score for a query-response pair."""
-        data = {"prompt": query, "response": response, **kwargs}
-        return self._make_request("score", data)
-
-    def prompt(self, prompt: Union[str, Sequence[str]], /, **kwargs: Any) -> dict[str, Any]:
-        """Send a prompt to the TLM API."""
-        data = {"prompt": prompt, **kwargs}
-        return self._make_request("prompt", data)
 
 
 class BackupHandler(Protocol):
@@ -105,9 +46,10 @@ class CodexBackup:
 
     Args:
         project: The Codex project to use for backup responses
-        fallback_answer: The fallback answer to use if the primary system fails
+        fallback_answer: The fallback answer to use if the primary system fails to provide an adequate response
         backup_handler: A callback function that processes Codex's response and updates the primary RAG system. This handler is called whenever Codex provides a backup response after the primary system fails. By default, the backup handler is a no-op.
         primary_system: The existing RAG system that needs to be backed up by Codex
+        tlm: The client for the Trustworthy Language Model, which evaluates the quality of responses from the primary system
         is_bad_response_kwargs: Additional keyword arguments to pass to the is_bad_response function, for detecting inadequate responses from the primary system
     """
 
@@ -120,13 +62,14 @@ class CodexBackup:
         fallback_answer: str = DEFAULT_FALLBACK_ANSWER,
         backup_handler: BackupHandler = handle_backup_default,
         primary_system: Optional[Any] = None,
+        tlm: Optional[TLM] = None,
         is_bad_response_kwargs: Optional[dict[str, Any]] = None,
     ):
         self._project = project
         self._fallback_answer = fallback_answer
         self._backup_handler = backup_handler
-        self._tlm = _TemporaryTLM()  # TODO: Improve integration
         self._primary_system: Optional[Any] = primary_system
+        self._tlm = tlm
         self._is_bad_response_kwargs = is_bad_response_kwargs
 
     @classmethod
