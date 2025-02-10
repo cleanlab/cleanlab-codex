@@ -17,8 +17,8 @@ from cleanlab_codex.utils.function import (
 class CodexTool:
     """A tool that connects to a Codex project to answer questions."""
 
-    _tool_name = "ask_advisor"
-    _tool_description = "Asks an all-knowing advisor this query in cases where it cannot be answered from the provided Context. If the answer is unavailable, this returns None."
+    _tool_name = "check_codex"
+    _tool_description = "Checks a codex that contains answers to any possible question. If the answer is not available, this returns None."
     DEFAULT_FALLBACK_ANSWER = "Based on the available information, I cannot provide a complete answer to this question."
 
     def __init__(
@@ -93,13 +93,13 @@ class CodexTool:
         self,
         question: Annotated[
             str,
-            "The question to ask the advisor. This should be the same as the original user question, except in cases where the user question is missing information that could be additionally clarified.",
+            "The question to ask the codex. It should match the original user question unless clarification is needed (for instance to account for prior user messages), in which case changes to the question should be minimal.",
         ],
     ) -> Optional[str]:
-        """Asks an all-knowing advisor this question in cases where it cannot be answered from the provided Context. If the answer is unavailable, this returns a fallback answer or None.
+        """Checks a codex that contains answers to any possible question. If the answer is not available, this returns None.
 
         Args:
-            question (str): The question to ask the advisor. This should be the same as the original user question, except in cases where the user question is missing information that could be additionally clarified.
+            question (str): The question to ask the codex. It should match the original user question unless clarification is needed (for instance to account for prior user messages), in which case changes to the question should be minimal.
 
         Returns:
             The answer to the question if available. If no answer is available, this returns a fallback answer or None.
