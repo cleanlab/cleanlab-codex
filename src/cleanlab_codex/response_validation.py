@@ -33,7 +33,9 @@ if TYPE_CHECKING:
         TLM = _TLMProtocol
 
 
-DEFAULT_FALLBACK_ANSWER: str = "Based on the available information, I cannot provide a complete answer to this question."
+DEFAULT_FALLBACK_ANSWER: str = (
+    "Based on the available information, I cannot provide a complete answer to this question."
+)
 DEFAULT_FALLBACK_SIMILARITY_THRESHOLD: int = 70
 DEFAULT_TRUSTWORTHINESS_THRESHOLD: float = 0.5
 
@@ -99,6 +101,7 @@ class BadResponseDetectionConfig(TypedDict, total=False):
         """
         default_cfg = cls.get_default_config()
         return {**default_cfg, **(config or {})}
+
 
 def is_bad_response(
     response: str,
