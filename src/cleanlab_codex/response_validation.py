@@ -4,34 +4,48 @@ This module provides validation functions for evaluating LLM responses and deter
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Callable, Optional, Sequence, TypedDict, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    Optional,
+    Protocol,
+    Sequence,
+    Union,
+    cast,
+    runtime_checkable,
+)
+
+from pydantic import BaseModel, ConfigDict, Field
 
 from cleanlab_codex.utils.errors import MissingDependencyError
 from cleanlab_codex.utils.prompt import default_format_prompt
+
+
+@runtime_checkable
+class TLMProtocol(Protocol):
+    def get_trustworthiness_score(
+        self,
+        prompt: Union[str, Sequence[str]],
+        response: Union[str, Sequence[str]],
+        **kwargs: Any,
+    ) -> Dict[str, Any]: ...
+
+    def prompt(
+        self,
+        prompt: Union[str, Sequence[str]],
+        /,
+        **kwargs: Any,
+    ) -> Dict[str, Any]: ...
 
 if TYPE_CHECKING:
     try:
         from cleanlab_studio.studio.trustworthy_language_model import TLM  # type: ignore
     except ImportError:
-        from typing import Any, Dict, Protocol, Sequence
-
-        class _TLMProtocol(Protocol):
-            def get_trustworthiness_score(
-                self,
-                prompt: Union[str, Sequence[str]],
-                response: Union[str, Sequence[str]],
-                **kwargs: Any,
-            ) -> Dict[str, Any]: ...
-
-            def prompt(
-                self,
-                prompt: Union[str, Sequence[str]],
-                /,
-                **kwargs: Any,
-            ) -> Dict[str, Any]: ...
-
-        TLM = _TLMProtocol
-
+        TLM = TLMProtocol
+else:
+    TLM = TLMProtocol
 
 DEFAULT_FALLBACK_ANSWER: str = (
     "Based on the available information, I cannot provide a complete answer to this question."
@@ -44,71 +58,33 @@ Context = str
 Prompt = str
 
 
-class BadResponseDetectionConfig(TypedDict, total=False):
-    """Configuration for bad response detection functions.
-    See get_bad_response_config() for default values.
+class BadResponseDetectionConfig(BaseModel):
+    """Configuration for bad response detection functions."""
 
-    Attributes:
-        fallback_answer: Known unhelpful response to compare against
-        fallback_similarity_threshold: Fuzzy string matching similarity threshold (0-100).
-            Higher values mean responses must be more similar to fallback_answer
-            to be considered bad.
-        trustworthiness_threshold: Score threshold (0.0-1.0). Lower values allow less trustworthy responses
-        format_prompt: Function to format (query, context) into a prompt string
-        unhelpfulness_confidence_threshold: Optional confidence threshold (0.0-1.0) for unhelpful classification
-        tlm: TLM model to use for evaluation (required for untrustworthiness and unhelpfulness checks)
-    """
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     # Fallback check config
-    fallback_answer: str
-    fallback_similarity_threshold: int  # Fuzzy matching similarity threshold (0-100)
+    fallback_answer: str = Field(default=DEFAULT_FALLBACK_ANSWER, description="Known unhelpful response to compare against")
+    fallback_similarity_threshold: int = Field(default=DEFAULT_FALLBACK_SIMILARITY_THRESHOLD, description="Fuzzy matching similarity threshold (0-100). Higher values mean responses must be more similar to fallback_answer to be considered bad.")
 
     # Untrustworthy check config
-    trustworthiness_threshold: float
-    format_prompt: Callable[[Query, Context], Prompt]
+    trustworthiness_threshold: float = Field(default=DEFAULT_TRUSTWORTHINESS_THRESHOLD, description="Score threshold (0.0-1.0). Lower values allow less trustworthy responses.")
+    format_prompt: Callable[[Query, Context], Prompt] = Field(default=default_format_prompt, description="Function to format (query, context) into a prompt string.")
 
     # Unhelpful check config
-    unhelpfulness_confidence_threshold: Optional[float]
+    unhelpfulness_confidence_threshold: Optional[float] = Field(default=None, description="Optional confidence threshold (0.0-1.0) for unhelpful classification.")
 
     # Shared config (for untrustworthiness and unhelpfulness checks)
-    tlm: Optional[TLM]
+    tlm: Optional[TLM] = Field(default=None, description="TLM model to use for evaluation (required for untrustworthiness and unhelpfulness checks).")
 
-    @classmethod
-    def get_default_config(cls) -> BadResponseDetectionConfig:
-        """Get the default configuration for bad response detection functions.
-
-        Returns:
-            BadResponseDetectionConfig: Default configuration for bad response detection functions
-        """
-        return {
-            "fallback_answer": DEFAULT_FALLBACK_ANSWER,
-            "fallback_similarity_threshold": DEFAULT_FALLBACK_SIMILARITY_THRESHOLD,
-            "trustworthiness_threshold": DEFAULT_TRUSTWORTHINESS_THRESHOLD,
-            "format_prompt": default_format_prompt,
-            "unhelpfulness_confidence_threshold": None,
-            "tlm": None,
-        }
-
-    @classmethod
-    def apply_defaults(cls, config: Optional[BadResponseDetectionConfig] = None) -> BadResponseDetectionConfig:
-        """Apply default values to a configuration dictionary with missing entries.
-
-        Args:
-            config: Configuration dictionary to apply defaults to
-
-        Returns:
-            BadResponseDetectionConfig: Configuration dictionary with defaults applied
-        """
-        default_cfg = cls.get_default_config()
-        return {**default_cfg, **(config or {})}
-
+DEFAULT_CONFIG = BadResponseDetectionConfig()
 
 def is_bad_response(
     response: str,
     *,
     context: Optional[str] = None,
     query: Optional[str] = None,
-    config: Optional[BadResponseDetectionConfig] = None,
+    config: Union[BadResponseDetectionConfig, Dict[str, Any]] = DEFAULT_CONFIG,
 ) -> bool:
     """Run a series of checks to determine if a response is bad.
 
@@ -132,7 +108,7 @@ def is_bad_response(
     Returns:
         bool: True if any validation check fails, False if all pass.
     """
-    cfg = BadResponseDetectionConfig.apply_defaults(config)
+    config = BadResponseDetectionConfig.model_validate(config)
 
     validation_checks: list[Callable[[], bool]] = []
 
@@ -140,12 +116,12 @@ def is_bad_response(
     validation_checks.append(
         lambda: is_fallback_response(
             response,
-            cfg["fallback_answer"],
-            threshold=cfg["fallback_similarity_threshold"],
+            config.fallback_answer,
+            threshold=config.fallback_similarity_threshold,
         )
     )
 
-    can_run_untrustworthy_check = query is not None and context is not None and cfg["tlm"] is not None
+    can_run_untrustworthy_check = query is not None and context is not None and config.tlm is not None
     if can_run_untrustworthy_check:
         # The if condition guarantees these are not None
         validation_checks.append(
@@ -153,20 +129,20 @@ def is_bad_response(
                 response=response,
                 context=cast(str, context),
                 query=cast(str, query),
-                tlm=cfg["tlm"],
-                trustworthiness_threshold=cfg["trustworthiness_threshold"],
-                format_prompt=cfg["format_prompt"],
+                tlm=config.tlm,
+                trustworthiness_threshold=config.trustworthiness_threshold,
+                format_prompt=config.format_prompt,
             )
         )
 
-    can_run_unhelpful_check = query is not None and cfg["tlm"] is not None
+    can_run_unhelpful_check = query is not None and config.tlm is not None
     if can_run_unhelpful_check:
         validation_checks.append(
             lambda: is_unhelpful_response(
                 response=response,
                 query=cast(str, query),
-                tlm=cfg["tlm"],
-                trustworthiness_score_threshold=cast(float, cfg["unhelpfulness_confidence_threshold"]),
+                tlm=config.tlm,
+                trustworthiness_score_threshold=cast(float, config.unhelpfulness_confidence_threshold),
             )
         )
 

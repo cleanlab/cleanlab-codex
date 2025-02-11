@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from typing import Any, Dict, Sequence, Union
 from unittest.mock import Mock, patch
 
 import pytest
@@ -20,14 +21,47 @@ QUERY = "What is the capital of France?"
 CONTEXT = "Paris is the capital and largest city of France."
 
 
+class MockTLM(Mock):
+
+    _trustworthiness_score: float = 0.8
+    _response: str = "No"
+
+    @property
+    def trustworthiness_score(self) -> float:
+        return self._trustworthiness_score
+
+    @trustworthiness_score.setter
+    def trustworthiness_score(self, value: float) -> None:
+        self._trustworthiness_score = value
+
+    @property
+    def response(self) -> str:
+        return self._response
+
+    @response.setter
+    def response(self, value: str) -> None:
+        self._response = value
+
+    def get_trustworthiness_score(
+        self,
+        prompt: Union[str, Sequence[str]],  # noqa: ARG002
+        response: Union[str, Sequence[str]],  # noqa: ARG002
+        **kwargs: Any,  # noqa: ARG002
+    ) -> Dict[str, Any]:
+        return {"trustworthiness_score": self._trustworthiness_score}
+
+    def prompt(
+        self,
+        prompt: Union[str, Sequence[str]],  # noqa: ARG002
+        /,
+        **kwargs: Any,  # noqa: ARG002
+    ) -> Dict[str, Any]:
+        return {"response": self._response, "trustworthiness_score": self._trustworthiness_score}
+
+
 @pytest.fixture
-def mock_tlm() -> Mock:
-    """Create a mock TLM instance."""
-    mock = Mock()
-    # Configure default return values
-    mock.get_trustworthiness_score.return_value = {"trustworthiness_score": 0.8}
-    mock.prompt.return_value = {"response": "No", "trustworthiness_score": 0.9}
-    return mock
+def mock_tlm() -> MockTLM:
+    return MockTLM()
 
 
 @pytest.mark.parametrize(
@@ -64,11 +98,11 @@ def test_is_fallback_response(
 def test_is_untrustworthy_response(mock_tlm: Mock) -> None:
     """Test untrustworthy response detection."""
     # Test trustworthy response
-    mock_tlm.get_trustworthiness_score.return_value = {"trustworthiness_score": 0.8}
+    mock_tlm.trustworthiness_score = 0.8
     assert is_untrustworthy_response(GOOD_RESPONSE, CONTEXT, QUERY, mock_tlm, trustworthiness_threshold=0.5) is False
 
     # Test untrustworthy response
-    mock_tlm.get_trustworthiness_score.return_value = {"trustworthiness_score": 0.3}
+    mock_tlm.trustworthiness_score = 0.3
     assert is_untrustworthy_response(BAD_RESPONSE, CONTEXT, QUERY, mock_tlm, trustworthiness_threshold=0.5) is True
 
 
@@ -99,7 +133,8 @@ def test_is_unhelpful_response(
     expected: bool,
 ) -> None:
     """Test unhelpful response detection."""
-    mock_tlm.prompt.return_value = {"response": tlm_response, "trustworthiness_score": tlm_score}
+    mock_tlm.response = tlm_response
+    mock_tlm.trustworthiness_score = tlm_score
     assert is_unhelpful_response(response, QUERY, mock_tlm, trustworthiness_score_threshold=threshold) is expected
 
 
@@ -122,8 +157,9 @@ def test_is_bad_response(
     expected: bool,
 ) -> None:
     """Test the main is_bad_response function."""
-    mock_tlm.get_trustworthiness_score.return_value = {"trustworthiness_score": trustworthiness_score}
-    mock_tlm.prompt.return_value = {"response": prompt_response, "trustworthiness_score": prompt_score}
+    mock_tlm.trustworthiness_score = trustworthiness_score
+    mock_tlm.response = prompt_response
+    mock_tlm.trustworthiness_score = prompt_score
 
     assert (
         is_bad_response(
@@ -161,7 +197,8 @@ def test_is_bad_response_partial_inputs(
     mock_fuzz.partial_ratio.return_value = fuzz_ratio
     with patch.dict("sys.modules", {"thefuzz": Mock(fuzz=mock_fuzz)}):
         if prompt_response is not None:
-            mock_tlm.prompt.return_value = {"response": prompt_response, "trustworthiness_score": prompt_score}
+            mock_tlm.response = prompt_response
+            mock_tlm.trustworthiness_score = prompt_score
             tlm = mock_tlm
 
         assert (
