@@ -1,5 +1,5 @@
 """
-Utility functions for RAG (Retrieval Augmented Generation) operations.
+Helper functions for processing prompts in RAG applications.
 """
 
 
