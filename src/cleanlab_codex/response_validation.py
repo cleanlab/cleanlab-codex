@@ -33,9 +33,9 @@ if TYPE_CHECKING:
         TLM = _TLMProtocol
 
 
-DEFAULT_FALLBACK_ANSWER = "Based on the available information, I cannot provide a complete answer to this question."
-DEFAULT_PARTIAL_RATIO_THRESHOLD = 70
-DEFAULT_TRUSTWORTHINESS_THRESHOLD = 0.5
+DEFAULT_FALLBACK_ANSWER: str = "Based on the available information, I cannot provide a complete answer to this question."
+DEFAULT_FALLBACK_SIMILARITY_THRESHOLD: int = 70
+DEFAULT_TRUSTWORTHINESS_THRESHOLD: float = 0.5
 
 
 class BadResponseDetectionConfig(TypedDict, total=False):
@@ -44,7 +44,9 @@ class BadResponseDetectionConfig(TypedDict, total=False):
 
     Attributes:
         fallback_answer: Known unhelpful response to compare against
-        partial_ratio_threshold: Similarity threshold (0-100). Higher values require more similarity
+        fallback_similarity_threshold: Fuzzy string matching similarity threshold (0-100).
+            Higher values mean responses must be more similar to fallback_answer
+            to be considered bad.
         trustworthiness_threshold: Score threshold (0.0-1.0). Lower values allow less trustworthy responses
         format_prompt: Function to format (query, context) into a prompt string
         unhelpfulness_confidence_threshold: Optional confidence threshold (0.0-1.0) for unhelpful classification
@@ -53,7 +55,7 @@ class BadResponseDetectionConfig(TypedDict, total=False):
 
     # Fallback check config
     fallback_answer: str
-    partial_ratio_threshold: int
+    fallback_similarity_threshold: int  # Fuzzy matching similarity threshold (0-100)
 
     # Untrustworthy check config
     trustworthiness_threshold: float
@@ -74,7 +76,7 @@ def get_bad_response_config() -> BadResponseDetectionConfig:
     """
     return {
         "fallback_answer": DEFAULT_FALLBACK_ANSWER,
-        "partial_ratio_threshold": DEFAULT_PARTIAL_RATIO_THRESHOLD,
+        "fallback_similarity_threshold": DEFAULT_FALLBACK_SIMILARITY_THRESHOLD,
         "trustworthiness_threshold": DEFAULT_TRUSTWORTHINESS_THRESHOLD,
         "format_prompt": default_format_prompt,
         "unhelpfulness_confidence_threshold": None,
@@ -122,7 +124,7 @@ def is_bad_response(
         lambda: is_fallback_response(
             response,
             cfg["fallback_answer"],
-            threshold=cfg["partial_ratio_threshold"],
+            threshold=cfg["fallback_similarity_threshold"],
         )
     )
 
@@ -155,7 +157,9 @@ def is_bad_response(
 
 
 def is_fallback_response(
-    response: str, fallback_answer: str = DEFAULT_FALLBACK_ANSWER, threshold: int = DEFAULT_PARTIAL_RATIO_THRESHOLD
+    response: str,
+    fallback_answer: str = DEFAULT_FALLBACK_ANSWER,
+    threshold: int = DEFAULT_FALLBACK_SIMILARITY_THRESHOLD,
 ) -> bool:
     """Check if a response is too similar to a known fallback answer.
 
