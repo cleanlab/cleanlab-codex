@@ -70,23 +70,35 @@ class BadResponseDetectionConfig(TypedDict, total=False):
 
     # Shared config (for untrustworthiness and unhelpfulness checks)
     tlm: Optional[TLM]
+    
+    @classmethod
+    def get_default_config(cls) -> BadResponseDetectionConfig:
+        """Get the default configuration for bad response detection functions.
 
+        Returns:
+            BadResponseDetectionConfig: Default configuration for bad response detection functions
+        """
+        return {
+            "fallback_answer": DEFAULT_FALLBACK_ANSWER,
+            "fallback_similarity_threshold": DEFAULT_FALLBACK_SIMILARITY_THRESHOLD,
+            "trustworthiness_threshold": DEFAULT_TRUSTWORTHINESS_THRESHOLD,
+            "format_prompt": default_format_prompt,
+            "unhelpfulness_confidence_threshold": None,
+            "tlm": None,
+        }
 
-def get_bad_response_config() -> BadResponseDetectionConfig:
-    """Get the default configuration for bad response detection functions.
+    @classmethod
+    def apply_defaults(cls, config: Optional[BadResponseDetectionConfig] = None) -> BadResponseDetectionConfig:
+        """Apply default values to a configuration dictionary with missing entries.
 
-    Returns:
-        BadResponseDetectionConfig: Default configuration for bad response detection functions
-    """
-    return {
-        "fallback_answer": DEFAULT_FALLBACK_ANSWER,
-        "fallback_similarity_threshold": DEFAULT_FALLBACK_SIMILARITY_THRESHOLD,
-        "trustworthiness_threshold": DEFAULT_TRUSTWORTHINESS_THRESHOLD,
-        "format_prompt": default_format_prompt,
-        "unhelpfulness_confidence_threshold": None,
-        "tlm": None,
-    }
+        Args:
+            config: Configuration dictionary to apply defaults to
 
+        Returns:
+            BadResponseDetectionConfig: Configuration dictionary with defaults applied
+        """
+        default_cfg = cls.get_default_config()
+        return {**default_cfg, **(config or {})}
 
 def is_bad_response(
     response: str,
@@ -117,9 +129,7 @@ def is_bad_response(
     Returns:
         bool: True if any validation check fails, False if all pass.
     """
-    default_cfg = get_bad_response_config()
-    cfg: BadResponseDetectionConfig
-    cfg = {**default_cfg, **(config or {})}
+    cfg = BadResponseDetectionConfig.apply_defaults(config)
 
     validation_checks: list[Callable[[], bool]] = []
 
