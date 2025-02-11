@@ -30,7 +30,7 @@ def is_bad_response(
     trustworthiness_threshold: float = DEFAULT_TRUSTWORTHINESS_THRESHOLD,
     format_prompt: Callable[[str, str], str] = default_format_prompt,
     # is_unhelpful_response args
-    unhelpful_trustworthiness_threshold: Optional[float] = None,
+    unhelpfulness_confidence_threshold: Optional[float] = None,
 ) -> bool:
     """Run a series of checks to determine if a response is bad.
 
@@ -60,7 +60,7 @@ def is_bad_response(
         format_prompt: Function to format (query, context) into a prompt string.
 
         --- Unhelpful check parameters ---
-        unhelpful_trustworthiness_threshold: Optional confidence threshold (0.0-1.0) for unhelpful classification.
+        unhelpfulness_confidence_threshold: Optional confidence threshold (0.0-1.0) for unhelpful classification.
 
     Returns:
         bool: True if any validation check fails, False if all pass.
@@ -92,7 +92,7 @@ def is_bad_response(
                 response=response,
                 query=cast(str, query),
                 tlm=tlm,
-                trustworthiness_score_threshold=unhelpful_trustworthiness_threshold,
+                trustworthiness_score_threshold=unhelpfulness_confidence_threshold,
             )
         )
 
