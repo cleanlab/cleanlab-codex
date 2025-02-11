@@ -32,12 +32,18 @@ def is_bad_response(
     # is_unhelpful_response args
     unhelpful_trustworthiness_threshold: Optional[float] = None,
 ) -> bool:
-    """Run a series of checks to determine if a response is bad. If any of the checks pass, return True.
+    """Run a series of checks to determine if a response is bad.
+
+    If any check detects an issue (i.e. fails), the function returns True, indicating the response is bad.
 
     This function runs three possible validation checks:
-    1. Fallback check: Detects if response is too similar to known fallback answers.
-    2. Untrustworthy check: Evaluates response trustworthiness given context and query.
-    3. Unhelpful check: Evaluates if response is helpful for the given query.
+    1. **Fallback check**: Detects if response is too similar to a known fallback answer.
+    2. **Untrustworthy check**: Assesses response trustworthiness based on the given context and query.
+    3. **Unhelpful check**: Predicts if the response adequately answers the query or not, in a useful way.
+
+    Note:
+    Each validation check runs conditionally based on whether the required arguments are provided.
+    As soon as any validation check fails, the function returns True.
 
     Args:
         response: The response to check.
@@ -45,15 +51,15 @@ def is_bad_response(
         query: Optional user question. Required for untrustworthy and unhelpful checks.
         tlm: Optional TLM model for evaluation. Required for untrustworthy and unhelpful checks.
 
-        # Fallback check parameters
+        --- Fallback check parameters ---
         fallback_answer: Known unhelpful response to compare against.
         partial_ratio_threshold: Similarity threshold (0-100). Higher values require more similarity.
 
-        # Untrustworthy check parameters
+        --- Untrustworthy check parameters ---
         trustworthiness_threshold: Score threshold (0.0-1.0). Lower values allow less trustworthy responses.
         format_prompt: Function to format (query, context) into a prompt string.
 
-        # Unhelpful check parameters
+        --- Unhelpful check parameters ---
         unhelpful_trustworthiness_threshold: Optional confidence threshold (0.0-1.0) for unhelpful classification.
 
     Returns:
