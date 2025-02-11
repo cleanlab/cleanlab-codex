@@ -1,5 +1,5 @@
 """
-This module provides validation functions for checking if an LLM response is unhelpful.
+This module provides validation functions for evaluating LLM responses and determining if they should be replaced with Codex-generated alternatives.
 """
 
 from __future__ import annotations
