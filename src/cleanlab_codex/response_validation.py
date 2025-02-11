@@ -5,7 +5,6 @@ This module provides validation functions for evaluating LLM responses and deter
 from __future__ import annotations
 
 from typing import (
-    TYPE_CHECKING,
     Any,
     Callable,
     Dict,
@@ -24,7 +23,7 @@ from cleanlab_codex.utils.prompt import default_format_prompt
 
 
 @runtime_checkable
-class TLMProtocol(Protocol):
+class TLM(Protocol):
     def get_trustworthiness_score(
         self,
         prompt: Union[str, Sequence[str]],
@@ -39,14 +38,6 @@ class TLMProtocol(Protocol):
         **kwargs: Any,
     ) -> Dict[str, Any]: ...
 
-
-if TYPE_CHECKING:
-    try:
-        from cleanlab_studio.studio.trustworthy_language_model import TLM  # type: ignore
-    except ImportError:
-        TLM = TLMProtocol
-else:
-    TLM = TLMProtocol
 
 DEFAULT_FALLBACK_ANSWER: str = (
     "Based on the available information, I cannot provide a complete answer to this question."
@@ -149,7 +140,7 @@ def is_bad_response(
                 response=response,
                 context=cast(str, context),
                 query=cast(str, query),
-                tlm=config.tlm,
+                tlm=cast(TLM, config.tlm),
                 trustworthiness_threshold=config.trustworthiness_threshold,
                 format_prompt=config.format_prompt,
             )
@@ -161,7 +152,7 @@ def is_bad_response(
             lambda: is_unhelpful_response(
                 response=response,
                 query=cast(str, query),
-                tlm=config.tlm,
+                tlm=cast(TLM, config.tlm),
                 trustworthiness_score_threshold=cast(float, config.unhelpfulness_confidence_threshold),
             )
         )
