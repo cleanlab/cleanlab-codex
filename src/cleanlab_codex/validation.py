@@ -180,13 +180,13 @@ def is_unhelpful_response(
     is sufficiently confident in that assessment (if a threshold is provided).
 
     Args:
-        response: The response to check from the assistant
+        response: The response to check
+        query: User query that will be used to evaluate if the response is helpful
         tlm: The TLM model to use for evaluation
-        query: Optional user query to provide context for evaluating helpfulness.
-              If provided, TLM will assess if the response helpfully answers this query.
-        trustworthiness_score_threshold: Optional confidence threshold (0.0-1.0).
-                                       If provided, responses are only marked unhelpful if TLM's
-                                       confidence score exceeds this threshold.
+        trustworthiness_score_threshold: Optional confidence threshold (0.0-1.0)
+                                       If provided and the response is marked as unhelpful,
+                                       the confidence score must exceed this threshold for
+                                       the response to be considered truly unhelpful.
 
     Returns:
         bool: True if TLM determines the response is unhelpful with sufficient confidence,
