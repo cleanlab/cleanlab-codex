@@ -43,6 +43,8 @@ extra-dependencies = [
   "pytest",
   "llama-index-core",
   "smolagents",
+  "cleanlab-studio",
+  "thefuzz",
   "langchain-core",
 ]
 [tool.hatch.envs.types.scripts]
