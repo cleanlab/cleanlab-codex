@@ -37,6 +37,10 @@ DEFAULT_FALLBACK_ANSWER: str = "Based on the available information, I cannot pro
 DEFAULT_FALLBACK_SIMILARITY_THRESHOLD: int = 70
 DEFAULT_TRUSTWORTHINESS_THRESHOLD: float = 0.5
 
+Query = str
+Context = str
+Prompt = str
+
 
 class BadResponseDetectionConfig(TypedDict, total=False):
     """Configuration for bad response detection functions.
@@ -59,7 +63,7 @@ class BadResponseDetectionConfig(TypedDict, total=False):
 
     # Untrustworthy check config
     trustworthiness_threshold: float
-    format_prompt: Callable[[str, str], str]
+    format_prompt: Callable[[Query, Context], Prompt]
 
     # Unhelpful check config
     unhelpfulness_confidence_threshold: Optional[float]
