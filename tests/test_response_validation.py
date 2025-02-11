@@ -22,7 +22,6 @@ CONTEXT = "Paris is the capital and largest city of France."
 
 
 class MockTLM(Mock):
-
     _trustworthiness_score: float = 0.8
     _response: str = "No"
 

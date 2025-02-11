@@ -39,6 +39,7 @@ class TLMProtocol(Protocol):
         **kwargs: Any,
     ) -> Dict[str, Any]: ...
 
+
 if TYPE_CHECKING:
     try:
         from cleanlab_studio.studio.trustworthy_language_model import TLM  # type: ignore
@@ -64,20 +65,39 @@ class BadResponseDetectionConfig(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     # Fallback check config
-    fallback_answer: str = Field(default=DEFAULT_FALLBACK_ANSWER, description="Known unhelpful response to compare against")
-    fallback_similarity_threshold: int = Field(default=DEFAULT_FALLBACK_SIMILARITY_THRESHOLD, description="Fuzzy matching similarity threshold (0-100). Higher values mean responses must be more similar to fallback_answer to be considered bad.")
+    fallback_answer: str = Field(
+        default=DEFAULT_FALLBACK_ANSWER, description="Known unhelpful response to compare against"
+    )
+    fallback_similarity_threshold: int = Field(
+        default=DEFAULT_FALLBACK_SIMILARITY_THRESHOLD,
+        description="Fuzzy matching similarity threshold (0-100). Higher values mean responses must be more similar to fallback_answer to be considered bad.",
+    )
 
     # Untrustworthy check config
-    trustworthiness_threshold: float = Field(default=DEFAULT_TRUSTWORTHINESS_THRESHOLD, description="Score threshold (0.0-1.0). Lower values allow less trustworthy responses.")
-    format_prompt: Callable[[Query, Context], Prompt] = Field(default=default_format_prompt, description="Function to format (query, context) into a prompt string.")
+    trustworthiness_threshold: float = Field(
+        default=DEFAULT_TRUSTWORTHINESS_THRESHOLD,
+        description="Score threshold (0.0-1.0). Lower values allow less trustworthy responses.",
+    )
+    format_prompt: Callable[[Query, Context], Prompt] = Field(
+        default=default_format_prompt,
+        description="Function to format (query, context) into a prompt string.",
+    )
 
     # Unhelpful check config
-    unhelpfulness_confidence_threshold: Optional[float] = Field(default=None, description="Optional confidence threshold (0.0-1.0) for unhelpful classification.")
+    unhelpfulness_confidence_threshold: Optional[float] = Field(
+        default=None,
+        description="Optional confidence threshold (0.0-1.0) for unhelpful classification.",
+    )
 
     # Shared config (for untrustworthiness and unhelpfulness checks)
-    tlm: Optional[TLM] = Field(default=None, description="TLM model to use for evaluation (required for untrustworthiness and unhelpfulness checks).")
+    tlm: Optional[TLM] = Field(
+        default=None,
+        description="TLM model to use for evaluation (required for untrustworthiness and unhelpfulness checks).",
+    )
+
 
 DEFAULT_CONFIG = BadResponseDetectionConfig()
+
 
 def is_bad_response(
     response: str,
