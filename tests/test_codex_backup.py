@@ -14,6 +14,7 @@ class MockApp:
         # Just echo the user message
         return user_message
 
+
 @pytest.fixture
 def mock_app() -> MockApp:
     return MockApp()
