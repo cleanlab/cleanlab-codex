@@ -74,7 +74,7 @@ def is_bad_response(
                 context=cast(str, context),
                 query=cast(str, query),
                 tlm=tlm,
-                threshold=trustworthiness_threshold,
+                trustworthiness_threshold=trustworthiness_threshold,
                 format_prompt=format_prompt,
             )
         )
@@ -125,7 +125,7 @@ def is_untrustworthy_response(
     context: str,
     query: str,
     tlm: TLM,
-    threshold: float = DEFAULT_TRUSTWORTHINESS_THRESHOLD,
+    trustworthiness_threshold: float = DEFAULT_TRUSTWORTHINESS_THRESHOLD,
     format_prompt: Callable[[str, str], str] = default_format_prompt,
 ) -> bool:
     """Check if a response is untrustworthy.
@@ -139,7 +139,7 @@ def is_untrustworthy_response(
         context: The context information available for answering the query
         query: The user's question or request
         tlm: The TLM model to use for evaluation
-        threshold: Score threshold (0.0-1.0). Lower values allow less trustworthy responses.
+        trustworthiness_threshold: Score threshold (0.0-1.0). Lower values allow less trustworthy responses.
                   Default 0.5, meaning responses with scores less than 0.5 are considered untrustworthy.
         format_prompt: Function that takes (query, context) and returns a formatted prompt string.
                       Users should provide their RAG app's own prompt formatting function here
@@ -157,7 +157,7 @@ def is_untrustworthy_response(
     prompt = format_prompt(query, context)
     result = tlm.get_trustworthiness_score(prompt, response)
     score: float = result["trustworthiness_score"]
-    return score < threshold
+    return score < trustworthiness_threshold
 
 
 def is_unhelpful_response(
