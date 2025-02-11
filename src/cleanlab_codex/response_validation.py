@@ -279,7 +279,7 @@ def is_unhelpful_response(
             package_url="https://github.com/cleanlab/cleanlab-studio",
         ) from e
 
-    # The question and expected "unhelpful" response are linked:
+    # If editing `question`, make sure `expected_unhelpful_response` is still correct:
     # - When asking "is helpful?" -> "no" means unhelpful
     # - When asking "is unhelpful?" -> "yes" means unhelpful
     question = (
