@@ -6,7 +6,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from cleanlab_codex.validation import (
+from cleanlab_codex.response_validation import (
     is_bad_response,
     is_fallback_response,
     is_unhelpful_response,

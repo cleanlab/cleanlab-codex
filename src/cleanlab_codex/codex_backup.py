@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Optional, Protocol
 
-from cleanlab_codex.validation import is_bad_response
+from cleanlab_codex.response_validation import is_bad_response
 
 if TYPE_CHECKING:
     from cleanlab_studio.studio.trustworthy_language_model import TLM
