@@ -65,11 +65,11 @@ def test_is_untrustworthy_response(mock_tlm: Mock) -> None:
     """Test untrustworthy response detection."""
     # Test trustworthy response
     mock_tlm.get_trustworthiness_score.return_value = {"trustworthiness_score": 0.8}
-    assert is_untrustworthy_response(GOOD_RESPONSE, CONTEXT, QUERY, mock_tlm, threshold=0.5) is False
+    assert is_untrustworthy_response(GOOD_RESPONSE, CONTEXT, QUERY, mock_tlm, trustworthiness_threshold=0.5) is False
 
     # Test untrustworthy response
     mock_tlm.get_trustworthiness_score.return_value = {"trustworthiness_score": 0.3}
-    assert is_untrustworthy_response(BAD_RESPONSE, CONTEXT, QUERY, mock_tlm, threshold=0.5) is True
+    assert is_untrustworthy_response(BAD_RESPONSE, CONTEXT, QUERY, mock_tlm, trustworthiness_threshold=0.5) is True
 
 
 @pytest.mark.parametrize(
@@ -130,7 +130,7 @@ def test_is_bad_response(
             response,
             context=CONTEXT,
             query=QUERY,
-            tlm=mock_tlm,
+            config={"tlm": mock_tlm},
         )
         is expected
     )
@@ -168,7 +168,7 @@ def test_is_bad_response_partial_inputs(
             is_bad_response(
                 response,
                 query=query,
-                tlm=tlm,
+                config={"tlm": tlm},
             )
             is expected
         )

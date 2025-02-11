@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Optional, Protocol
+from typing import TYPE_CHECKING, Any, Optional, Protocol, cast
 
-from cleanlab_codex.response_validation import is_bad_response
+from cleanlab_codex.response_validation import BadResponseDetectionConfig, is_bad_response
 
 if TYPE_CHECKING:
-    from cleanlab_studio.studio.trustworthy_language_model import TLM
+    from cleanlab_studio.studio.trustworthy_language_model import TLM  # type: ignore
 
     from cleanlab_codex.project import Project
 
@@ -119,9 +119,11 @@ class CodexBackup:
             response,
             query=query,
             context=context,
-            tlm=self._tlm,
-            fallback_answer=self._fallback_answer,
-            **_is_bad_response_kwargs,
+            config=cast(BadResponseDetectionConfig, {
+                "tlm": self._tlm,
+                "fallback_answer": self._fallback_answer,
+                **_is_bad_response_kwargs,
+            }),
         ):
             return response
 

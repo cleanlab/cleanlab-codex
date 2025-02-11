@@ -4,12 +4,36 @@ This module provides validation functions for evaluating LLM responses and deter
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Callable, Optional, cast
+from typing import TYPE_CHECKING, Callable, Optional, Sequence, TypedDict, Union, cast
 
+from cleanlab_codex.utils.errors import MissingDependencyError
 from cleanlab_codex.utils.prompt import default_format_prompt
 
 if TYPE_CHECKING:
-    from cleanlab_studio.studio.trustworthy_language_model import TLM  # type: ignore
+    try:
+        from cleanlab_studio.studio.trustworthy_language_model import TLM  # type: ignore
+    except ImportError:
+        from typing import Any, Dict, Protocol, Sequence
+
+        class _TLMProtocol(Protocol):
+            def get_trustworthiness_score(
+                self,
+                prompt: Union[str, Sequence[str]],
+                response: Union[str, Sequence[str]],
+                **kwargs: Any,
+            ) -> Dict[str, Any]:
+                ...
+
+            def prompt(
+                self,
+                prompt: Union[str, Sequence[str]],
+                /,
+                **kwargs: Any,
+            ) -> Dict[str, Any]:
+                ...
+
+        TLM = _TLMProtocol
+
 
 
 DEFAULT_FALLBACK_ANSWER = "Based on the available information, I cannot provide a complete answer to this question."
@@ -17,20 +41,54 @@ DEFAULT_PARTIAL_RATIO_THRESHOLD = 70
 DEFAULT_TRUSTWORTHINESS_THRESHOLD = 0.5
 
 
+class BadResponseDetectionConfig(TypedDict, total=False):
+    """Configuration for bad response detection functions.
+    See get_bad_response_config() for default values.
+
+    Attributes:
+        fallback_answer: Known unhelpful response to compare against
+        partial_ratio_threshold: Similarity threshold (0-100). Higher values require more similarity
+        trustworthiness_threshold: Score threshold (0.0-1.0). Lower values allow less trustworthy responses
+        format_prompt: Function to format (query, context) into a prompt string
+        unhelpfulness_confidence_threshold: Optional confidence threshold (0.0-1.0) for unhelpful classification
+        tlm: TLM model to use for evaluation (required for untrustworthiness and unhelpfulness checks)
+    """
+    # Fallback check config
+    fallback_answer: str
+    partial_ratio_threshold: int
+
+    # Untrustworthy check config
+    trustworthiness_threshold: float
+    format_prompt: Callable[[str, str], str]
+
+    # Unhelpful check config
+    unhelpfulness_confidence_threshold: Optional[float]
+
+    # Shared config (for untrustworthiness and unhelpfulness checks)
+    tlm: Optional[TLM]
+
+def get_bad_response_config() -> BadResponseDetectionConfig:
+    """Get the default configuration for bad response detection functions.
+
+    Returns:
+        BadResponseDetectionConfig: Default configuration for bad response detection functions
+    """
+    return {
+        "fallback_answer": DEFAULT_FALLBACK_ANSWER,
+        "partial_ratio_threshold": DEFAULT_PARTIAL_RATIO_THRESHOLD,
+        "trustworthiness_threshold": DEFAULT_TRUSTWORTHINESS_THRESHOLD,
+        "format_prompt": default_format_prompt,
+        "unhelpfulness_confidence_threshold": None,
+        "tlm": None,
+    }
+
+
 def is_bad_response(
     response: str,
     *,
     context: Optional[str] = None,
     query: Optional[str] = None,
-    tlm: Optional[TLM] = None,
-    # is_fallback_response args
-    fallback_answer: str = DEFAULT_FALLBACK_ANSWER,
-    partial_ratio_threshold: int = DEFAULT_PARTIAL_RATIO_THRESHOLD,
-    # is_untrustworthy_response args
-    trustworthiness_threshold: float = DEFAULT_TRUSTWORTHINESS_THRESHOLD,
-    format_prompt: Callable[[str, str], str] = default_format_prompt,
-    # is_unhelpful_response args
-    unhelpfulness_confidence_threshold: Optional[float] = None,
+    config: Optional[BadResponseDetectionConfig] = None,
 ) -> bool:
     """Run a series of checks to determine if a response is bad.
 
@@ -49,29 +107,25 @@ def is_bad_response(
         response: The response to check.
         context: Optional context/documents used for answering. Required for untrustworthy check.
         query: Optional user question. Required for untrustworthy and unhelpful checks.
-        tlm: Optional TLM model for evaluation. Required for untrustworthy and unhelpful checks.
-
-        --- Fallback check parameters ---
-        fallback_answer: Known unhelpful response to compare against.
-        partial_ratio_threshold: Similarity threshold (0-100). Higher values require more similarity.
-
-        --- Untrustworthy check parameters ---
-        trustworthiness_threshold: Score threshold (0.0-1.0). Lower values allow less trustworthy responses.
-        format_prompt: Function to format (query, context) into a prompt string.
-
-        --- Unhelpful check parameters ---
-        unhelpfulness_confidence_threshold: Optional confidence threshold (0.0-1.0) for unhelpful classification.
+        config: Optional, typed dictionary of configuration parameters. See <_BadReponseConfig> for details.
 
     Returns:
         bool: True if any validation check fails, False if all pass.
     """
+    default_cfg = get_bad_response_config()
+    cfg: BadResponseDetectionConfig
+    cfg = {**default_cfg, **(config or {})}
 
     validation_checks: list[Callable[[], bool]] = []
 
     # All required inputs are available for checking fallback responses
-    validation_checks.append(lambda: is_fallback_response(response, fallback_answer, threshold=partial_ratio_threshold))
+    validation_checks.append(lambda: is_fallback_response(
+        response,
+        cfg["fallback_answer"],
+        threshold=cfg["partial_ratio_threshold"],
+    ))
 
-    can_run_untrustworthy_check = query is not None and context is not None and tlm is not None
+    can_run_untrustworthy_check = query is not None and context is not None and cfg["tlm"] is not None
     if can_run_untrustworthy_check:
         # The if condition guarantees these are not None
         validation_checks.append(
@@ -79,20 +133,20 @@ def is_bad_response(
                 response=response,
                 context=cast(str, context),
                 query=cast(str, query),
-                tlm=tlm,
-                trustworthiness_threshold=trustworthiness_threshold,
-                format_prompt=format_prompt,
+                tlm=cfg["tlm"],
+                trustworthiness_threshold=cfg["trustworthiness_threshold"],
+                format_prompt=cfg["format_prompt"],
             )
         )
 
-    can_run_unhelpful_check = query is not None and tlm is not None
+    can_run_unhelpful_check = query is not None and cfg["tlm"] is not None
     if can_run_unhelpful_check:
         validation_checks.append(
             lambda: is_unhelpful_response(
                 response=response,
                 query=cast(str, query),
-                tlm=tlm,
-                trustworthiness_score_threshold=unhelpfulness_confidence_threshold,
+                tlm=cfg["tlm"],
+                trustworthiness_score_threshold=cast(float, cfg["unhelpfulness_confidence_threshold"]),
             )
         )
 
@@ -119,8 +173,10 @@ def is_fallback_response(
     try:
         from thefuzz import fuzz  # type: ignore
     except ImportError as e:
-        error_msg = "The 'thefuzz' library is required. Please install it with `pip install thefuzz`."
-        raise ImportError(error_msg) from e
+        raise MissingDependencyError(
+            import_name=e.name or "thefuzz",
+            package_url="https://github.com/seatgeek/thefuzz",
+        ) from e
 
     partial_ratio: int = fuzz.partial_ratio(fallback_answer.lower(), response.lower())
     return bool(partial_ratio >= threshold)
@@ -155,10 +211,13 @@ def is_untrustworthy_response(
         bool: True if the response is deemed untrustworthy by TLM, False otherwise
     """
     try:
-        from cleanlab_studio import Studio  # type: ignore # noqa: F401
+        from cleanlab_studio import Studio  # type: ignore[import-untyped]  # noqa: F401
     except ImportError as e:
-        error_msg = "The 'cleanlab_studio' library is required. Please install it with `pip install cleanlab-studio`."
-        raise ImportError(error_msg) from e
+        raise MissingDependencyError(
+            import_name=e.name or "cleanlab_studio",
+            package_name="cleanlab-studio",
+            package_url="https://github.com/cleanlab/cleanlab-studio",
+        ) from e
 
     prompt = format_prompt(query, context)
     result = tlm.get_trustworthiness_score(prompt, response)
@@ -195,8 +254,11 @@ def is_unhelpful_response(
     try:
         from cleanlab_studio import Studio  # noqa: F401
     except ImportError as e:
-        error_msg = "The 'cleanlab_studio' library is required. Please install it with `pip install cleanlab-studio`."
-        raise ImportError(error_msg) from e
+        raise MissingDependencyError(
+            import_name=e.name or "cleanlab_studio",
+            package_name="cleanlab-studio",
+            package_url="https://github.com/cleanlab/cleanlab-studio",
+        ) from e
 
     # The question and expected "unhelpful" response are linked:
     # - When asking "is helpful?" -> "no" means unhelpful
