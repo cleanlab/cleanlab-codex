@@ -70,7 +70,7 @@ class BadResponseDetectionConfig(TypedDict, total=False):
 
     # Shared config (for untrustworthiness and unhelpfulness checks)
     tlm: Optional[TLM]
-    
+
     @classmethod
     def get_default_config(cls) -> BadResponseDetectionConfig:
         """Get the default configuration for bad response detection functions.
