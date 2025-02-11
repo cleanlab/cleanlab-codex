@@ -119,11 +119,14 @@ class CodexBackup:
             response,
             query=query,
             context=context,
-            config=cast(BadResponseDetectionConfig, {
-                "tlm": self._tlm,
-                "fallback_answer": self._fallback_answer,
-                **_is_bad_response_kwargs,
-            }),
+            config=cast(
+                BadResponseDetectionConfig,
+                {
+                    "tlm": self._tlm,
+                    "fallback_answer": self._fallback_answer,
+                    **_is_bad_response_kwargs,
+                },
+            ),
         ):
             return response
 

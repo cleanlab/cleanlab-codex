@@ -21,19 +21,16 @@ if TYPE_CHECKING:
                 prompt: Union[str, Sequence[str]],
                 response: Union[str, Sequence[str]],
                 **kwargs: Any,
-            ) -> Dict[str, Any]:
-                ...
+            ) -> Dict[str, Any]: ...
 
             def prompt(
                 self,
                 prompt: Union[str, Sequence[str]],
                 /,
                 **kwargs: Any,
-            ) -> Dict[str, Any]:
-                ...
+            ) -> Dict[str, Any]: ...
 
         TLM = _TLMProtocol
-
 
 
 DEFAULT_FALLBACK_ANSWER = "Based on the available information, I cannot provide a complete answer to this question."
@@ -53,6 +50,7 @@ class BadResponseDetectionConfig(TypedDict, total=False):
         unhelpfulness_confidence_threshold: Optional confidence threshold (0.0-1.0) for unhelpful classification
         tlm: TLM model to use for evaluation (required for untrustworthiness and unhelpfulness checks)
     """
+
     # Fallback check config
     fallback_answer: str
     partial_ratio_threshold: int
@@ -66,6 +64,7 @@ class BadResponseDetectionConfig(TypedDict, total=False):
 
     # Shared config (for untrustworthiness and unhelpfulness checks)
     tlm: Optional[TLM]
+
 
 def get_bad_response_config() -> BadResponseDetectionConfig:
     """Get the default configuration for bad response detection functions.
@@ -119,11 +118,13 @@ def is_bad_response(
     validation_checks: list[Callable[[], bool]] = []
 
     # All required inputs are available for checking fallback responses
-    validation_checks.append(lambda: is_fallback_response(
-        response,
-        cfg["fallback_answer"],
-        threshold=cfg["partial_ratio_threshold"],
-    ))
+    validation_checks.append(
+        lambda: is_fallback_response(
+            response,
+            cfg["fallback_answer"],
+            threshold=cfg["partial_ratio_threshold"],
+        )
+    )
 
     can_run_untrustworthy_check = query is not None and context is not None and cfg["tlm"] is not None
     if can_run_untrustworthy_check:
