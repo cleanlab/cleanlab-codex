@@ -96,6 +96,10 @@ Testing, type checking, and formatting/linting is [checked in CI][ci].
 
 [ci]: .github/workflows/ci.yml
 
+## Developing against different environments
+
+To target a different Codex backend environment (i.e. staging or local), set the `CODEX_BASE_URL` environment variable. Example: `export CODEX_BASE_URL=http://localhost:8080`.
+
 ## Style guide
 
 ### Adding integrations with external libraries
