@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.1a5] - 2025-02-12
+
+### Added
+
+- Module for validating LLM responses and determining whether to use Codex as a backup.
+
+### Changed
+
+- Default name, description, and parameter descriptions for `CodexTool`.
+
 ## [0.0.1a4] - 2025-02-07
 
 ### Fixed
@@ -33,7 +43,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Pre-release of the Cleanlab Codex Python client.
 
-[Unreleased]: https://github.com/cleanlab/cleanlab-codex/compare/v0.0.1a4...HEAD
+[Unreleased]: https://github.com/cleanlab/cleanlab-codex/compare/v0.0.1a5...HEAD
+[0.0.1a5]: https://github.com/cleanlab/cleanlab-codex/compare/v0.0.1a4...v0.0.1a5
 [0.0.1a4]: https://github.com/cleanlab/cleanlab-codex/compare/v0.0.1a3...v0.0.1a4
 [0.0.1a3]: https://github.com/cleanlab/cleanlab-codex/compare/v0.0.1a2...v0.0.1a3
 [0.0.1a2]: https://github.com/cleanlab/cleanlab-codex/compare/v0.0.1a1...v0.0.1a2
