@@ -1,5 +1,5 @@
 """
-This module provides validation functions for evaluating LLM responses and determining if they should be replaced with Codex-generated alternatives.
+Validation functions for evaluating LLM responses and determining if they should be replaced with Codex-generated alternatives.
 """
 
 from __future__ import annotations
@@ -9,41 +9,22 @@ from typing import (
     Callable,
     Dict,
     Optional,
-    Protocol,
-    Sequence,
     Union,
     cast,
-    runtime_checkable,
 )
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from cleanlab_codex.internal.utils import generate_pydantic_model_docstring
+from cleanlab_codex.types.tlm import TLM
 from cleanlab_codex.utils.errors import MissingDependencyError
 from cleanlab_codex.utils.prompt import default_format_prompt
 
-
-@runtime_checkable
-class TLM(Protocol):
-    def get_trustworthiness_score(
-        self,
-        prompt: Union[str, Sequence[str]],
-        response: Union[str, Sequence[str]],
-        **kwargs: Any,
-    ) -> Dict[str, Any]: ...
-
-    def prompt(
-        self,
-        prompt: Union[str, Sequence[str]],
-        /,
-        **kwargs: Any,
-    ) -> Dict[str, Any]: ...
-
-
-DEFAULT_FALLBACK_ANSWER: str = (
+_DEFAULT_FALLBACK_ANSWER: str = (
     "Based on the available information, I cannot provide a complete answer to this question."
 )
-DEFAULT_FALLBACK_SIMILARITY_THRESHOLD: int = 70
-DEFAULT_TRUSTWORTHINESS_THRESHOLD: float = 0.5
+_DEFAULT_FALLBACK_SIMILARITY_THRESHOLD: int = 70
+_DEFAULT_TRUSTWORTHINESS_THRESHOLD: float = 0.5
 
 Query = str
 Context = str
@@ -51,23 +32,31 @@ Prompt = str
 
 
 class BadResponseDetectionConfig(BaseModel):
-    """Configuration for bad response detection functions."""
+    """Configuration for bad response detection functions.
+
+    Used by [`is_bad_response`](#function-is_bad_response) function to which passes values to corresponding downstream validation checks.
+    """
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     # Fallback check config
     fallback_answer: str = Field(
-        default=DEFAULT_FALLBACK_ANSWER, description="Known unhelpful response to compare against"
+        default=_DEFAULT_FALLBACK_ANSWER,
+        description="Known unhelpful response to compare against",
     )
     fallback_similarity_threshold: int = Field(
-        default=DEFAULT_FALLBACK_SIMILARITY_THRESHOLD,
+        default=_DEFAULT_FALLBACK_SIMILARITY_THRESHOLD,
         description="Fuzzy matching similarity threshold (0-100). Higher values mean responses must be more similar to fallback_answer to be considered bad.",
+        ge=0,
+        le=100,
     )
 
     # Untrustworthy check config
     trustworthiness_threshold: float = Field(
-        default=DEFAULT_TRUSTWORTHINESS_THRESHOLD,
+        default=_DEFAULT_TRUSTWORTHINESS_THRESHOLD,
         description="Score threshold (0.0-1.0). Lower values allow less trustworthy responses.",
+        ge=0.0,
+        le=1.0,
     )
     format_prompt: Callable[[Query, Context], Prompt] = Field(
         default=default_format_prompt,
@@ -78,6 +67,8 @@ class BadResponseDetectionConfig(BaseModel):
     unhelpfulness_confidence_threshold: Optional[float] = Field(
         default=None,
         description="Optional confidence threshold (0.0-1.0) for unhelpful classification.",
+        ge=0.0,
+        le=1.0,
     )
 
     # Shared config (for untrustworthiness and unhelpfulness checks)
@@ -87,7 +78,14 @@ class BadResponseDetectionConfig(BaseModel):
     )
 
 
-DEFAULT_CONFIG = BadResponseDetectionConfig()
+# hack to generate better documentation for help.cleanlab.ai
+BadResponseDetectionConfig.__doc__ = f"""
+{BadResponseDetectionConfig.__doc__}
+
+{generate_pydantic_model_docstring(BadResponseDetectionConfig, BadResponseDetectionConfig.__name__)}
+"""
+
+_DEFAULT_CONFIG = BadResponseDetectionConfig()
 
 
 def is_bad_response(
@@ -95,29 +93,28 @@ def is_bad_response(
     *,
     context: Optional[str] = None,
     query: Optional[str] = None,
-    config: Union[BadResponseDetectionConfig, Dict[str, Any]] = DEFAULT_CONFIG,
+    config: Union[BadResponseDetectionConfig, Dict[str, Any]] = _DEFAULT_CONFIG,
 ) -> bool:
     """Run a series of checks to determine if a response is bad.
 
-    If any check detects an issue (i.e. fails), the function returns True, indicating the response is bad.
+    If any check detects an issue (i.e. fails), the function returns `True`, indicating the response is bad.
 
     This function runs three possible validation checks:
     1. **Fallback check**: Detects if response is too similar to a known fallback answer.
     2. **Untrustworthy check**: Assesses response trustworthiness based on the given context and query.
     3. **Unhelpful check**: Predicts if the response adequately answers the query or not, in a useful way.
 
-    Note:
-    Each validation check runs conditionally based on whether the required arguments are provided.
-    As soon as any validation check fails, the function returns True.
+    Note: Each validation check runs conditionally based on whether the required arguments are provided.
+    As soon as any validation check fails, the function returns `True`.
 
     Args:
-        response: The response to check.
-        context: Optional context/documents used for answering. Required for untrustworthy check.
-        query: Optional user question. Required for untrustworthy and unhelpful checks.
-        config: Optional, typed dictionary of configuration parameters. See <_BadReponseConfig> for details.
+        response (str): The response to check.
+        context (str, optional): Optional context/documents used for answering. Required for untrustworthy check.
+        query (str, optional): Optional user question. Required for untrustworthy and unhelpful checks.
+        config (BadResponseDetectionConfig, optional): Optional, configuration parameters for validation checks. See [BadResponseDetectionConfig](#class-badresponsedetectionconfig) for details. If not provided, default values will be used.
 
     Returns:
-        bool: True if any validation check fails, False if all pass.
+        bool: `True` if any validation check fails, `False` if all pass.
     """
     config = BadResponseDetectionConfig.model_validate(config)
 
@@ -162,22 +159,22 @@ def is_bad_response(
 
 def is_fallback_response(
     response: str,
-    fallback_answer: str = DEFAULT_FALLBACK_ANSWER,
-    threshold: int = DEFAULT_FALLBACK_SIMILARITY_THRESHOLD,
+    fallback_answer: str = _DEFAULT_FALLBACK_ANSWER,
+    threshold: int = _DEFAULT_FALLBACK_SIMILARITY_THRESHOLD,
 ) -> bool:
     """Check if a response is too similar to a known fallback answer.
 
     Uses fuzzy string matching to compare the response against a known fallback answer.
-    Returns True if the response is similar enough to be considered unhelpful.
+    Returns `True` if the response is similar enough to the fallback answer to be considered unhelpful.
 
     Args:
-        response: The response to check.
-        fallback_answer: A known unhelpful/fallback response to compare against.
-        threshold: Similarity threshold (0-100). Higher values require more similarity.
-                  Default 70 means responses that are 70% or more similar are considered bad.
+        response (str): The response to check.
+        fallback_answer (str): A known unhelpful/fallback response to compare against.
+        threshold (int): Similarity threshold (0-100) above which a response is considered to match the fallback answer.
+                Higher values require more similarity. Default 70 means responses that are 70% or more similar are considered bad.
 
     Returns:
-        bool: True if the response is too similar to the fallback answer, False otherwise
+        bool: `True` if the response is too similar to the fallback answer, `False` otherwise.
     """
     try:
         from thefuzz import fuzz  # type: ignore
@@ -196,28 +193,28 @@ def is_untrustworthy_response(
     context: str,
     query: str,
     tlm: TLM,
-    trustworthiness_threshold: float = DEFAULT_TRUSTWORTHINESS_THRESHOLD,
+    trustworthiness_threshold: float = _DEFAULT_TRUSTWORTHINESS_THRESHOLD,
     format_prompt: Callable[[str, str], str] = default_format_prompt,
 ) -> bool:
     """Check if a response is untrustworthy.
 
-    Uses TLM to evaluate whether a response is trustworthy given the context and query.
-    Returns True if TLM's trustworthiness score falls below the threshold, indicating
+    Uses [TLM](/tlm) to evaluate whether a response is trustworthy given the context and query.
+    Returns `True` if TLM's trustworthiness score falls below the threshold, indicating
     the response may be incorrect or unreliable.
 
     Args:
-        response: The response to check from the assistant
-        context: The context information available for answering the query
-        query: The user's question or request
-        tlm: The TLM model to use for evaluation
-        trustworthiness_threshold: Score threshold (0.0-1.0). Lower values allow less trustworthy responses.
-                  Default 0.5, meaning responses with scores less than 0.5 are considered untrustworthy.
-        format_prompt: Function that takes (query, context) and returns a formatted prompt string.
-                      Users should provide their RAG app's own prompt formatting function here
-                      to match how their LLM is prompted.
+        response (str): The response to check from the assistant.
+        context (str): The context information available for answering the query.
+        query (str): The user's question or request.
+        tlm (TLM): The TLM model to use for evaluation.
+        trustworthiness_threshold (float): Score threshold (0.0-1.0) under which a response is considered untrustworthy.
+                  Lower values allow less trustworthy responses. Default 0.5 means responses with scores less than 0.5 are considered untrustworthy.
+        format_prompt (Callable[[str, str], str]): Function that takes (query, context) and returns a formatted prompt string.
+                      Users should provide the prompt formatting function for their RAG application here so that the response can
+                      be evaluated using the same prompt that was used to generate the response.
 
     Returns:
-        bool: True if the response is deemed untrustworthy by TLM, False otherwise
+        bool: `True` if the response is deemed untrustworthy by TLM, `False` otherwise.
     """
     try:
         from cleanlab_studio import Studio  # type: ignore[import-untyped]  # noqa: F401
@@ -240,25 +237,25 @@ def is_unhelpful_response(
     tlm: TLM,
     trustworthiness_score_threshold: Optional[float] = None,
 ) -> bool:
-    """Check if a response is unhelpful by asking TLM to evaluate it.
+    """Check if a response is unhelpful by asking [TLM](/tlm) to evaluate it.
 
     Uses TLM to evaluate whether a response is helpful by asking it to make a Yes/No judgment.
     The evaluation considers both the TLM's binary classification of helpfulness and its
-    confidence score. Returns True only if TLM classifies the response as unhelpful AND
+    confidence score. Returns `True` only if TLM classifies the response as unhelpful AND
     is sufficiently confident in that assessment (if a threshold is provided).
 
     Args:
-        response: The response to check
-        query: User query that will be used to evaluate if the response is helpful
-        tlm: The TLM model to use for evaluation
-        trustworthiness_score_threshold: Optional confidence threshold (0.0-1.0)
-                                       If provided and the response is marked as unhelpful,
-                                       the confidence score must exceed this threshold for
+        response (str): The response to check.
+        query (str): User query that will be used to evaluate if the response is helpful.
+        tlm (TLM): The TLM model to use for evaluation.
+        trustworthiness_score_threshold (float, optional): Optional confidence threshold (0.0-1.0).
+                                       If provided and TLM determines the response is unhelpful,
+                                       the TLM confidence score must also exceed this threshold for
                                        the response to be considered truly unhelpful.
 
     Returns:
-        bool: True if TLM determines the response is unhelpful with sufficient confidence,
-              False otherwise
+        bool: `True` if TLM determines the response is unhelpful with sufficient confidence,
+              `False` otherwise.
     """
     try:
         from cleanlab_studio import Studio  # noqa: F401
