@@ -9,35 +9,15 @@ from typing import (
     Callable,
     Dict,
     Optional,
-    Protocol,
-    Sequence,
     Union,
     cast,
-    runtime_checkable,
 )
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from cleanlab_codex.types.tlm import TLM
 from cleanlab_codex.utils.errors import MissingDependencyError
 from cleanlab_codex.utils.prompt import default_format_prompt
-
-
-@runtime_checkable
-class TLM(Protocol):
-    def get_trustworthiness_score(
-        self,
-        prompt: Union[str, Sequence[str]],
-        response: Union[str, Sequence[str]],
-        **kwargs: Any,
-    ) -> Dict[str, Any]: ...
-
-    def prompt(
-        self,
-        prompt: Union[str, Sequence[str]],
-        /,
-        **kwargs: Any,
-    ) -> Dict[str, Any]: ...
-
 
 DEFAULT_FALLBACK_ANSWER: str = (
     "Based on the available information, I cannot provide a complete answer to this question."
