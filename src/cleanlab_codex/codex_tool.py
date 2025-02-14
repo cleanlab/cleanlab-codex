@@ -27,6 +27,12 @@ class CodexTool:
         *,
         fallback_answer: Optional[str] = DEFAULT_FALLBACK_ANSWER,
     ):
+        """Initialize a CodexTool.
+
+        Args:
+            project (Project): The Codex project to use for this tool.
+            fallback_answer (str, optional): The fallback answer to use if the Codex project cannot answer the question. A default will be used if not provided.
+        """
         self._project = project
         self._fallback_answer = fallback_answer
         self._tool_function_schema = pydantic_model_from_function(self._tool_name, self.query)
@@ -40,7 +46,7 @@ class CodexTool:
         *,
         fallback_answer: Optional[str] = DEFAULT_FALLBACK_ANSWER,
     ) -> CodexTool:
-        """Creates a CodexTool from an access key. The CodexTool will use the project ID associated with the access key provided.
+        """Creates a CodexTool from an access key. The CodexTool will use the project associated with the access key provided.
 
         Args:
             access_key (str): The access key for the Codex project.
@@ -89,13 +95,7 @@ class CodexTool:
         """Sets the fallback answer to use if the Codex project cannot answer the question."""
         self._fallback_answer = value
 
-    def query(
-        self,
-        question: Annotated[
-            str,
-            "The query to search in the database. It should match the original user query unless clarification is needed (for instance to account for prior user messages), in which case changes to the query should be minimal.",
-        ],
-    ) -> Optional[str]:
+    def query(self, question: str) -> Optional[str]:
         """Consults a database that contains answers to any possible question. If the answer is not available, this returns None.
 
         Args:
