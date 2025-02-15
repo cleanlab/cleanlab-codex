@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.1a7] - 2025-02-15
+
+### Changed
+
+- Added and edited docstrings to make the auto-generated API reference more clear.
+
 ## [0.0.1a6] - 2025-02-14
 
 ### Changed
@@ -50,7 +56,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Pre-release of the Cleanlab Codex Python client.
 
-[Unreleased]: https://github.com/cleanlab/cleanlab-codex/compare/v0.0.1a6...HEAD
+[Unreleased]: https://github.com/cleanlab/cleanlab-codex/compare/v0.0.1a7...HEAD
+[0.0.1a7]: https://github.com/cleanlab/cleanlab-codex/compare/v0.0.1a6...v0.0.1a7
 [0.0.1a6]: https://github.com/cleanlab/cleanlab-codex/compare/v0.0.1a5...v0.0.1a6
 [0.0.1a5]: https://github.com/cleanlab/cleanlab-codex/compare/v0.0.1a4...v0.0.1a5
 [0.0.1a4]: https://github.com/cleanlab/cleanlab-codex/compare/v0.0.1a3...v0.0.1a4
