@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
-from typing_extensions import Annotated, Any, Optional
+from typing import Any, Optional
+
+from typing_extensions import Annotated
 
 from cleanlab_codex.project import Project
 from cleanlab_codex.utils.errors import MissingDependencyError
