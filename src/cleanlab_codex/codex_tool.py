@@ -2,9 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Optional
-
-from typing_extensions import Annotated
+from typing_extensions import Annotated, Any, Optional
 
 from cleanlab_codex.project import Project
 from cleanlab_codex.utils.errors import MissingDependencyError
@@ -95,7 +93,13 @@ class CodexTool:
         """Sets the fallback answer to use if the Codex project cannot answer the question."""
         self._fallback_answer = value
 
-    def query(self, question: str) -> Optional[str]:
+    def query(
+        self,
+        question: Annotated[
+            str,
+            "The query to search in the database. It should match the original user query unless clarification is needed (for instance to account for prior user messages), in which case changes to the query should be minimal.",
+        ],
+    ) -> Optional[str]:
         """Consults a database that contains answers to any possible question. If the answer is not available, this returns None.
 
         Args:
