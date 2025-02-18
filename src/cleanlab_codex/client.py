@@ -73,6 +73,6 @@ class Client:
 
         Returns:
             list[Organization]: A list of organizations the authenticated user is a member of.
-            See [`Organization`](/reference/python/types.organization#class-organization) for more information.
+            See [`Organization`](/codex/api/python/types.organization#class-organization) for more information.
         """
         return list_organizations(self._client)
