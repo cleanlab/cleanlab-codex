@@ -42,14 +42,14 @@ class MissingProjectError(Exception):
 class Project:
     """Represents a Codex project.
 
-    To integrate a Codex project into your RAG/Agentic system, we recommend using one of our abstractions such as [`CodexTool`](/reference/python/codex_tool).
+    To integrate a Codex project into your RAG/Agentic system, we recommend using one of our abstractions such as [`CodexTool`](/codex/api/python/codex_tool).
     The [`query`](#method-query) method can also be used directly if none of our existing abstractions are sufficient for your use case.
     """
 
     def __init__(self, sdk_client: _Codex, project_id: str, *, verify_existence: bool = True):
         """Initialize the Project. This method is not meant to be used directly.
-        Instead, use the [`Client.get_project()`](/reference/python/client#method-get_project),
-        [`Client.create_project()`](/reference/python/client#method-create_project), or [`Project.from_access_key()`](/reference/python/project#classmethod-from_access_key) methods.
+        Instead, use the [`Client.get_project()`](/codex/api/python/client#method-get_project),
+        [`Client.create_project()`](/codex/api/python/client#method-create_project), or [`Project.from_access_key()`](/codex/api/python/project#classmethod-from_access_key) methods.
 
         Args:
             sdk_client (_Codex): The Codex SDK client to use to interact with the project.
@@ -89,7 +89,7 @@ class Project:
 
     @classmethod
     def create(cls, sdk_client: _Codex, organization_id: str, name: str, description: str | None = None) -> Project:
-        """Create a new Codex project. This method is not meant to be used directly. Instead, use the [`create_project`](/reference/python/client#method-create_project) method on the `Client` class.
+        """Create a new Codex project. This method is not meant to be used directly. Instead, use the [`create_project`](/codex/api/python/client#method-create_project) method on the `Client` class.
 
         Args:
             sdk_client (_Codex): The Codex SDK client to use to create the project. This client must be authenticated with a user-level API key.
@@ -114,7 +114,7 @@ class Project:
 
     def create_access_key(self, name: str, description: str | None = None, expiration: datetime | None = None) -> str:
         """Create a new access key for this project. Must be authenticated with a user-level API key to use this method.
-        See [`Client.create_project()`](/reference/python/client#method-create_project) or [`Client.get_project()`](/reference/python/client#method-get_project).
+        See [`Client.create_project()`](/codex/api/python/client#method-create_project) or [`Client.get_project()`](/codex/api/python/client#method-get_project).
 
         Args:
             name (str): The name of the access key.
@@ -125,7 +125,7 @@ class Project:
             str: The access key token.
 
         Raises:
-            AuthenticationError: If the Project was created from a project-level access key instead of a [Client instance](/reference/python/client#class-client).
+            AuthenticationError: If the Project was created from a project-level access key instead of a [Client instance](/codex/api/python/client#class-client).
         """
         try:
             return self._sdk_client.projects.access_keys.create(
@@ -136,13 +136,13 @@ class Project:
 
     def add_entries(self, entries: list[EntryCreate]) -> None:
         """Add a list of entries to this Codex project. Must be authenticated with a user-level API key to use this method.
-        See [`Client.create_project()`](/reference/python/client#method-create_project) or [`Client.get_project()`](/reference/python/client#method-get_project).
+        See [`Client.create_project()`](/codex/api/python/client#method-create_project) or [`Client.get_project()`](/codex/api/python/client#method-get_project).
 
         Args:
-            entries (list[EntryCreate]): The entries to add to this project. See [`EntryCreate`](/reference/python/types.entry#class-entrycreate).
+            entries (list[EntryCreate]): The entries to add to this project. See [`EntryCreate`](/codex/api/python/types.entry#class-entrycreate).
 
         Raises:
-            AuthenticationError: If the Project was created from a project-level access key instead of a [Client instance](/reference/python/client#class-client).
+            AuthenticationError: If the Project was created from a project-level access key instead of a [Client instance](/codex/api/python/client#class-client).
         """
         try:
             # TODO: implement batch creation of entries in backend and update this function
@@ -170,8 +170,8 @@ class Project:
 
         Returns:
             tuple[Optional[str], Optional[Entry]]: A tuple representing the answer for the query and the existing or new entry in the Codex project.
-                If Codex is able to answer the question, the first element will be the answer returned by Codex and the second element will be the existing [`Entry`](/reference/python/types.entry#class-entry) in the Codex project.
-                If Codex is unable to answer the question, the first element will be `fallback_answer` if provided, otherwise None. The second element will be a new [`Entry`](/reference/python/types.entry#class-entry) in the Codex project.
+                If Codex is able to answer the question, the first element will be the answer returned by Codex and the second element will be the existing [`Entry`](/codex/api/python/types.entry#class-entry) in the Codex project.
+                If Codex is unable to answer the question, the first element will be `fallback_answer` if provided, otherwise None. The second element will be a new [`Entry`](/codex/api/python/types.entry#class-entry) in the Codex project.
         """
         return query_project(
             client=self._sdk_client,
