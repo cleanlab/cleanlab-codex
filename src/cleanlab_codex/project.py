@@ -33,7 +33,7 @@ _ERROR_ADD_ENTRIES = (
 
 
 class MissingProjectError(Exception):
-    """Raised when the project ID does not match any existing project."""
+    """Raised when the project ID or access key does not match any existing project."""
 
     def __str__(self) -> str:
         return "valid project ID or access key is required to authenticate access"
@@ -52,7 +52,7 @@ class Project:
         [`Client.create_project()`](/codex/api/python/client#method-create_project), or [`Project.from_access_key()`](/codex/api/python/project#classmethod-from_access_key) methods.
 
         Args:
-            sdk_client (_Codex): The Codex SDK client to use to interact with the project.
+            sdk_client (Codex): The Codex SDK client to use to interact with the project.
             project_id (str): The ID of the project.
             verify_existence (bool, optional): Whether to verify that the project exists.
         """
@@ -92,10 +92,10 @@ class Project:
         """Create a new Codex project. This method is not meant to be used directly. Instead, use the [`create_project`](/codex/api/python/client#method-create_project) method on the `Client` class.
 
         Args:
-            sdk_client (_Codex): The Codex SDK client to use to create the project. This client must be authenticated with a user-level API key.
+            sdk_client (Codex): The Codex SDK client to use to create the project. This client must be authenticated with a user-level API key.
             organization_id (str): The ID of the organization to create the project in.
             name (str): The name of the project.
-            description (:obj:`str`, optional): The description of the project.
+            description (str, optional): The description of the project.
 
         Returns:
             Project: The created project.
@@ -118,8 +118,8 @@ class Project:
 
         Args:
             name (str): The name of the access key.
-            description (:obj:`str`, optional): The description of the access key.
-            expiration (:obj:`datetime`, optional): The expiration date of the access key. If not provided, the access key will not expire.
+            description (str, optional): The description of the access key.
+            expiration (datetime, optional): The expiration date of the access key. If not provided, the access key will not expire.
 
         Returns:
             str: The access key token.
