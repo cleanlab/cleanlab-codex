@@ -11,4 +11,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Initial release of the `cleanlab-codex` client library.
 
 [Unreleased]: https://github.com/cleanlab/cleanlab-codex/compare/v1.0.0...HEAD
-[0.0.1a1]: https://github.com/cleanlab/cleanlab-codex/compare/267a93300f77c94e215d7697223931e7926cad9e...v1.0.0
+[1.0.0]: https://github.com/cleanlab/cleanlab-codex/compare/267a93300f77c94e215d7697223931e7926cad9e...v1.0.0
