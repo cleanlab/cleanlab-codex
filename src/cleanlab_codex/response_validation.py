@@ -218,7 +218,7 @@ def is_untrustworthy_response(
         bool: `True` if the response is deemed untrustworthy by TLM, `False` otherwise.
     """
     try:
-        from cleanlab_tlm import TLM
+        from cleanlab_tlm import TLM  # noqa: F401
     except ImportError as e:
         raise MissingDependencyError(
             import_name=e.name or "cleanlab_tlm",
@@ -257,7 +257,7 @@ def is_unhelpful_response(
               `False` otherwise.
     """
     try:
-        from cleanlab_tlm import TLM
+        from cleanlab_tlm import TLM  # noqa: F401
     except ImportError as e:
         raise MissingDependencyError(
             import_name=e.name or "cleanlab_tlm",
@@ -300,7 +300,9 @@ def is_unhelpful_response(
         f"{question}"
     )
 
-    output = tlm.get_trustworthiness_score(prompt, response=expected_unhelpful_response, constrain_outputs=["Yes", "No"])
+    output = tlm.get_trustworthiness_score(
+        prompt, response=expected_unhelpful_response, constrain_outputs=["Yes", "No"]
+    )
 
     # Current implementation assumes question is phrased to expect "Yes" for unhelpful responses
     # Changing the question would require restructuring this logic and potentially adjusting

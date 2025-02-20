@@ -111,18 +111,16 @@ def test_is_untrustworthy_response(mock_tlm: Mock) -> None:
     [
         # Scores above threshold indicate unhelpful responses
         (0.9, 0.5, True),  # High score (0.9) > threshold (0.5) -> unhelpful
-        (0.3, 0.5, False), # Low score (0.3) < threshold (0.5) -> helpful
-        (0.5, 0.5, False), # Equal score (0.5) = threshold (0.5) -> helpful
-
+        (0.3, 0.5, False),  # Low score (0.3) < threshold (0.5) -> helpful
+        (0.5, 0.5, False),  # Equal score (0.5) = threshold (0.5) -> helpful
         # Different threshold tests
         (0.8, 0.7, True),  # Score 0.8 > threshold 0.7 -> unhelpful
-        (0.1, 0.3, False), # Score 0.1 < threshold 0.3 -> helpful
-
+        (0.1, 0.3, False),  # Score 0.1 < threshold 0.3 -> helpful
         # Default threshold tests
         (0.4, None, False),  # Below default
         (_DEFAULT_UNHELPFULNESS_CONFIDENCE_THRESHOLD, None, False),  # At default
         (_DEFAULT_UNHELPFULNESS_CONFIDENCE_THRESHOLD + 0.01, None, True),  # Just above default
-        (0.7, None, True),   # Above default
+        (0.7, None, True),  # Above default
     ],
 )
 def test_is_unhelpful_response(
@@ -168,9 +166,7 @@ def test_is_bad_response(
 ) -> None:
     """Test the main is_bad_response function."""
     # Create a new Mock object for get_trustworthiness_score
-    mock_tlm.get_trustworthiness_score = Mock(
-        return_value={"trustworthiness_score": trustworthiness_score}
-    )
+    mock_tlm.get_trustworthiness_score = Mock(return_value={"trustworthiness_score": trustworthiness_score})
     # Set up the second call to return prompt_score
     mock_tlm.get_trustworthiness_score.side_effect = [
         {"trustworthiness_score": trustworthiness_score},  # Should be called by is_untrustworthy_response
