@@ -25,6 +25,7 @@ _DEFAULT_FALLBACK_ANSWER: str = (
 )
 _DEFAULT_FALLBACK_SIMILARITY_THRESHOLD: int = 70
 _DEFAULT_TRUSTWORTHINESS_THRESHOLD: float = 0.5
+_DEFAULT_UNHELPFULNESS_CONFIDENCE_THRESHOLD: float = 0.5
 
 Query = str
 Context = str
@@ -64,9 +65,9 @@ class BadResponseDetectionConfig(BaseModel):
     )
 
     # Unhelpful check config
-    unhelpfulness_confidence_threshold: Optional[float] = Field(
-        default=None,
-        description="Optional confidence threshold (0.0-1.0) for unhelpful classification.",
+    unhelpfulness_confidence_threshold: float = Field(
+        default=_DEFAULT_UNHELPFULNESS_CONFIDENCE_THRESHOLD,
+        description="Confidence threshold (0.0-1.0) for unhelpful classification.",
         ge=0.0,
         le=1.0,
     )
@@ -217,12 +218,12 @@ def is_untrustworthy_response(
         bool: `True` if the response is deemed untrustworthy by TLM, `False` otherwise.
     """
     try:
-        from cleanlab_studio import Studio  # type: ignore[import-untyped]  # noqa: F401
+        from cleanlab_tlm import TLM  # type: ignore[import-untyped]  # noqa: F401
     except ImportError as e:
         raise MissingDependencyError(
-            import_name=e.name or "cleanlab_studio",
-            package_name="cleanlab-studio",
-            package_url="https://github.com/cleanlab/cleanlab-studio",
+            import_name=e.name or "cleanlab_tlm",
+            package_name="cleanlab-tlm",
+            package_url="https://github.com/cleanlab/cleanlab-tlm",
         ) from e
 
     prompt = format_prompt(query, context)
@@ -235,7 +236,7 @@ def is_unhelpful_response(
     response: str,
     query: str,
     tlm: TLM,
-    trustworthiness_score_threshold: Optional[float] = None,
+    trustworthiness_score_threshold: float = _DEFAULT_UNHELPFULNESS_CONFIDENCE_THRESHOLD,
 ) -> bool:
     """Check if a response is unhelpful by asking [TLM](/tlm) to evaluate it.
 
@@ -248,7 +249,7 @@ def is_unhelpful_response(
         response (str): The response to check.
         query (str): User query that will be used to evaluate if the response is helpful.
         tlm (TLM): The TLM model to use for evaluation.
-        trustworthiness_score_threshold (float, optional): Optional confidence threshold (0.0-1.0).
+        trustworthiness_score_threshold (float): Confidence threshold in the range of (0.0-1.0).
                                        If provided and TLM determines the response is unhelpful,
                                        the TLM confidence score must also exceed this threshold for
                                        the response to be considered truly unhelpful.
@@ -258,17 +259,24 @@ def is_unhelpful_response(
               `False` otherwise.
     """
     try:
-        from cleanlab_studio import Studio  # noqa: F401
+        from cleanlab_tlm import TLM  # noqa: F401
     except ImportError as e:
         raise MissingDependencyError(
-            import_name=e.name or "cleanlab_studio",
-            package_name="cleanlab-studio",
-            package_url="https://github.com/cleanlab/cleanlab-studio",
+            import_name=e.name or "cleanlab_tlm",
+            package_name="cleanlab-tlm",
+            package_url="https://github.com/cleanlab/cleanlab-tlm",
         ) from e
 
-    # If editing `question`, make sure `expected_unhelpful_response` is still correct:
-    # - When asking "is helpful?" -> "no" means unhelpful
-    # - When asking "is unhelpful?" -> "yes" means unhelpful
+    # IMPORTANT: The current implementation couples three things that must stay in sync:
+    # 1. The question phrasing ("is unhelpful?")
+    # 2. The expected_unhelpful_response ("Yes")
+    # 3. The threshold logic (score > threshold)
+    #
+    # If changing the question to "is helpful?", you would need to:
+    # 1. Change expected_unhelpful_response to "No"
+    # 2. Invert the threshold logic to: score > threshold
+    # 3. Consider adjusting the default threshold value since confidence scores
+    #    might have different distributions for positive vs negative questions
     question = (
         "Does the AI Assistant Response seem unhelpful? "
         "Things that are not helpful include answers that:\n"
@@ -279,7 +287,7 @@ def is_unhelpful_response(
         "- Are irrelevant to the question\n"
         "Answer Yes/No only."
     )
-    expected_unhelpful_response = "yes"
+    expected_unhelpful_response = "Yes"
 
     prompt = (
         "Consider the following User Query and AI Assistant Response.\n\n"
@@ -288,9 +296,9 @@ def is_unhelpful_response(
         f"{question}"
     )
 
-    output = tlm.prompt(prompt, constrain_outputs=["Yes", "No"])
-    response_marked_unhelpful = output["response"].lower() == expected_unhelpful_response
-    is_trustworthy = trustworthiness_score_threshold is None or (
-        output["trustworthiness_score"] > trustworthiness_score_threshold
-    )
-    return response_marked_unhelpful and is_trustworthy
+    output = tlm.get_trustworthiness_score(prompt, response=expected_unhelpful_response, constrain_outputs=["Yes", "No"])
+
+    # Current implementation assumes question is phrased to expect "Yes" for unhelpful responses
+    # Changing the question would require restructuring this logic and potentially adjusting
+    # the threshold value in BadResponseDetectionConfig
+    return output["trustworthiness_score"] > trustworthiness_score_threshold

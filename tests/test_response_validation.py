@@ -8,6 +8,7 @@ from unittest.mock import Mock, patch
 import pytest
 
 from cleanlab_codex.response_validation import (
+    _DEFAULT_UNHELPFULNESS_CONFIDENCE_THRESHOLD,
     is_bad_response,
     is_fallback_response,
     is_unhelpful_response,
@@ -106,59 +107,74 @@ def test_is_untrustworthy_response(mock_tlm: Mock) -> None:
 
 
 @pytest.mark.parametrize(
-    ("response", "tlm_response", "tlm_score", "threshold", "expected"),
+    ("tlm_score", "threshold", "expected_unhelpful"),
     [
-        # Test helpful response
-        (GOOD_RESPONSE, "No", 0.9, 0.5, False),
-        # Test unhelpful response
-        (BAD_RESPONSE, "Yes", 0.9, 0.5, True),
-        # Test unhelpful response but low trustworthiness score
-        (BAD_RESPONSE, "Yes", 0.3, 0.5, False),
-        # Test without threshold - Yes prediction
-        (BAD_RESPONSE, "Yes", 0.3, None, True),
-        (GOOD_RESPONSE, "Yes", 0.3, None, True),
-        # Test without threshold - No prediction
-        (BAD_RESPONSE, "No", 0.3, None, False),
-        (GOOD_RESPONSE, "No", 0.3, None, False),
+        # Scores above threshold indicate unhelpful responses
+        (0.9, 0.5, True),  # High score (0.9) > threshold (0.5) -> unhelpful
+        (0.3, 0.5, False), # Low score (0.3) < threshold (0.5) -> helpful
+        (0.5, 0.5, False), # Equal score (0.5) = threshold (0.5) -> helpful
+        
+        # Different threshold tests
+        (0.8, 0.7, True),  # Score 0.8 > threshold 0.7 -> unhelpful
+        (0.1, 0.3, False), # Score 0.1 < threshold 0.3 -> helpful
+        
+        # Default threshold tests
+        (0.4, None, False),  # Below default
+        (_DEFAULT_UNHELPFULNESS_CONFIDENCE_THRESHOLD, None, False),  # At default
+        (_DEFAULT_UNHELPFULNESS_CONFIDENCE_THRESHOLD + 0.01, None, True),  # Just above default
+        (0.7, None, True),   # Above default
     ],
 )
 def test_is_unhelpful_response(
     mock_tlm: Mock,
-    response: str,
-    tlm_response: str,
     tlm_score: float,
     threshold: float | None,
     *,
-    expected: bool,
+    expected_unhelpful: bool,
 ) -> None:
-    """Test unhelpful response detection."""
-    mock_tlm.response = tlm_response
+    """Test unhelpful response detection.
+    
+    A response is considered unhelpful if its trustworthiness score is ABOVE the threshold.
+    This may seem counter-intuitive, but higher scores indicate more similar responses to
+    known unhelpful patterns.
+    """
     mock_tlm.trustworthiness_score = tlm_score
-    assert is_unhelpful_response(response, QUERY, mock_tlm, trustworthiness_score_threshold=threshold) is expected
+    kwargs: dict[str, float | None] = {}
+    if threshold is not None:
+        kwargs["trustworthiness_score_threshold"] = threshold
+    
+    # The response content doesn't affect the result, only the score matters
+    result = is_unhelpful_response(GOOD_RESPONSE, QUERY, mock_tlm, **kwargs)
+    assert result is expected_unhelpful
 
 
 @pytest.mark.parametrize(
-    ("response", "trustworthiness_score", "prompt_response", "prompt_score", "expected"),
+    ("response", "trustworthiness_score", "prompt_score", "expected"),
     [
         # Good response passes all checks
-        (GOOD_RESPONSE, 0.8, "No", 0.9, False),
+        (GOOD_RESPONSE, 0.8, 0.2, False),
         # Bad response fails at least one check
-        (BAD_RESPONSE, 0.3, "Yes", 0.9, True),
+        (BAD_RESPONSE, 0.3, 0.9, True),
     ],
 )
 def test_is_bad_response(
     mock_tlm: Mock,
     response: str,
     trustworthiness_score: float,
-    prompt_response: str,
     prompt_score: float,
     *,
     expected: bool,
 ) -> None:
     """Test the main is_bad_response function."""
-    mock_tlm.trustworthiness_score = trustworthiness_score
-    mock_tlm.response = prompt_response
-    mock_tlm.trustworthiness_score = prompt_score
+    # Create a new Mock object for get_trustworthiness_score
+    mock_tlm.get_trustworthiness_score = Mock(
+        return_value={"trustworthiness_score": trustworthiness_score}
+    )
+    # Set up the second call to return prompt_score
+    mock_tlm.get_trustworthiness_score.side_effect = [
+        {"trustworthiness_score": trustworthiness_score},  # Should be called by is_untrustworthy_response
+        {"trustworthiness_score": prompt_score},  # Should be called by is_unhelpful_response
+    ]
 
     assert (
         is_bad_response(
@@ -172,19 +188,20 @@ def test_is_bad_response(
 
 
 @pytest.mark.parametrize(
-    ("response", "fuzz_ratio", "prompt_response", "prompt_score", "query", "tlm", "expected"),
+    ("response", "fuzz_ratio", "prompt_score", "query", "tlm", "expected"),
     [
         # Test with only fallback check (no context/query/tlm)
-        (BAD_RESPONSE, 90, None, None, None, None, True),
+        (BAD_RESPONSE, 90, None, None, None, True),
         # Test with fallback and unhelpful checks (no context)
-        (GOOD_RESPONSE, 30, "No", 0.9, QUERY, "mock_tlm", False),
+        (GOOD_RESPONSE, 30, 0.1, QUERY, "mock_tlm", False),
+        # Test with fallback and unhelpful checks (with context) (prompt_score is above threshold)
+        (GOOD_RESPONSE, 30, 0.6, QUERY, "mock_tlm", True),
     ],
 )
 def test_is_bad_response_partial_inputs(
     mock_tlm: Mock,
     response: str,
     fuzz_ratio: int,
-    prompt_response: str,
     prompt_score: float,
     query: str,
     tlm: Mock,
@@ -195,8 +212,7 @@ def test_is_bad_response_partial_inputs(
     mock_fuzz = Mock()
     mock_fuzz.partial_ratio.return_value = fuzz_ratio
     with patch.dict("sys.modules", {"thefuzz": Mock(fuzz=mock_fuzz)}):
-        if prompt_response is not None:
-            mock_tlm.response = prompt_response
+        if prompt_score is not None:
             mock_tlm.trustworthiness_score = prompt_score
             tlm = mock_tlm
 
