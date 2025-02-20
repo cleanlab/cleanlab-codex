@@ -113,11 +113,11 @@ def test_is_untrustworthy_response(mock_tlm: Mock) -> None:
         (0.9, 0.5, True),  # High score (0.9) > threshold (0.5) -> unhelpful
         (0.3, 0.5, False), # Low score (0.3) < threshold (0.5) -> helpful
         (0.5, 0.5, False), # Equal score (0.5) = threshold (0.5) -> helpful
-        
+
         # Different threshold tests
         (0.8, 0.7, True),  # Score 0.8 > threshold 0.7 -> unhelpful
         (0.1, 0.3, False), # Score 0.1 < threshold 0.3 -> helpful
-        
+
         # Default threshold tests
         (0.4, None, False),  # Below default
         (_DEFAULT_UNHELPFULNESS_CONFIDENCE_THRESHOLD, None, False),  # At default
@@ -133,7 +133,7 @@ def test_is_unhelpful_response(
     expected_unhelpful: bool,
 ) -> None:
     """Test unhelpful response detection.
-    
+
     A response is considered unhelpful if its trustworthiness score is ABOVE the threshold.
     This may seem counter-intuitive, but higher scores indicate more similar responses to
     known unhelpful patterns.
@@ -141,8 +141,8 @@ def test_is_unhelpful_response(
     mock_tlm.trustworthiness_score = tlm_score
     kwargs: dict[str, float | None] = {}
     if threshold is not None:
-        kwargs["trustworthiness_score_threshold"] = threshold
-    
+        kwargs["confidence_score_threshold"] = threshold
+
     # The response content doesn't affect the result, only the score matters
     result = is_unhelpful_response(GOOD_RESPONSE, QUERY, mock_tlm, **kwargs)
     assert result is expected_unhelpful

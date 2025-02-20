@@ -151,7 +151,7 @@ def is_bad_response(
                 response=response,
                 query=cast(str, query),
                 tlm=cast(TLM, config.tlm),
-                trustworthiness_score_threshold=cast(float, config.unhelpfulness_confidence_threshold),
+                confidence_score_threshold=cast(float, config.unhelpfulness_confidence_threshold),
             )
         )
 
@@ -236,7 +236,7 @@ def is_unhelpful_response(
     response: str,
     query: str,
     tlm: TLM,
-    trustworthiness_score_threshold: float = _DEFAULT_UNHELPFULNESS_CONFIDENCE_THRESHOLD,
+    confidence_score_threshold: float = _DEFAULT_UNHELPFULNESS_CONFIDENCE_THRESHOLD,
 ) -> bool:
     """Check if a response is unhelpful by asking [TLM](/tlm) to evaluate it.
 
@@ -249,10 +249,8 @@ def is_unhelpful_response(
         response (str): The response to check.
         query (str): User query that will be used to evaluate if the response is helpful.
         tlm (TLM): The TLM model to use for evaluation.
-        trustworthiness_score_threshold (float): Confidence threshold in the range of (0.0-1.0).
-                                       If provided and TLM determines the response is unhelpful,
-                                       the TLM confidence score must also exceed this threshold for
-                                       the response to be considered truly unhelpful.
+        confidence_score_threshold (float): Confidence threshold (0.0-1.0) above which a response is considered unhelpful.
+                                       E.g. if confidence_score_threshold is 0.5, then responses with scores higher than 0.5 are considered unhelpful.
 
     Returns:
         bool: `True` if TLM determines the response is unhelpful with sufficient confidence,
@@ -273,10 +271,16 @@ def is_unhelpful_response(
     # 3. The threshold logic (score > threshold)
     #
     # If changing the question to "is helpful?", you would need to:
-    # 1. Change expected_unhelpful_response to "No"
-    # 2. Invert the threshold logic to: score > threshold
-    # 3. Consider adjusting the default threshold value since confidence scores
-    #    might have different distributions for positive vs negative questions
+    # If changing the question to "is helpful?", you would need to either:
+    # Option A:
+    #   1. Change expected_unhelpful_response to "No"
+    #   2. Keep the threshold logic as: score > threshold
+    # Option B:
+    #   1. Keep expected_unhelpful_response as "Yes"
+    #   2. Invert the threshold logic to: score < threshold
+    # In either case:
+    #   Consider adjusting the default threshold value since confidence scores
+    #      might have different distributions for positive vs negative questions
     question = (
         "Does the AI Assistant Response seem unhelpful? "
         "Things that are not helpful include answers that:\n"
@@ -301,4 +305,4 @@ def is_unhelpful_response(
     # Current implementation assumes question is phrased to expect "Yes" for unhelpful responses
     # Changing the question would require restructuring this logic and potentially adjusting
     # the threshold value in BadResponseDetectionConfig
-    return output["trustworthiness_score"] > trustworthiness_score_threshold
+    return output["trustworthiness_score"] > confidence_score_threshold
