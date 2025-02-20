@@ -139,12 +139,13 @@ def test_is_unhelpful_response(
     known unhelpful patterns.
     """
     mock_tlm.trustworthiness_score = tlm_score
-    kwargs: dict[str, float | None] = {}
-    if threshold is not None:
-        kwargs["confidence_score_threshold"] = threshold
 
     # The response content doesn't affect the result, only the score matters
-    result = is_unhelpful_response(GOOD_RESPONSE, QUERY, mock_tlm, **kwargs)
+    if threshold is not None:
+        result = is_unhelpful_response(GOOD_RESPONSE, QUERY, mock_tlm, confidence_score_threshold=threshold)
+    else:
+        result = is_unhelpful_response(GOOD_RESPONSE, QUERY, mock_tlm)
+
     assert result is expected_unhelpful
 
 

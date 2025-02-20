@@ -151,7 +151,7 @@ def is_bad_response(
                 response=response,
                 query=cast(str, query),
                 tlm=cast(TLM, config.tlm),
-                confidence_score_threshold=cast(float, config.unhelpfulness_confidence_threshold),
+                confidence_score_threshold=config.unhelpfulness_confidence_threshold,
             )
         )
 
@@ -218,7 +218,7 @@ def is_untrustworthy_response(
         bool: `True` if the response is deemed untrustworthy by TLM, `False` otherwise.
     """
     try:
-        from cleanlab_tlm import TLM  # type: ignore[import-untyped]  # noqa: F401
+        from cleanlab_tlm import TLM
     except ImportError as e:
         raise MissingDependencyError(
             import_name=e.name or "cleanlab_tlm",
@@ -257,7 +257,7 @@ def is_unhelpful_response(
               `False` otherwise.
     """
     try:
-        from cleanlab_tlm import TLM  # noqa: F401
+        from cleanlab_tlm import TLM
     except ImportError as e:
         raise MissingDependencyError(
             import_name=e.name or "cleanlab_tlm",
@@ -305,4 +305,4 @@ def is_unhelpful_response(
     # Current implementation assumes question is phrased to expect "Yes" for unhelpful responses
     # Changing the question would require restructuring this logic and potentially adjusting
     # the threshold value in BadResponseDetectionConfig
-    return output["trustworthiness_score"] > confidence_score_threshold
+    return float(output["trustworthiness_score"]) > confidence_score_threshold
