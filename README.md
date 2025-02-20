@@ -15,6 +15,12 @@ Install the package:
 pip install cleanlab-codex
 ```
 
+To install Cleanlab Codex with support for [CleanLab's Trustworthy Langugage Model (TLM)](https://help.cleanlab.ai/tlm/) for response trustworthiness scoring, add `tlm` as an optional dependency:
+
+```console
+pip install cleanlab-codex[tlm]
+```
+
 Integrating Codex into your RAG application as a tool is as simple as:
 
 ```python

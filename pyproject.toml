@@ -29,6 +29,9 @@ dependencies = [
   "pydantic>=2.0.0, <3",
 ]
 
+[project.optional-dependencies]
+tlm = ["cleanlab-tlm"]
+
 [project.urls]
 Documentation = "https://github.com/cleanlab/cleanlab-codex#readme"
 Issues = "https://github.com/cleanlab/cleanlab-codex/issues"
