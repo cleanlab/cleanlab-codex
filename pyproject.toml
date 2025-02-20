@@ -43,7 +43,7 @@ extra-dependencies = [
   "pytest",
   "llama-index-core",
   "smolagents",
-  "cleanlab-studio",
+  "cleanlab-tlm",
   "thefuzz",
   "langchain-core",
 ]
@@ -56,7 +56,7 @@ allow-direct-references = true
 extra-dependencies = [
   "llama-index-core",
   "smolagents; python_version >= '3.10'",
-  "cleanlab-studio",
+  "cleanlab-tlm",
   "thefuzz",
   "langchain-core",
 ]
