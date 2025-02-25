@@ -27,6 +27,7 @@ classifiers = [
 dependencies = [
   "codex-sdk==0.1.0a9",
   "pydantic>=2.0.0, <3",
+  "cleanlab-tlm",
 ]
 
 [project.urls]
