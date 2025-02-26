@@ -70,7 +70,7 @@ class Project:
 
     @classmethod
     def from_access_key(cls, access_key: str) -> Project:
-        """Initialize a Project from a [project-level access key](/codex/web_tutorials/getting_started/#access-keys).
+        """Initialize a Project from a [project-level access key](/codex/web_tutorials/create_project/#access-keys).
 
         Args:
             access_key (str): The access key for authenticating project access.
