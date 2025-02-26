@@ -17,7 +17,7 @@ class Client:
     """
     Client for interacting with Cleanlab Codex. In order to use this client, make sure you have an account at [codex.cleanlab.ai](https://codex.cleanlab.ai).
 
-    We recommend using the [Web UI](https://codex.cleanlab.ai) to [set up Codex projects](/codex/sme_tutorials/getting_started), but you can also use this client to programmatically set up Codex projects.
+    We recommend using the [Web UI](https://codex.cleanlab.ai) to [set up Codex projects](/codex/web_tutorials/getting_started), but you can also use this client to programmatically set up Codex projects.
     """
 
     def __init__(self, api_key: str | None = None, organization_id: Optional[str] = None):
