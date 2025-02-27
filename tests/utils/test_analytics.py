@@ -1,4 +1,3 @@
-from pydantic import ValidationError
 from cleanlab_codex.utils.analytics import AnalyticsMetadata
 
 

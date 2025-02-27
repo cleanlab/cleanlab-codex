@@ -177,7 +177,7 @@ class Project:
         """
         if not analytics_metadata:
             analytics_metadata = AnalyticsMetadata(integration_type="backup")
-        
+
         return self._query_project(
             question=question,
             fallback_answer=fallback_answer,

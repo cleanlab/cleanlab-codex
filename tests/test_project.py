@@ -10,7 +10,6 @@ from codex.types.projects.entry import Entry as SDKEntry
 
 from cleanlab_codex.project import MissingProjectError, Project
 from cleanlab_codex.types.entry import EntryCreate
-from cleanlab_codex.utils.analytics import AnalyticsMetadata
 
 FAKE_PROJECT_ID = str(uuid.uuid4())
 FAKE_USER_ID = "Test User"

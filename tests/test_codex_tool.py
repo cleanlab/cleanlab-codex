@@ -5,11 +5,11 @@ from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pytest
-from cleanlab_codex.utils.analytics import AnalyticsMetadata
 from langchain_core.tools.structured import StructuredTool
 from llama_index.core.tools import FunctionTool
 
 from cleanlab_codex.codex_tool import CodexTool
+from cleanlab_codex.utils.analytics import AnalyticsMetadata
 from cleanlab_codex.utils.errors import MissingDependencyError
 
 
