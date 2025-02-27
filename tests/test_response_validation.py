@@ -2,13 +2,14 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, Sequence, Union
-from unittest.mock import Mock, patch
+from typing import Callable
+from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 
 from cleanlab_codex.response_validation import (
     _DEFAULT_UNHELPFULNESS_CONFIDENCE_THRESHOLD,
+    MissingAuthError,
     is_bad_response,
     is_fallback_response,
     is_unhelpful_response,
@@ -20,48 +21,7 @@ GOOD_RESPONSE = "This is a helpful and specific response that answers the questi
 BAD_RESPONSE = "Based on the available information, I cannot provide a complete answer."
 QUERY = "What is the capital of France?"
 CONTEXT = "Paris is the capital and largest city of France."
-
-
-class MockTLM(Mock):
-    _trustworthiness_score: float = 0.8
-    _response: str = "No"
-
-    @property
-    def trustworthiness_score(self) -> float:
-        return self._trustworthiness_score
-
-    @trustworthiness_score.setter
-    def trustworthiness_score(self, value: float) -> None:
-        self._trustworthiness_score = value
-
-    @property
-    def response(self) -> str:
-        return self._response
-
-    @response.setter
-    def response(self, value: str) -> None:
-        self._response = value
-
-    def get_trustworthiness_score(
-        self,
-        prompt: Union[str, Sequence[str]],  # noqa: ARG002
-        response: Union[str, Sequence[str]],  # noqa: ARG002
-        **kwargs: Any,  # noqa: ARG002
-    ) -> Dict[str, Any]:
-        return {"trustworthiness_score": self._trustworthiness_score}
-
-    def prompt(
-        self,
-        prompt: Union[str, Sequence[str]],  # noqa: ARG002
-        /,
-        **kwargs: Any,  # noqa: ARG002
-    ) -> Dict[str, Any]:
-        return {"response": self._response, "trustworthiness_score": self._trustworthiness_score}
-
-
-@pytest.fixture
-def mock_tlm() -> MockTLM:
-    return MockTLM()
+DUMMY_ACCESS_KEY = "sk-1-EMOh6UrRo7exTEbEi8_azzACAEdtNiib2LLa1IGo6kA"
 
 
 @pytest.mark.parametrize(
@@ -95,15 +55,25 @@ def test_is_fallback_response(
     assert is_fallback_response(response, **kwargs) is expected  # type: ignore
 
 
-def test_is_untrustworthy_response(mock_tlm: Mock) -> None:
+def test_is_untrustworthy_response(mock_client_from_access_key_tlm: MagicMock) -> None:
     """Test untrustworthy response detection."""
     # Test trustworthy response
-    mock_tlm.trustworthiness_score = 0.8
-    assert is_untrustworthy_response(GOOD_RESPONSE, CONTEXT, QUERY, mock_tlm, trustworthiness_threshold=0.5) is False
+    mock_client_from_access_key_tlm.tlm.score.return_value = {"trustworthiness_score": 0.8}
+    assert (
+        is_untrustworthy_response(
+            GOOD_RESPONSE, CONTEXT, QUERY, tlm_options=None, trustworthiness_threshold=0.5, codex_key=DUMMY_ACCESS_KEY
+        )
+        is False
+    )
 
     # Test untrustworthy response
-    mock_tlm.trustworthiness_score = 0.3
-    assert is_untrustworthy_response(BAD_RESPONSE, CONTEXT, QUERY, mock_tlm, trustworthiness_threshold=0.5) is True
+    mock_client_from_access_key_tlm.tlm.score.return_value = {"trustworthiness_score": 0.3}
+    assert (
+        is_untrustworthy_response(
+            BAD_RESPONSE, CONTEXT, QUERY, tlm_options=None, trustworthiness_threshold=0.5, codex_key=DUMMY_ACCESS_KEY
+        )
+        is True
+    )
 
 
 @pytest.mark.parametrize(
@@ -124,7 +94,7 @@ def test_is_untrustworthy_response(mock_tlm: Mock) -> None:
     ],
 )
 def test_is_unhelpful_response(
-    mock_tlm: Mock,
+    mock_client_from_access_key_tlm: MagicMock,
     tlm_score: float,
     threshold: float | None,
     *,
@@ -136,13 +106,15 @@ def test_is_unhelpful_response(
     This may seem counter-intuitive, but higher scores indicate more similar responses to
     known unhelpful patterns.
     """
-    mock_tlm.trustworthiness_score = tlm_score
+    mock_client_from_access_key_tlm.tlm.score.return_value = {"trustworthiness_score": tlm_score}
 
     # The response content doesn't affect the result, only the score matters
     if threshold is not None:
-        result = is_unhelpful_response(GOOD_RESPONSE, QUERY, mock_tlm, confidence_score_threshold=threshold)
+        result = is_unhelpful_response(
+            GOOD_RESPONSE, QUERY, tlm_options=None, confidence_score_threshold=threshold, codex_key=DUMMY_ACCESS_KEY
+        )
     else:
-        result = is_unhelpful_response(GOOD_RESPONSE, QUERY, mock_tlm)
+        result = is_unhelpful_response(GOOD_RESPONSE, QUERY, tlm_options=None, codex_key=DUMMY_ACCESS_KEY)
 
     assert result is expected_unhelpful
 
@@ -157,7 +129,7 @@ def test_is_unhelpful_response(
     ],
 )
 def test_is_bad_response(
-    mock_tlm: Mock,
+    mock_client_from_access_key_tlm: MagicMock,
     response: str,
     trustworthiness_score: float,
     prompt_score: float,
@@ -166,42 +138,33 @@ def test_is_bad_response(
 ) -> None:
     """Test the main is_bad_response function."""
     # Create a new Mock object for get_trustworthiness_score
-    mock_tlm.get_trustworthiness_score = Mock(return_value={"trustworthiness_score": trustworthiness_score})
+    mock_client_from_access_key_tlm.tlm.score.return_value = {"trustworthiness_score": trustworthiness_score}
     # Set up the second call to return prompt_score
-    mock_tlm.get_trustworthiness_score.side_effect = [
+    mock_client_from_access_key_tlm.tlm.score.side_effect = [
         {"trustworthiness_score": trustworthiness_score},  # Should be called by is_untrustworthy_response
         {"trustworthiness_score": prompt_score},  # Should be called by is_unhelpful_response
     ]
 
-    assert (
-        is_bad_response(
-            response,
-            context=CONTEXT,
-            query=QUERY,
-            config={"tlm": mock_tlm},
-        )
-        is expected
-    )
+    assert is_bad_response(response, context=CONTEXT, query=QUERY, config={"codex_key": DUMMY_ACCESS_KEY}) is expected
 
 
 @pytest.mark.parametrize(
-    ("response", "fuzz_ratio", "prompt_score", "query", "tlm", "expected"),
+    ("response", "fuzz_ratio", "prompt_score", "query", "expected"),
     [
         # Test with only fallback check (no context/query/tlm)
-        (BAD_RESPONSE, 90, None, None, None, True),
+        (BAD_RESPONSE, 90, None, None, True),
         # Test with fallback and unhelpful checks (no context)
-        (GOOD_RESPONSE, 30, 0.1, QUERY, "mock_tlm", False),
+        (GOOD_RESPONSE, 30, 0.1, QUERY, False),
         # Test with fallback and unhelpful checks (with context) (prompt_score is above threshold)
-        (GOOD_RESPONSE, 30, 0.6, QUERY, "mock_tlm", True),
+        (GOOD_RESPONSE, 30, 0.6, QUERY, True),
     ],
 )
 def test_is_bad_response_partial_inputs(
-    mock_tlm: Mock,
+    mock_client_from_access_key_tlm: MagicMock,
     response: str,
     fuzz_ratio: int,
     prompt_score: float,
     query: str,
-    tlm: Mock,
     *,
     expected: bool,
 ) -> None:
@@ -210,14 +173,67 @@ def test_is_bad_response_partial_inputs(
     mock_fuzz.partial_ratio.return_value = fuzz_ratio
     with patch.dict("sys.modules", {"thefuzz": Mock(fuzz=mock_fuzz)}):
         if prompt_score is not None:
-            mock_tlm.trustworthiness_score = prompt_score
-            tlm = mock_tlm
+            mock_client_from_access_key_tlm.tlm.score.return_value = {"trustworthiness_score": prompt_score}
 
         assert (
             is_bad_response(
                 response,
                 query=query,
-                config={"tlm": tlm},
+                config={"codex_key": DUMMY_ACCESS_KEY},
             )
             is expected
         )
+
+
+@pytest.mark.parametrize(
+    "method",
+    [
+        lambda: is_unhelpful_response(response="", query=""),
+        lambda: is_untrustworthy_response(response="", context="", query=""),
+    ],
+)
+def test_tlm_access_with_no_access_key_and_no_auth(
+    method: Callable[[], bool],
+) -> None:
+    """Test that attempting to access is_unhelpful_response and is_untrustworthy_response without a valid key fails."""
+    with pytest.raises(
+        MissingAuthError,
+        match="A valid Codex API key or access key must be provided when using the TLM for untrustworthy or unhelpfulness checks.",
+    ):
+        method()
+
+
+@pytest.mark.parametrize(
+    "method",
+    [
+        lambda key: is_unhelpful_response(response="", query="", codex_key=key),
+        lambda key: is_untrustworthy_response(response="", context="", query="", codex_key=key),
+    ],
+)
+def test_tlm_access_with_bad_api_key(
+    method: Callable[[str], bool],
+) -> None:
+    """Test that attempting to access is_unhelpful_response and is_untrustworthy_response without a valid key fails."""
+    with pytest.raises(
+        MissingAuthError,
+        match="A valid Codex API key or access key must be provided when using the TLM for untrustworthy or unhelpfulness checks.",
+    ):
+        method("MY-API-KEY")
+
+
+@pytest.mark.parametrize(
+    "method",
+    [
+        lambda key: is_unhelpful_response(response="", query="", codex_key=key),
+        lambda key: is_untrustworthy_response(response="", context="", query="", codex_key=key),
+    ],
+)
+def test_tlm_access_with_bad_access_key(
+    method: Callable[[str], bool],
+) -> None:
+    """Test that attempting to access is_unhelpful_response and is_untrustworthy_response without a valid key fails."""
+    with pytest.raises(
+        MissingAuthError,
+        match="A valid Codex API key or access key must be provided when using the TLM for untrustworthy or unhelpfulness checks.",
+    ):
+        method(DUMMY_ACCESS_KEY)
