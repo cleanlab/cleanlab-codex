@@ -18,3 +18,11 @@ def mock_client_from_api_key() -> Generator[MagicMock, None, None]:
         mock_client = MagicMock()
         mock_init.return_value = mock_client
         yield mock_client
+
+
+@pytest.fixture
+def mock_client_from_access_key_tlm() -> Generator[MagicMock, None, None]:
+    with patch("cleanlab_codex.response_validation.client_from_access_key") as mock_init:
+        mock_client = MagicMock()
+        mock_init.return_value = mock_client
+        yield mock_client

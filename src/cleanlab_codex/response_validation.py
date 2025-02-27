@@ -5,26 +5,35 @@ Validation functions for evaluating LLM responses and determining if they should
 from __future__ import annotations
 
 from typing import (
+    TYPE_CHECKING as _TYPE_CHECKING,
+)
+from typing import (
     Any,
     Callable,
     Dict,
     Optional,
     Union,
     cast,
-    TYPE_CHECKING as _TYPE_CHECKING,
 )
 
+from codex import AuthenticationError, BadRequestError
 from pydantic import BaseModel, ConfigDict, Field
 
+from cleanlab_codex.internal.sdk_client import (
+    MissingAuthKeyError,
+    client_from_access_key,
+    client_from_api_key,
+    is_access_key,
+)
 from cleanlab_codex.internal.utils import generate_pydantic_model_docstring
-from cleanlab_codex.internal.sdk_client import client_from_access_key, client_from_api_key, MissingAuthKeyError, is_access_key
 from cleanlab_codex.utils.errors import MissingDependencyError
 from cleanlab_codex.utils.prompt import default_format_prompt
 
-from cleanlab_tlm.tlm import TlmOptions
-
 if _TYPE_CHECKING:
+    from cleanlab_tlm.tlm import TLMOptions
     from codex import Codex as _Codex
+
+    from cleanlab_codex.types.tlm import TlmScoreResponse
 
 
 class MissingAuthError(ValueError):
@@ -87,14 +96,14 @@ class BadResponseDetectionConfig(BaseModel):
     )
 
     # Shared config (for untrustworthiness and unhelpfulness checks)
-    tlm_options: Optional[TlmOptions] = Field(
+    tlm_options: Optional[TLMOptions] = Field(
         default=None,
         description="Configuration options for the TLM model used for evaluation.",
     )
 
     codex_key: Optional[str] = Field(
         default=None,
-        description="Codex Access Key or API Key to use when querying TLM for untrustworthiness and unhelpfulness checks."
+        description="Codex Access Key or API Key to use when querying TLM for untrustworthiness and unhelpfulness checks.",
     )
 
 
@@ -220,7 +229,7 @@ def _create_codex_client(codex_key_arg: str | None) -> _Codex:
 
     Args:
         codex_key_or_arg (str): A Codex API or Access key to use when querying TLM.
-    
+
     Returns:
         _Codex: A Codex client to use to proxy TLM requests.
     """
@@ -231,24 +240,56 @@ def _create_codex_client(codex_key_arg: str | None) -> _Codex:
             pass
         try:
             return client_from_api_key()
-        except MissingAuthKeyError:
+        except (MissingAuthKeyError, BadRequestError):
             pass
-        raise MissingAuthError
-    else:
-        try:
-            if is_access_key(codex_key_arg):
-                return client_from_access_key(codex_key_arg)
-            else:
-                return client_from_api_key(codex_key_arg)
-        except MissingAuthKeyError:
-            raise MissingAuthError
+        raise MissingAuthError from None
+
+    try:
+        if is_access_key(codex_key_arg):
+            return client_from_access_key(codex_key_arg)
+
+        return client_from_api_key(codex_key_arg)
+    except (MissingAuthKeyError, BadRequestError):
+        raise MissingAuthError from None
+
+
+def _try_tlm_score(
+    client: _Codex,
+    prompt: str,
+    response: str,
+    options: Optional[TLMOptions] = None,
+    constrain_outputs: Optional[list[str]] = None,
+) -> TlmScoreResponse:
+    """
+    Helper mtehod to try reaching the TLM scoring Codex endpoint, and catch any Authentication issues and raise our own Authentication Error.
+
+    Args:
+        client (_Codex): The (authenticated) Codex client to use.
+        prompt (str): The prompt to pass to tlm.score.
+        response (str): The response to pass to tlm.score.
+        options (TLMOptions): The TLMOptions to pass to the TLM.
+        constrain_outputs (list[str]): The constrain_outputs keyword argument to pass to tlm.score.
+
+    Notes:
+        We need the try-except here since when users authenticate via an access key, there is no eager check to see if they
+        are correctly authenticated (unlike when authenticating via an API key, which performs an immediate check to see
+        if the authentication is valid). This means that we could get AuthenticationErrors from the Codex client, that we
+        want to catch, and instead raise our own MissingAuthError.
+
+    Returns:
+        TLMScoreResponse: The TLMScoreResponse from TLM, or a MissingAuthError if the user is not correctly authenticated.
+    """
+    try:
+        return client.tlm.score(prompt=prompt, response=response, options=options, constrain_outputs=constrain_outputs)
+    except AuthenticationError:
+        raise MissingAuthError from None
 
 
 def is_untrustworthy_response(
     response: str,
     context: str,
     query: str,
-    tlm_options: Optional[TlmOptions] = None,
+    tlm_options: Optional[TLMOptions] = None,
     trustworthiness_threshold: float = _DEFAULT_TRUSTWORTHINESS_THRESHOLD,
     format_prompt: Callable[[str, str], str] = default_format_prompt,
     codex_key: Optional[str] = None,
@@ -263,7 +304,7 @@ def is_untrustworthy_response(
         response (str): The response to check from the assistant.
         context (str): The context information available for answering the query.
         query (str): The user's question or request.
-        tlm_options (TlmOptions): The options to pass to the TLM model used for evaluation.
+        tlm_options (TLMOptions): The options to pass to the TLM model used for evaluation.
         trustworthiness_threshold (float): Score threshold (0.0-1.0) under which a response is considered untrustworthy.
                   Lower values allow less trustworthy responses. Default 0.5 means responses with scores less than 0.5 are considered untrustworthy.
         format_prompt (Callable[[str, str], str]): Function that takes (query, context) and returns a formatted prompt string.
@@ -276,7 +317,7 @@ def is_untrustworthy_response(
     """
     prompt = format_prompt(query, context)
     client = _create_codex_client(codex_key)
-    result = client.tlm.score(prompt=prompt, response=response, options=tlm_options)
+    result = _try_tlm_score(client=client, prompt=prompt, response=response, options=tlm_options)
     score: float = result["trustworthiness_score"]
     return score < trustworthiness_threshold
 
@@ -284,7 +325,7 @@ def is_untrustworthy_response(
 def is_unhelpful_response(
     response: str,
     query: str,
-    tlm_options: Optional[TlmOptions] = None,
+    tlm_options: Optional[TLMOptions] = None,
     confidence_score_threshold: float = _DEFAULT_UNHELPFULNESS_CONFIDENCE_THRESHOLD,
     codex_key: Optional[str] = None,
 ) -> bool:
@@ -298,7 +339,7 @@ def is_unhelpful_response(
     Args:
         response (str): The response to check.
         query (str): User query that will be used to evaluate if the response is helpful.
-        tlm_options (TlmOptions): The options to pass to the TLM model used for evaluation.
+        tlm_options (TLMOptions): The options to pass to the TLM model used for evaluation.
         confidence_score_threshold (float): Confidence threshold (0.0-1.0) above which a response is considered unhelpful.
                                        E.g. if confidence_score_threshold is 0.5, then responses with scores higher than 0.5 are considered unhelpful.
         codex_key (str): A Codex API or Access key to use when querying TLM.
@@ -343,8 +384,12 @@ def is_unhelpful_response(
     )
 
     client = _create_codex_client(codex_key)
-    output = client.tlm.score(
-        prompt=prompt, response=expected_unhelpful_response, options=tlm_options, constrain_outputs=["Yes", "No"]
+    output = _try_tlm_score(
+        client=client,
+        prompt=prompt,
+        response=expected_unhelpful_response,
+        options=tlm_options,
+        constrain_outputs=["Yes", "No"],
     )
 
     # Current implementation assumes question is phrased to expect "Yes" for unhelpful responses

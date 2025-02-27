@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- Update response validation methods to use the TLM endpoint in the Codex backend rather than a TLM model.
+- Update response validation methods to support accepting and propagating TLMOptions from the cleanlab_tlm library.
+
 ## [1.0.1] - 2025-02-26
 
 - Updates to logic for `is_unhelpful_response` util method.
