@@ -7,6 +7,7 @@ from typing import Any, Optional
 from typing_extensions import Annotated
 
 from cleanlab_codex.project import Project
+from cleanlab_codex.utils.analytics import AnalyticsMetadata
 from cleanlab_codex.utils.errors import MissingDependencyError
 from cleanlab_codex.utils.function import (
     pydantic_model_from_function,
@@ -110,7 +111,11 @@ class CodexTool:
         Returns:
             The answer to the question if available. If no answer is available, this returns a fallback answer or None.
         """
-        return self._project.query(question, fallback_answer=self._fallback_answer)[0]
+        return self._project.query(
+            question=question,
+            fallback_answer=self._fallback_answer,
+            analytics_metadata=AnalyticsMetadata(integration_type="tool")
+        )[0]
 
     def to_openai_tool(self) -> dict[str, Any]:
         """Converts the tool to the expected format for an [OpenAI function tool](https://platform.openai.com/docs/guides/function-calling).
