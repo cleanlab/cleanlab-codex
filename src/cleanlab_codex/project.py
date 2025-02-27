@@ -8,9 +8,10 @@ from typing import Optional
 
 from codex import AuthenticationError
 
-from cleanlab_codex.internal.project import query_project
 from cleanlab_codex.internal.sdk_client import client_from_access_key
+from cleanlab_codex.types.entry import Entry
 from cleanlab_codex.types.project import ProjectConfig
+from cleanlab_codex.utils.analytics import AnalyticsMetadata
 
 if _TYPE_CHECKING:
     from datetime import datetime
@@ -159,6 +160,7 @@ class Project:
         *,
         fallback_answer: Optional[str] = None,
         read_only: bool = False,
+        analytics_metadata: Optional[AnalyticsMetadata] = None,
     ) -> tuple[Optional[str], Optional[Entry]]:
         """Query Codex to check if this project contains an answer to the question. Add the question to the project for SME review if it does not.
 
@@ -173,10 +175,38 @@ class Project:
                 If Codex is able to answer the question, the first element will be the answer returned by Codex and the second element will be the existing [`Entry`](/codex/api/python/types.entry#class-entry) in the Codex project.
                 If Codex is unable to answer the question, the first element will be `fallback_answer` if provided, otherwise None. The second element will be a new [`Entry`](/codex/api/python/types.entry#class-entry) in the Codex project.
         """
-        return query_project(
-            client=self._sdk_client,
+        if not analytics_metadata:
+            analytics_metadata = AnalyticsMetadata(integration_type="backup")
+        
+        return self._query_project(
             question=question,
-            project_id=self.id,
             fallback_answer=fallback_answer,
             read_only=read_only,
+            analytics_metadata=analytics_metadata,
         )
+
+    def _query_project(
+        self,
+        question: str,
+        *,
+        fallback_answer: Optional[str] = None,
+        read_only: bool = False,
+        analytics_metadata: Optional[AnalyticsMetadata] = None,
+    ) -> tuple[Optional[str], Optional[Entry]]:
+        extra_headers = analytics_metadata.to_headers() if analytics_metadata else None
+        maybe_entry = self._sdk_client.projects.entries.query(self._id, question=question, extra_headers=extra_headers)
+
+        if maybe_entry is not None:
+            entry = Entry.model_validate(maybe_entry.model_dump())
+            if entry.answer is not None:
+                return entry.answer, entry
+
+            return fallback_answer, entry
+
+        if not read_only:
+            created_entry = Entry.model_validate(
+                self._sdk_client.projects.entries.add_question(self._id, question=question).model_dump()
+            )
+            return fallback_answer, created_entry
+
+        return fallback_answer, None
