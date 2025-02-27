@@ -11,14 +11,28 @@ from typing import (
     Optional,
     Union,
     cast,
+    TYPE_CHECKING as _TYPE_CHECKING,
 )
 
 from pydantic import BaseModel, ConfigDict, Field
 
 from cleanlab_codex.internal.utils import generate_pydantic_model_docstring
-from cleanlab_codex.types.tlm import TLM
+from cleanlab_codex.internal.sdk_client import client_from_access_key, client_from_api_key, MissingAuthKeyError, is_access_key
 from cleanlab_codex.utils.errors import MissingDependencyError
 from cleanlab_codex.utils.prompt import default_format_prompt
+
+from cleanlab_tlm.tlm import TlmOptions
+
+if _TYPE_CHECKING:
+    from codex import Codex as _Codex
+
+
+class MissingAuthError(ValueError):
+    """Raised when no API key or access key is provided and untrustworthy or unhelpfulness checks are run."""
+
+    def __str__(self) -> str:
+        return "A valid Codex API key or access key must be provided when using the TLM for untrustworthy or unhelpfulness checks."
+
 
 _DEFAULT_FALLBACK_ANSWER: str = (
     "Based on the available information, I cannot provide a complete answer to this question."
@@ -73,9 +87,14 @@ class BadResponseDetectionConfig(BaseModel):
     )
 
     # Shared config (for untrustworthiness and unhelpfulness checks)
-    tlm: Optional[TLM] = Field(
+    tlm_options: Optional[TlmOptions] = Field(
         default=None,
-        description="TLM model to use for evaluation (required for untrustworthiness and unhelpfulness checks).",
+        description="Configuration options for the TLM model used for evaluation.",
+    )
+
+    codex_key: Optional[str] = Field(
+        default=None,
+        description="Codex Access Key or API Key to use when querying TLM for untrustworthiness and unhelpfulness checks."
     )
 
 
@@ -95,6 +114,8 @@ def is_bad_response(
     context: Optional[str] = None,
     query: Optional[str] = None,
     config: Union[BadResponseDetectionConfig, Dict[str, Any]] = _DEFAULT_CONFIG,
+    run_untrustworthy_check: Optional[bool] = True,
+    run_unhelpful_check: Optional[bool] = True,
 ) -> bool:
     """Run a series of checks to determine if a response is bad.
 
@@ -113,6 +134,8 @@ def is_bad_response(
         context (str, optional): Optional context/documents used for answering. Required for untrustworthy check.
         query (str, optional): Optional user question. Required for untrustworthy and unhelpful checks.
         config (BadResponseDetectionConfig, optional): Optional, configuration parameters for validation checks. See [BadResponseDetectionConfig](#class-badresponsedetectionconfig) for details. If not provided, default values will be used.
+        run_untrustworthy_check (bool, optional): Optional flag to specify whether to run untrustworthy check. This check is run by default.
+        run_unhelpful_check (bool, optional): Optional flag to specify whether to run unhelpfulness check. This check is run by default.
 
     Returns:
         bool: `True` if any validation check fails, `False` if all pass.
@@ -130,7 +153,7 @@ def is_bad_response(
         )
     )
 
-    can_run_untrustworthy_check = query is not None and context is not None and config.tlm is not None
+    can_run_untrustworthy_check = query is not None and context is not None and run_untrustworthy_check
     if can_run_untrustworthy_check:
         # The if condition guarantees these are not None
         validation_checks.append(
@@ -138,20 +161,22 @@ def is_bad_response(
                 response=response,
                 context=cast(str, context),
                 query=cast(str, query),
-                tlm=cast(TLM, config.tlm),
+                tlm_options=config.tlm_options,
                 trustworthiness_threshold=config.trustworthiness_threshold,
                 format_prompt=config.format_prompt,
+                codex_key=config.codex_key,
             )
         )
 
-    can_run_unhelpful_check = query is not None and config.tlm is not None
+    can_run_unhelpful_check = query is not None and run_unhelpful_check
     if can_run_unhelpful_check:
         validation_checks.append(
             lambda: is_unhelpful_response(
                 response=response,
                 query=cast(str, query),
-                tlm=cast(TLM, config.tlm),
+                tlm_options=config.tlm_options,
                 confidence_score_threshold=config.unhelpfulness_confidence_threshold,
+                codex_key=config.codex_key,
             )
         )
 
@@ -189,13 +214,44 @@ def is_fallback_response(
     return bool(partial_ratio >= threshold)
 
 
+def _create_codex_client(codex_key_arg: str | None) -> _Codex:
+    """
+    Helper method to create a Codex client for proxying TLM requests.
+
+    Args:
+        codex_key_or_arg (str): A Codex API or Access key to use when querying TLM.
+    
+    Returns:
+        _Codex: A Codex client to use to proxy TLM requests.
+    """
+    if codex_key_arg is None:
+        try:
+            return client_from_access_key()
+        except MissingAuthKeyError:
+            pass
+        try:
+            return client_from_api_key()
+        except MissingAuthKeyError:
+            pass
+        raise MissingAuthError
+    else:
+        try:
+            if is_access_key(codex_key_arg):
+                return client_from_access_key(codex_key_arg)
+            else:
+                return client_from_api_key(codex_key_arg)
+        except MissingAuthKeyError:
+            raise MissingAuthError
+
+
 def is_untrustworthy_response(
     response: str,
     context: str,
     query: str,
-    tlm: TLM,
+    tlm_options: Optional[TlmOptions] = None,
     trustworthiness_threshold: float = _DEFAULT_TRUSTWORTHINESS_THRESHOLD,
     format_prompt: Callable[[str, str], str] = default_format_prompt,
+    codex_key: Optional[str] = None,
 ) -> bool:
     """Check if a response is untrustworthy.
 
@@ -207,27 +263,20 @@ def is_untrustworthy_response(
         response (str): The response to check from the assistant.
         context (str): The context information available for answering the query.
         query (str): The user's question or request.
-        tlm (TLM): The TLM model to use for evaluation.
+        tlm_options (TlmOptions): The options to pass to the TLM model used for evaluation.
         trustworthiness_threshold (float): Score threshold (0.0-1.0) under which a response is considered untrustworthy.
                   Lower values allow less trustworthy responses. Default 0.5 means responses with scores less than 0.5 are considered untrustworthy.
         format_prompt (Callable[[str, str], str]): Function that takes (query, context) and returns a formatted prompt string.
                       Users should provide the prompt formatting function for their RAG application here so that the response can
                       be evaluated using the same prompt that was used to generate the response.
+        codex_key (str): A Codex API or Access key to use when querying TLM.
 
     Returns:
         bool: `True` if the response is deemed untrustworthy by TLM, `False` otherwise.
     """
-    try:
-        from cleanlab_tlm import TLM  # noqa: F401
-    except ImportError as e:
-        raise MissingDependencyError(
-            import_name=e.name or "cleanlab_tlm",
-            package_name="cleanlab-tlm",
-            package_url="https://github.com/cleanlab/cleanlab-tlm",
-        ) from e
-
     prompt = format_prompt(query, context)
-    result = tlm.get_trustworthiness_score(prompt, response)
+    client = _create_codex_client(codex_key)
+    result = client.tlm.score(prompt=prompt, response=response, options=tlm_options)
     score: float = result["trustworthiness_score"]
     return score < trustworthiness_threshold
 
@@ -235,8 +284,9 @@ def is_untrustworthy_response(
 def is_unhelpful_response(
     response: str,
     query: str,
-    tlm: TLM,
+    tlm_options: Optional[TlmOptions] = None,
     confidence_score_threshold: float = _DEFAULT_UNHELPFULNESS_CONFIDENCE_THRESHOLD,
+    codex_key: Optional[str] = None,
 ) -> bool:
     """Check if a response is unhelpful by asking [TLM](/tlm) to evaluate it.
 
@@ -248,23 +298,15 @@ def is_unhelpful_response(
     Args:
         response (str): The response to check.
         query (str): User query that will be used to evaluate if the response is helpful.
-        tlm (TLM): The TLM model to use for evaluation.
+        tlm_options (TlmOptions): The options to pass to the TLM model used for evaluation.
         confidence_score_threshold (float): Confidence threshold (0.0-1.0) above which a response is considered unhelpful.
                                        E.g. if confidence_score_threshold is 0.5, then responses with scores higher than 0.5 are considered unhelpful.
+        codex_key (str): A Codex API or Access key to use when querying TLM.
 
     Returns:
         bool: `True` if TLM determines the response is unhelpful with sufficient confidence,
               `False` otherwise.
     """
-    try:
-        from cleanlab_tlm import TLM  # noqa: F401
-    except ImportError as e:
-        raise MissingDependencyError(
-            import_name=e.name or "cleanlab_tlm",
-            package_name="cleanlab-tlm",
-            package_url="https://github.com/cleanlab/cleanlab-tlm",
-        ) from e
-
     # IMPORTANT: The current implementation couples three things that must stay in sync:
     # 1. The question phrasing ("is unhelpful?")
     # 2. The expected_unhelpful_response ("Yes")
@@ -300,8 +342,9 @@ def is_unhelpful_response(
         f"{question}"
     )
 
-    output = tlm.get_trustworthiness_score(
-        prompt, response=expected_unhelpful_response, constrain_outputs=["Yes", "No"]
+    client = _create_codex_client(codex_key)
+    output = client.tlm.score(
+        prompt=prompt, response=expected_unhelpful_response, options=tlm_options, constrain_outputs=["Yes", "No"]
     )
 
     # Current implementation assumes question is phrased to expect "Yes" for unhelpful responses
