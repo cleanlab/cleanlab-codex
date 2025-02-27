@@ -13,21 +13,19 @@ from cleanlab_codex.utils.analytics import AnalyticsMetadata
 from cleanlab_codex.utils.errors import MissingDependencyError
 
 
-def test_tool_query_passes_metadata(mock_client_from_access_key: MagicMock) -> None:
+def test_tool_query_passes_metadata(mock_client_from_access_key: MagicMock) -> None:  # noqa: ARG001
     mock_project = MagicMock()
     mock_project.query.return_value = (None, None)
 
-    with patch("cleanlab_codex.codex_tool.Project") as MockProject:
-        MockProject.from_access_key.return_value = mock_project
-
+    with patch("cleanlab_codex.codex_tool.Project.from_access_key", return_value=mock_project):
         tool = CodexTool.from_access_key("sk-test-123")
         tool.query("what is the capital of France?")
 
         assert mock_project.query.call_count == 1
         args, kwargs = mock_project.query.call_args
-        assert kwargs['question'] == "what is the capital of France?"
-        assert kwargs['fallback_answer'] == CodexTool.DEFAULT_FALLBACK_ANSWER
-        assert kwargs['analytics_metadata'].to_headers() == AnalyticsMetadata(integration_type="tool").to_headers()
+        assert kwargs["question"] == "what is the capital of France?"
+        assert kwargs["fallback_answer"] == CodexTool.DEFAULT_FALLBACK_ANSWER
+        assert kwargs["analytics_metadata"].to_headers() == AnalyticsMetadata(integration_type="tool").to_headers()
 
 
 def patch_import_with_import_error(missing_module: str) -> None:
@@ -39,7 +37,7 @@ def patch_import_with_import_error(missing_module: str) -> None:
     builtins.__import__ = custom_import
 
 
-def test_to_openai_tool(mock_client_from_access_key: MagicMock) -> None:
+def test_to_openai_tool(mock_client_from_access_key: MagicMock) -> None:  # noqa: ARG001
     tool = CodexTool.from_access_key("sk-test-123")
     openai_tool = tool.to_openai_tool()
     assert openai_tool.get("type") == "function"
@@ -48,7 +46,7 @@ def test_to_openai_tool(mock_client_from_access_key: MagicMock) -> None:
     assert openai_tool.get("function", {}).get("parameters", {}).get("type") == "object"
 
 
-def test_to_llamaindex_tool(mock_client_from_access_key: MagicMock) -> None:
+def test_to_llamaindex_tool(mock_client_from_access_key: MagicMock) -> None:  # noqa: ARG001
     tool = CodexTool.from_access_key("sk-test-123")
     llama_index_tool = tool.to_llamaindex_tool()
     assert isinstance(llama_index_tool, FunctionTool)
@@ -58,7 +56,7 @@ def test_to_llamaindex_tool(mock_client_from_access_key: MagicMock) -> None:
 
 
 def test_to_llamaindex_tool_import_error(
-    mock_client_from_access_key: MagicMock,
+    mock_client_from_access_key: MagicMock,  # noqa: ARG001
 ) -> None:
     tool = CodexTool.from_access_key("sk-test-123")
     patch_import_with_import_error("llama_index")
@@ -68,22 +66,20 @@ def test_to_llamaindex_tool_import_error(
     assert exc_info.value.import_name == "llama_index"
 
 
-def test_to_langchain_tool(mock_client_from_access_key: MagicMock) -> None:
+def test_to_langchain_tool(mock_client_from_access_key: MagicMock) -> None:  # noqa: ARG001
     tool = CodexTool.from_access_key("sk-test-123")
     langchain_tool = tool.to_langchain_tool()
     assert isinstance(langchain_tool, StructuredTool)
     assert callable(langchain_tool)
     assert hasattr(langchain_tool, "name")
     assert hasattr(langchain_tool, "description")
-    assert (
-        langchain_tool.name == tool.tool_name
-    ), f"Expected tool name '{tool.tool_name}', got '{langchain_tool.name}'."
+    assert langchain_tool.name == tool.tool_name, f"Expected tool name '{tool.tool_name}', got '{langchain_tool.name}'."
     assert (
         langchain_tool.description == tool.tool_description
     ), f"Expected description '{tool.tool_description}', got '{langchain_tool.description}'."
 
 
-def test_to_langchain_tool_import_error(mock_client_from_access_key: MagicMock) -> None:
+def test_to_langchain_tool_import_error(mock_client_from_access_key: MagicMock) -> None:  # noqa: ARG001
     tool = CodexTool.from_access_key("sk-test-123")
     patch_import_with_import_error("langchain")
     with pytest.raises(MissingDependencyError) as exc_info:
@@ -92,7 +88,7 @@ def test_to_langchain_tool_import_error(mock_client_from_access_key: MagicMock) 
     assert exc_info.value.import_name == "langchain"
 
 
-def test_to_aws_converse_tool(mock_client_from_access_key: MagicMock) -> None:
+def test_to_aws_converse_tool(mock_client_from_access_key: MagicMock) -> None:  # noqa: ARG001
     tool = CodexTool.from_access_key("sk-test-123")
     aws_converse_tool = tool.to_aws_converse_tool()
 
@@ -123,7 +119,7 @@ def test_to_aws_converse_tool(mock_client_from_access_key: MagicMock) -> None:
 
 
 @pytest.mark.skipif(sys.version_info < (3, 10), reason="requires python3.10 or higher")
-def test_to_smolagents_tool(mock_client_from_access_key: MagicMock) -> None:
+def test_to_smolagents_tool(mock_client_from_access_key: MagicMock) -> None:  # noqa: ARG001
     from smolagents import Tool  # type: ignore
 
     tool = CodexTool.from_access_key("sk-test-123")
@@ -134,7 +130,7 @@ def test_to_smolagents_tool(mock_client_from_access_key: MagicMock) -> None:
 
 
 def test_to_smolagents_tool_import_error(
-    mock_client_from_access_key: MagicMock,
+    mock_client_from_access_key: MagicMock,  # noqa: ARG001
 ) -> None:
     tool = CodexTool.from_access_key("sk-test-123")
     import_module_name = "smolagents"

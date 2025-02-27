@@ -18,7 +18,7 @@ if _TYPE_CHECKING:
 
     from codex import Codex as _Codex
 
-    from cleanlab_codex.types.entry import Entry, EntryCreate
+    from cleanlab_codex.types.entry import EntryCreate
 
 _ERROR_CREATE_ACCESS_KEY = (
     "Failed to create access key. Please ensure you have the necessary permissions "
