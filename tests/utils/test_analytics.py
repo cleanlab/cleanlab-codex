@@ -15,4 +15,4 @@ def test_analytics_metadata_to_headers_uses_integration_type() -> None:
 
 def test_analytics_metadata_requires_integration_type() -> None:
     with pytest.raises(TypeError):
-        AnalyticsMetadata()
+        AnalyticsMetadata()  # type: ignore[call-arg]
