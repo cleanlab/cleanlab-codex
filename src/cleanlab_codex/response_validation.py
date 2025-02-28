@@ -302,6 +302,29 @@ def is_unhelpful_response(
         bool: `True` if TLM determines the response is unhelpful with sufficient confidence,
               `False` otherwise.
     """
+    score: float = score_unhelpful_response(response, query, tlm)
+
+    # Current implementation assumes question is phrased to expect "Yes" for unhelpful responses
+    # Changing the question would require restructuring this logic and potentially adjusting
+    # the threshold value in BadResponseDetectionConfig
+    return score > confidence_score_threshold
+
+
+def score_unhelpful_response(
+    response: str,
+    query: str,
+    tlm: TLM,
+) -> float:
+    """Scores a response's unhelpfulness using [TLM](/tlm), given a query.
+
+    Args:
+        response (str): The response to check.
+        query (str): User query that will be used to evaluate if the response is helpful.
+        tlm (TLM): The TLM model to use for evaluation.
+
+    Returns:
+        float: The score of the response, between 0.0 and 1.0.
+    """
     try:
         from cleanlab_tlm import TLM  # noqa: F401
     except ImportError as e:
@@ -314,7 +337,7 @@ def is_unhelpful_response(
     # IMPORTANT: The current implementation couples three things that must stay in sync:
     # 1. The question phrasing ("is unhelpful?")
     # 2. The expected_unhelpful_response ("Yes")
-    # 3. The threshold logic (score > threshold)
+    # 3. The threshold logic (score > threshold), see `is_unhelpful_response` for details
     #
     # If changing the question to "is helpful?", you would need to:
     # If changing the question to "is helpful?", you would need to either:
@@ -345,12 +368,5 @@ def is_unhelpful_response(
         f"AI Assistant Response: {response}\n\n"
         f"{question}"
     )
-
-    output = tlm.get_trustworthiness_score(
-        prompt, response=expected_unhelpful_response, constrain_outputs=["Yes", "No"]
-    )
-
-    # Current implementation assumes question is phrased to expect "Yes" for unhelpful responses
-    # Changing the question would require restructuring this logic and potentially adjusting
-    # the threshold value in BadResponseDetectionConfig
-    return float(output["trustworthiness_score"]) > confidence_score_threshold
+    result = tlm.get_trustworthiness_score(prompt, response=expected_unhelpful_response)
+    return float(result["trustworthiness_score"])
