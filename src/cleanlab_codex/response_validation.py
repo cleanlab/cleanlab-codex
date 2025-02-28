@@ -177,6 +177,24 @@ def is_fallback_response(
     Returns:
         bool: `True` if the response is too similar to the fallback answer, `False` otherwise.
     """
+
+    score: int = score_fallback_response(response, fallback_answer)
+    return bool(score >= threshold)
+
+
+def score_fallback_response(
+    response: str,
+    fallback_answer: str = _DEFAULT_FALLBACK_ANSWER,
+) -> int:
+    """Score a response against a known fallback answer, based on how similar they are using fuzzy string matching.
+
+    Args:
+        response (str): The response to check.
+        fallback_answer (str): A known unhelpful/fallback response to compare against.
+
+    Returns:
+        int: The score of the response, between 0 and 100.
+    """
     try:
         from thefuzz import fuzz  # type: ignore
     except ImportError as e:
@@ -185,8 +203,7 @@ def is_fallback_response(
             package_url="https://github.com/seatgeek/thefuzz",
         ) from e
 
-    partial_ratio: int = fuzz.partial_ratio(fallback_answer.lower(), response.lower())
-    return bool(partial_ratio >= threshold)
+    return int(fuzz.partial_ratio(fallback_answer.lower(), response.lower()))
 
 
 def is_untrustworthy_response(

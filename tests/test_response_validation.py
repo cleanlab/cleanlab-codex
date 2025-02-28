@@ -13,6 +13,7 @@ from cleanlab_codex.response_validation import (
     is_fallback_response,
     is_unhelpful_response,
     is_untrustworthy_response,
+    score_fallback_response,
 )
 
 # Mock responses for testing
@@ -221,3 +222,20 @@ def test_is_bad_response_partial_inputs(
             )
             is expected
         )
+
+
+@pytest.mark.parametrize(
+    ("response", "fallback_answer", "expected"),
+    [
+        ("This is a test response", "This is a test response", 100),  # exact match
+        ("abcd", "Abcd", 100),  # same response, different case
+        ("This is a test response", "This is a test answer", 86),  # similar response
+        ("This is a test response", "A totally different fallback answer", 39),  # different response
+        ("abcd", "efgh", 0),  # no characters in common
+        ("abcd", "dcba", 40),  # reverse order
+        ("don't know", "I don't know", 100),  # partial match
+        ("I don't know", "don't know", 100),  # partial match, response longer than fallback
+    ],
+)
+def test_score_fallback_response(response: str, fallback_answer: str, expected: int) -> None:
+    assert score_fallback_response(response, fallback_answer) == expected
