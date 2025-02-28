@@ -14,6 +14,7 @@ from cleanlab_codex.response_validation import (
     is_unhelpful_response,
     is_untrustworthy_response,
     score_fallback_response,
+    score_untrustworthy_response,
 )
 
 # Mock responses for testing
@@ -239,3 +240,18 @@ def test_is_bad_response_partial_inputs(
 )
 def test_score_fallback_response(response: str, fallback_answer: str, expected: int) -> None:
     assert score_fallback_response(response, fallback_answer) == expected
+
+
+@pytest.mark.parametrize(
+    ("tlm_score"),
+    [
+        (0.5),
+        (0.8),
+        (0.3),
+        (0.0),
+    ],
+)
+def test_score_untrustworthy_response(mock_tlm: Mock, tlm_score: float) -> None:
+    """Test score_untrustworthy_response function."""
+    mock_tlm.get_trustworthiness_score = Mock(return_value={"trustworthiness_score": tlm_score})
+    assert score_untrustworthy_response(BAD_RESPONSE, CONTEXT, QUERY, mock_tlm) == tlm_score

@@ -234,6 +234,37 @@ def is_untrustworthy_response(
     Returns:
         bool: `True` if the response is deemed untrustworthy by TLM, `False` otherwise.
     """
+    score: float = score_untrustworthy_response(
+        response=response,
+        context=context,
+        query=query,
+        tlm=tlm,
+        format_prompt=format_prompt,
+    )
+    return score < trustworthiness_threshold
+
+
+def score_untrustworthy_response(
+    response: str,
+    context: str,
+    query: str,
+    tlm: TLM,
+    format_prompt: Callable[[str, str], str] = default_format_prompt,
+) -> float:
+    """Scores a response's untrustworthiness using [TLM](/tlm), given a context and query.
+
+    Args:
+        response (str): The response to check from the assistant.
+        context (str): The context information available for answering the query.
+        query (str): The user's question or request.
+        tlm (TLM): The TLM model to use for evaluation.
+        format_prompt (Callable[[str, str], str]): Function that takes (query, context) and returns a formatted prompt string.
+                    Users should provide the prompt formatting function for their RAG application here so that the response can
+                    be evaluated using the same prompt that was used to generate the response.
+
+    Returns:
+        float: The score of the response, between 0.0 and 1.0.
+    """
     try:
         from cleanlab_tlm import TLM  # noqa: F401
     except ImportError as e:
@@ -242,11 +273,9 @@ def is_untrustworthy_response(
             package_name="cleanlab-tlm",
             package_url="https://github.com/cleanlab/cleanlab-tlm",
         ) from e
-
     prompt = format_prompt(query, context)
     result = tlm.get_trustworthiness_score(prompt, response)
-    score: float = result["trustworthiness_score"]
-    return score < trustworthiness_threshold
+    return float(result["trustworthiness_score"])
 
 
 def is_unhelpful_response(
