@@ -9,6 +9,7 @@ import pytest
 
 from cleanlab_codex.response_validation import (
     _DEFAULT_UNHELPFULNESS_CONFIDENCE_THRESHOLD,
+    ResponseResult,
     is_bad_response,
     is_fallback_response,
     is_unhelpful_response,
@@ -95,18 +96,18 @@ def test_is_fallback_response(
     if fallback_answer is not None:
         kwargs["fallback_answer"] = fallback_answer
 
-    assert is_fallback_response(response, **kwargs) is expected  # type: ignore
+    assert bool(is_fallback_response(response, **kwargs)) == expected  # type: ignore
 
 
 def test_is_untrustworthy_response(mock_tlm: Mock) -> None:
     """Test untrustworthy response detection."""
     # Test trustworthy response
     mock_tlm.trustworthiness_score = 0.8
-    assert is_untrustworthy_response(GOOD_RESPONSE, CONTEXT, QUERY, mock_tlm, trustworthiness_threshold=0.5) is False
+    assert not bool(is_untrustworthy_response(GOOD_RESPONSE, CONTEXT, QUERY, mock_tlm, trustworthiness_threshold=0.5))
 
     # Test untrustworthy response
     mock_tlm.trustworthiness_score = 0.3
-    assert is_untrustworthy_response(BAD_RESPONSE, CONTEXT, QUERY, mock_tlm, trustworthiness_threshold=0.5) is True
+    assert bool(is_untrustworthy_response(BAD_RESPONSE, CONTEXT, QUERY, mock_tlm, trustworthiness_threshold=0.5))
 
 
 @pytest.mark.parametrize(
@@ -147,7 +148,7 @@ def test_is_unhelpful_response(
     else:
         result = is_unhelpful_response(GOOD_RESPONSE, QUERY, mock_tlm)
 
-    assert result is expected_unhelpful
+    assert bool(result) == expected_unhelpful
 
 
 @pytest.mark.parametrize(
@@ -177,13 +178,15 @@ def test_is_bad_response(
     ]
 
     assert (
-        is_bad_response(
-            response,
-            context=CONTEXT,
-            query=QUERY,
-            config={"tlm": mock_tlm},
+        bool(
+            is_bad_response(
+                response,
+                context=CONTEXT,
+                query=QUERY,
+                config={"tlm": mock_tlm},
+            )
         )
-        is expected
+        == expected
     )
 
 
@@ -217,12 +220,14 @@ def test_is_bad_response_partial_inputs(
             tlm = mock_tlm
 
         assert (
-            is_bad_response(
-                response,
-                query=query,
-                config={"tlm": tlm},
+            bool(
+                is_bad_response(
+                    response,
+                    query=query,
+                    config={"tlm": tlm},
+                )
             )
-            is expected
+            == expected
         )
 
 
@@ -286,3 +291,38 @@ def test_score_unhelpful_response(mock_tlm: Mock, tlm_score: float) -> None:
         )
         == tlm_score
     )
+
+
+class TestResponseResult:
+    def test_response_result_init(self) -> None:
+        for name in ["fallback", "untrustworthy", "unhelpful"]:
+            for fails_check in [True, False]:
+                result = ResponseResult(
+                    name=name,  # type: ignore
+                    fails_check=fails_check,
+                    scores={"similarity_score": 0.5},
+                    metadata={"context": "Some context"},
+                )
+                assert result.name == name
+                assert result.fails_check == fails_check
+                assert result.scores == {"similarity_score": 0.5}
+                assert result.metadata == {"context": "Some context"}
+
+    def test_bool_conversion(self) -> None:
+        result = ResponseResult(
+            name="fallback", fails_check=True, scores={"similarity_score": 0.5}, metadata={"context": "Some context"}
+        )
+        assert bool(result)
+        result.fails_check = False
+        assert not bool(result)
+
+    def test_invalid_name(self) -> None:
+        from pydantic_core import ValidationError
+
+        with pytest.raises(ValidationError):
+            ResponseResult(
+                name="invalid",  # type: ignore
+                fails_check=True,
+                scores={},
+                metadata={},
+            )

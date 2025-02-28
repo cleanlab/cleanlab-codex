@@ -8,6 +8,7 @@ from typing import (
     Any,
     Callable,
     Dict,
+    Literal,
     Optional,
     Union,
     cast,
@@ -89,6 +90,30 @@ BadResponseDetectionConfig.__doc__ = f"""
 _DEFAULT_CONFIG = BadResponseDetectionConfig()
 
 
+class ResponseResult(BaseModel):
+    """Result of a response validation check.
+
+    Attributes:
+        name (Literal["fallback", "untrustworthy", "unhelpful"]): Name of the validation check.
+        fails_check (bool): Whether the response fails a given validation check.
+        scores (dict[str, float]): Scores for the response from a given validation check.
+        metadata (dict[str, Any]): Metadata about the validation check.
+    """
+
+    name: Literal["fallback", "untrustworthy", "unhelpful"] = Field(description="Name of the validation check")
+    fails_check: bool = Field(description="Whether the response fails a given validation check")
+    scores: dict[str, float] = Field(description="Scores for the response from a given validation check")
+    metadata: dict[str, Any] = Field(default_factory=dict, description="Metadata about the validation check")
+
+    def __bool__(self) -> bool:
+        """Convert ResponseResult to bool.
+
+        Returns:
+            bool: True if the response fails a given validation check, False otherwise.
+        """
+        return self.fails_check
+
+
 def is_bad_response(
     response: str,
     *,
@@ -115,11 +140,11 @@ def is_bad_response(
         config (BadResponseDetectionConfig, optional): Optional, configuration parameters for validation checks. See [BadResponseDetectionConfig](#class-badresponsedetectionconfig) for details. If not provided, default values will be used.
 
     Returns:
-        bool: `True` if any validation check fails, `False` if all pass.
+        ResponseResult: A ResponseResult object containing the results of the validation checks.
     """
     config = BadResponseDetectionConfig.model_validate(config)
 
-    validation_checks: list[Callable[[], bool]] = []
+    validation_checks: list[Callable[[], ResponseResult]] = []
 
     # All required inputs are available for checking fallback responses
     validation_checks.append(
@@ -155,14 +180,14 @@ def is_bad_response(
             )
         )
 
-    return any(check() for check in validation_checks)
+    return any(bool(check()) for check in validation_checks)
 
 
 def is_fallback_response(
     response: str,
     fallback_answer: str = _DEFAULT_FALLBACK_ANSWER,
     threshold: int = _DEFAULT_FALLBACK_SIMILARITY_THRESHOLD,
-) -> bool:
+) -> ResponseResult:
     """Check if a response is too similar to a known fallback answer.
 
     Uses fuzzy string matching to compare the response against a known fallback answer.
@@ -175,11 +200,16 @@ def is_fallback_response(
                 Higher values require more similarity. Default 70 means responses that are 70% or more similar are considered bad.
 
     Returns:
-        bool: `True` if the response is too similar to the fallback answer, `False` otherwise.
+        ResponseResult: A ResponseResult object containing the results of the validation checks.
     """
 
     score: int = score_fallback_response(response, fallback_answer)
-    return bool(score >= threshold)
+    return ResponseResult(
+        name="fallback",
+        fails_check=score >= threshold,
+        scores={"similarity_score": score},
+        metadata={"threshold": threshold},
+    )
 
 
 def score_fallback_response(
@@ -213,7 +243,7 @@ def is_untrustworthy_response(
     tlm: TLM,
     trustworthiness_threshold: float = _DEFAULT_TRUSTWORTHINESS_THRESHOLD,
     format_prompt: Callable[[str, str], str] = default_format_prompt,
-) -> bool:
+) -> ResponseResult:
     """Check if a response is untrustworthy.
 
     Uses [TLM](/tlm) to evaluate whether a response is trustworthy given the context and query.
@@ -232,7 +262,7 @@ def is_untrustworthy_response(
                       be evaluated using the same prompt that was used to generate the response.
 
     Returns:
-        bool: `True` if the response is deemed untrustworthy by TLM, `False` otherwise.
+        ResponseResult: A ResponseResult object containing the results of the validation checks.
     """
     score: float = score_untrustworthy_response(
         response=response,
@@ -241,7 +271,12 @@ def is_untrustworthy_response(
         tlm=tlm,
         format_prompt=format_prompt,
     )
-    return score < trustworthiness_threshold
+    return ResponseResult(
+        name="untrustworthy",
+        fails_check=score < trustworthiness_threshold,
+        scores={"trustworthiness_score": score},
+        metadata={"threshold": trustworthiness_threshold},
+    )
 
 
 def score_untrustworthy_response(
@@ -283,7 +318,7 @@ def is_unhelpful_response(
     query: str,
     tlm: TLM,
     confidence_score_threshold: float = _DEFAULT_UNHELPFULNESS_CONFIDENCE_THRESHOLD,
-) -> bool:
+) -> ResponseResult:
     """Check if a response is unhelpful by asking [TLM](/tlm) to evaluate it.
 
     Uses TLM to evaluate whether a response is helpful by asking it to make a Yes/No judgment.
@@ -299,15 +334,19 @@ def is_unhelpful_response(
                                        E.g. if confidence_score_threshold is 0.5, then responses with scores higher than 0.5 are considered unhelpful.
 
     Returns:
-        bool: `True` if TLM determines the response is unhelpful with sufficient confidence,
-              `False` otherwise.
+        ResponseResult: A ResponseResult object containing the results of the validation checks.
     """
     score: float = score_unhelpful_response(response, query, tlm)
 
     # Current implementation assumes question is phrased to expect "Yes" for unhelpful responses
     # Changing the question would require restructuring this logic and potentially adjusting
     # the threshold value in BadResponseDetectionConfig
-    return score > confidence_score_threshold
+    return ResponseResult(
+        name="unhelpful",
+        fails_check=score > confidence_score_threshold,
+        scores={"confidence_score": score},
+        metadata={"threshold": confidence_score_threshold},
+    )
 
 
 def score_unhelpful_response(
