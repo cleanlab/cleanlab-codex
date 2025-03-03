@@ -195,7 +195,7 @@ def is_bad_response(
             )
         )
 
-    # Run all checks in parallel and collect results
+    # Run all checks and collect results, until one fails
     scores = {}
     metadata = {}
     fails_check = False
