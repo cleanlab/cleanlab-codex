@@ -129,8 +129,8 @@ def is_bad_response(
 ) -> ResponseCheck:
     """Run a series of checks to determine if a response is bad.
 
-    The function returns a `QualityReport` object containing results from multiple validation checks.
-    If any check fails (detects an issue), the QualityReport will evaluate to True when used in a boolean context.
+    The function returns a `ResponseCheck` object containing results from multiple validation checks.
+    If any check fails (detects an issue), the ResponseCheck will evaluate to True when used in a boolean context.
     This means code like `if is_bad_response(...)` will enter the if-block when problems are detected.
 
     For example:
