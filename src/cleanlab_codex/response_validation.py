@@ -4,14 +4,12 @@ Validation functions for evaluating LLM responses and determining if they should
 
 from __future__ import annotations
 
-import asyncio
 from typing import (
     Any,
     Callable,
     Dict,
     Literal,
     Optional,
-    Sequence,
     Union,
     cast,
 )
@@ -102,7 +100,7 @@ class ResponseCheck(BaseModel):
         metadata (dict[str, Any]): Metadata about the validation check.
     """
 
-    name: Literal["fallback", "untrustworthy", "unhelpful"] = Field(description="Name of the validation check")
+    name: Literal["bad", "fallback", "untrustworthy", "unhelpful"] = Field(description="Name of the validation check")
     fails_check: bool = Field(description="Whether the response fails a given validation check")
     scores: dict[str, float] = Field(description="Scores for the response from a given validation check")
     metadata: dict[str, Any] = Field(default_factory=dict, description="Metadata about the validation check")
@@ -122,34 +120,13 @@ class ResponseCheck(BaseModel):
         return f"ResponseResult(name={self.name}, {pass_or_fail}, scores={self.scores}{metadata_str})"
 
 
-class QualityReport(BaseModel):
-    """Container for results from multiple validation checks.
-
-    Attributes:
-        results (Sequence[ResponseResult]): Results from all validation checks
-        is_bad (bool): True if any validation check failed
-    """
-    results: Sequence[ResponseCheck] = Field(description="Results from all validation checks")
-
-    def __bool__(self) -> bool:
-        """Returns True if any validation check failed, i.e. if any of the results are True."""
-        return any(bool(result) for result in self.results)
-
-async def _run_validation_check(check: Callable[[], ResponseCheck]) -> ResponseCheck:
-    """Run a single validation check asynchronously."""
-    return check()
-
-async def _run_validation_checks(checks: list[Callable[[], ResponseCheck]]) -> list[ResponseCheck]:
-    """Run all validation checks in parallel."""
-    return await asyncio.gather(*[_run_validation_check(check) for check in checks])
-
 def is_bad_response(
     response: str,
     *,
     context: Optional[str] = None,
     query: Optional[str] = None,
     config: Union[BadResponseDetectionConfig, Dict[str, Any]] = _DEFAULT_CONFIG,
-) -> QualityReport:
+) -> ResponseCheck:
     """Run a series of checks to determine if a response is bad.
 
     The function returns a `QualityReport` object containing results from multiple validation checks.
@@ -219,9 +196,23 @@ def is_bad_response(
         )
 
     # Run all checks in parallel and collect results
-    results = asyncio.run(_run_validation_checks(validation_checks))
+    scores = {}
+    metadata = {}
+    fails_check = False
+    for check in validation_checks:
+        response_check = check()
+        scores.update(response_check.scores)
+        metadata.update(response_check.metadata)
+        if response_check.fails_check:
+            fails_check = True
+            break
 
-    return QualityReport(results=results)
+    return ResponseCheck(
+        name="bad",
+        fails_check=fails_check,
+        scores=scores,
+        metadata=metadata,
+    )
 
 
 def is_fallback_response(
@@ -248,8 +239,8 @@ def is_fallback_response(
     return ResponseCheck(
         name="fallback",
         fails_check=score >= threshold,
-        scores={"similarity_score": score},
-        metadata={"threshold": threshold},
+        scores={"fallback_similarity_score": score},
+        metadata={"fallback_similarity_threshold": threshold},
     )
 
 
@@ -315,8 +306,8 @@ def is_untrustworthy_response(
     return ResponseCheck(
         name="untrustworthy",
         fails_check=score < trustworthiness_threshold,
-        scores={"trustworthiness_score": score},
-        metadata={"threshold": trustworthiness_threshold},
+        scores={"untrustworthiness_score": score},
+        metadata={"untrustworthiness_threshold": trustworthiness_threshold},
     )
 
 
@@ -385,8 +376,8 @@ def is_unhelpful_response(
     return ResponseCheck(
         name="unhelpful",
         fails_check=score > confidence_score_threshold,
-        scores={"confidence_score": score},
-        metadata={"threshold": confidence_score_threshold},
+        scores={"unhelpful_score": score},
+        metadata={"unhelpful_score_threshold": confidence_score_threshold},
     )
 
 
