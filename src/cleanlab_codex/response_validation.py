@@ -92,7 +92,7 @@ BadResponseDetectionConfig.__doc__ = f"""
 _DEFAULT_CONFIG = BadResponseDetectionConfig()
 
 
-class ResponseResult(BaseModel):
+class ResponseCheck(BaseModel):
     """Result of a response validation check.
 
     Attributes:
@@ -129,17 +129,17 @@ class ValidationResults(BaseModel):
         results (Sequence[ResponseResult]): Results from all validation checks
         is_bad (bool): True if any validation check failed
     """
-    results: Sequence[ResponseResult] = Field(description="Results from all validation checks")
+    results: Sequence[ResponseCheck] = Field(description="Results from all validation checks")
 
     def __bool__(self) -> bool:
         """Returns True if any validation check failed, i.e. if any of the results are True."""
         return any(bool(result) for result in self.results)
 
-async def _run_validation_check(check: Callable[[], ResponseResult]) -> ResponseResult:
+async def _run_validation_check(check: Callable[[], ResponseCheck]) -> ResponseCheck:
     """Run a single validation check asynchronously."""
     return check()
 
-async def _run_validation_checks(checks: list[Callable[[], ResponseResult]]) -> list[ResponseResult]:
+async def _run_validation_checks(checks: list[Callable[[], ResponseCheck]]) -> list[ResponseCheck]:
     """Run all validation checks in parallel."""
     return await asyncio.gather(*[_run_validation_check(check) for check in checks])
 
@@ -173,7 +173,7 @@ def is_bad_response(
     """
     config = BadResponseDetectionConfig.model_validate(config)
 
-    validation_checks: list[Callable[[], ResponseResult]] = []
+    validation_checks: list[Callable[[], ResponseCheck]] = []
 
     # All required inputs are available for checking fallback responses
     validation_checks.append(
@@ -219,7 +219,7 @@ def is_fallback_response(
     response: str,
     fallback_answer: str = _DEFAULT_FALLBACK_ANSWER,
     threshold: int = _DEFAULT_FALLBACK_SIMILARITY_THRESHOLD,
-) -> ResponseResult:
+) -> ResponseCheck:
     """Check if a response is too similar to a known fallback answer.
 
     Uses fuzzy string matching to compare the response against a known fallback answer.
@@ -236,7 +236,7 @@ def is_fallback_response(
     """
 
     score: int = score_fallback_response(response, fallback_answer)
-    return ResponseResult(
+    return ResponseCheck(
         name="fallback",
         fails_check=score >= threshold,
         scores={"similarity_score": score},
@@ -275,7 +275,7 @@ def is_untrustworthy_response(
     tlm: TLM,
     trustworthiness_threshold: float = _DEFAULT_TRUSTWORTHINESS_THRESHOLD,
     format_prompt: Callable[[str, str], str] = default_format_prompt,
-) -> ResponseResult:
+) -> ResponseCheck:
     """Check if a response is untrustworthy.
 
     Uses [TLM](/tlm) to evaluate whether a response is trustworthy given the context and query.
@@ -303,7 +303,7 @@ def is_untrustworthy_response(
         tlm=tlm,
         format_prompt=format_prompt,
     )
-    return ResponseResult(
+    return ResponseCheck(
         name="untrustworthy",
         fails_check=score < trustworthiness_threshold,
         scores={"trustworthiness_score": score},
@@ -350,7 +350,7 @@ def is_unhelpful_response(
     query: str,
     tlm: TLM,
     confidence_score_threshold: float = _DEFAULT_UNHELPFULNESS_CONFIDENCE_THRESHOLD,
-) -> ResponseResult:
+) -> ResponseCheck:
     """Check if a response is unhelpful by asking [TLM](/tlm) to evaluate it.
 
     Uses TLM to evaluate whether a response is helpful by asking it to make a Yes/No judgment.
@@ -373,7 +373,7 @@ def is_unhelpful_response(
     # Current implementation assumes question is phrased to expect "Yes" for unhelpful responses
     # Changing the question would require restructuring this logic and potentially adjusting
     # the threshold value in BadResponseDetectionConfig
-    return ResponseResult(
+    return ResponseCheck(
         name="unhelpful",
         fails_check=score > confidence_score_threshold,
         scores={"confidence_score": score},

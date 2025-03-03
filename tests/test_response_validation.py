@@ -9,7 +9,7 @@ import pytest
 
 from cleanlab_codex.response_validation import (
     _DEFAULT_UNHELPFULNESS_CONFIDENCE_THRESHOLD,
-    ResponseResult,
+    ResponseCheck,
     is_bad_response,
     is_fallback_response,
     is_unhelpful_response,
@@ -297,7 +297,7 @@ class TestResponseResult:
     def test_response_result_init(self) -> None:
         for name in ["fallback", "untrustworthy", "unhelpful"]:
             for fails_check in [True, False]:
-                result = ResponseResult(
+                result = ResponseCheck(
                     name=name,  # type: ignore
                     fails_check=fails_check,
                     scores={"similarity_score": 0.5},
@@ -309,7 +309,7 @@ class TestResponseResult:
                 assert result.metadata == {"context": "Some context"}
 
     def test_bool_conversion(self) -> None:
-        result = ResponseResult(
+        result = ResponseCheck(
             name="fallback", fails_check=True, scores={"similarity_score": 0.5}, metadata={"context": "Some context"}
         )
         assert bool(result)
@@ -320,7 +320,7 @@ class TestResponseResult:
         from pydantic_core import ValidationError
 
         with pytest.raises(ValidationError):
-            ResponseResult(
+            ResponseCheck(
                 name="invalid",  # type: ignore
                 fails_check=True,
                 scores={},
