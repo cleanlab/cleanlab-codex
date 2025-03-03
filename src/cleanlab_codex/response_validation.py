@@ -4,12 +4,14 @@ Validation functions for evaluating LLM responses and determining if they should
 
 from __future__ import annotations
 
+import asyncio
 from typing import (
     Any,
     Callable,
     Dict,
     Literal,
     Optional,
+    Sequence,
     Union,
     cast,
 )
@@ -113,6 +115,33 @@ class ResponseResult(BaseModel):
         """
         return self.fails_check
 
+    def __repr__(self) -> str:
+        """Return a string representation of the ResponseResult."""
+        pass_or_fail = "Passed Check" if self.fails_check else "Failed Check"
+        metadata_str = ", metadata=..." if self.metadata else ""
+        return f"ResponseResult(name={self.name}, {pass_or_fail}, scores={self.scores}{metadata_str})"
+
+
+class ValidationResults(BaseModel):
+    """Container for results from multiple validation checks.
+
+    Attributes:
+        results (Sequence[ResponseResult]): Results from all validation checks
+        is_bad (bool): True if any validation check failed
+    """
+    results: Sequence[ResponseResult] = Field(description="Results from all validation checks")
+
+    def __bool__(self) -> bool:
+        """Returns True if any validation check failed, i.e. if any of the results are True."""
+        return any(bool(result) for result in self.results)
+
+async def _run_validation_check(check: Callable[[], ResponseResult]) -> ResponseResult:
+    """Run a single validation check asynchronously."""
+    return check()
+
+async def _run_validation_checks(checks: list[Callable[[], ResponseResult]]) -> list[ResponseResult]:
+    """Run all validation checks in parallel."""
+    return await asyncio.gather(*[_run_validation_check(check) for check in checks])
 
 def is_bad_response(
     response: str,
@@ -120,7 +149,7 @@ def is_bad_response(
     context: Optional[str] = None,
     query: Optional[str] = None,
     config: Union[BadResponseDetectionConfig, Dict[str, Any]] = _DEFAULT_CONFIG,
-) -> bool:
+) -> ValidationResults:
     """Run a series of checks to determine if a response is bad.
 
     If any check detects an issue (i.e. fails), the function returns `True`, indicating the response is bad.
@@ -180,7 +209,10 @@ def is_bad_response(
             )
         )
 
-    return any(bool(check()) for check in validation_checks)
+    # Run all checks in parallel and collect results
+    results = asyncio.run(_run_validation_checks(validation_checks))
+
+    return ValidationResults(results=results)
 
 
 def is_fallback_response(
