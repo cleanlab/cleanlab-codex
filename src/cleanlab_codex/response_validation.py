@@ -122,7 +122,7 @@ class ResponseCheck(BaseModel):
         return f"ResponseResult(name={self.name}, {pass_or_fail}, scores={self.scores}{metadata_str})"
 
 
-class ValidationResults(BaseModel):
+class QualityReport(BaseModel):
     """Container for results from multiple validation checks.
 
     Attributes:
@@ -149,11 +149,20 @@ def is_bad_response(
     context: Optional[str] = None,
     query: Optional[str] = None,
     config: Union[BadResponseDetectionConfig, Dict[str, Any]] = _DEFAULT_CONFIG,
-) -> ValidationResults:
+) -> QualityReport:
     """Run a series of checks to determine if a response is bad.
 
-    If any check detects an issue (i.e. fails), the function returns `True`, indicating the response is bad.
+    The function returns a `QualityReport` object containing results from multiple validation checks.
+    If any check fails (detects an issue), the QualityReport will evaluate to True when used in a boolean context.
+    This means code like `if is_bad_response(...)` will enter the if-block when problems are detected.
 
+    For example:
+    ```python
+    is_bad = is_bad_response(...)
+    if is_bad:  # True if any validation check failed
+        print("Response had issues")
+        # Access detailed results through is_bad.results
+    ```
     This function runs three possible validation checks:
     1. **Fallback check**: Detects if response is too similar to a known fallback answer.
     2. **Untrustworthy check**: Assesses response trustworthiness based on the given context and query.
@@ -212,7 +221,7 @@ def is_bad_response(
     # Run all checks in parallel and collect results
     results = asyncio.run(_run_validation_checks(validation_checks))
 
-    return ValidationResults(results=results)
+    return QualityReport(results=results)
 
 
 def is_fallback_response(
