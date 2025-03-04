@@ -217,13 +217,24 @@ def is_bad_response(
     scores = {}
     metadata = {}
     fails_check = False
-    for check in validation_checks:
-        response_check = check()
-        scores.update(response_check.scores)
-        metadata.update(response_check.metadata)
-        if response_check.fails_check:
+    _order = []
+    for validation_check_callable in validation_checks:
+        check = validation_check_callable()
+        # Nest the scores and metadata under the check name
+        scores[check.name] = check.scores
+        metadata[check.name] = check.metadata
+
+        # Record the order in which checks were run
+        _order.append(check.name)
+
+        # If any check fails, stop running remaining checks
+        if check.fails_check:
             fails_check = True
             break
+
+    # Add the order of checks to the metadata
+    # Key name is subject to change, use with caution as it may change in the future
+    metadata["_check_order"] = _order
 
     return ResponseCheck(
         name="bad",
