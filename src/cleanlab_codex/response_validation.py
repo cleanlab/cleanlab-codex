@@ -91,7 +91,7 @@ BadResponseDetectionConfig.__doc__ = f"""
 _DEFAULT_CONFIG = BadResponseDetectionConfig()
 
 # Type aliases for validation scores
-SingleScoreDict = dict[str, float]
+SingleScoreDict = Dict[str, float]
 NestedScoreDict = OrderedDict[str, SingleScoreDict]
 
 """Type alias for validation scores.
@@ -117,13 +117,13 @@ class ResponseCheck(BaseModel):
         name (Literal["fallback", "untrustworthy", "unhelpful"]): Name of the validation check.
         fails_check (bool): Whether the response fails a given validation check.
         scores (ValidationScores): Scores for the response from a given validation check.
-        metadata (dict[str, Any]): Metadata about the validation check.
+        metadata (Dict[str, Any]): Metadata about the validation check.
     """
 
     name: Literal["bad", "fallback", "untrustworthy", "unhelpful"] = Field(description="Name of the validation check")
     fails_check: bool = Field(description="Whether the response fails a given validation check")
     scores: ValidationScores = Field(description="Scores for the response from a given validation check")
-    metadata: dict[str, Any] = Field(default_factory=dict, description="Metadata about the validation check")
+    metadata: Dict[str, Any] = Field(default_factory=dict, description="Metadata about the validation check")
 
     def __bool__(self) -> bool:
         """Convert ResponseResult to bool.
