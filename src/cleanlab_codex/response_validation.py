@@ -226,6 +226,7 @@ def is_bad_response(
         score_dict = cast(SingleScoreDict, check.scores)
         scores[check.name] = score_dict
         metadata[check.name] = check.metadata
+        metadata[check.name]["fails_check"] = check.fails_check
 
         # If any check fails, stop running remaining checks
         if check.fails_check:
