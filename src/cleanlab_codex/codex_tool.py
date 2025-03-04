@@ -6,8 +6,8 @@ from typing import Any, Optional
 
 from typing_extensions import Annotated
 
+from cleanlab_codex.internal.analytics import IntegrationType, _AnalyticsMetadata
 from cleanlab_codex.project import Project
-from cleanlab_codex.utils.analytics import AnalyticsMetadata
 from cleanlab_codex.utils.errors import MissingDependencyError
 from cleanlab_codex.utils.function import (
     pydantic_model_from_function,
@@ -114,7 +114,7 @@ class CodexTool:
         return self._project.query(
             question=question,
             fallback_answer=self._fallback_answer,
-            analytics_metadata=AnalyticsMetadata(integration_type="tool"),
+            analytics_metadata=_AnalyticsMetadata(integration_type=IntegrationType.TOOL),
         )[0]
 
     def to_openai_tool(self) -> dict[str, Any]:

@@ -8,10 +8,10 @@ from typing import Optional
 
 from codex import AuthenticationError
 
+from cleanlab_codex.internal.analytics import IntegrationType, _AnalyticsMetadata
 from cleanlab_codex.internal.sdk_client import client_from_access_key
 from cleanlab_codex.types.entry import Entry
 from cleanlab_codex.types.project import ProjectConfig
-from cleanlab_codex.utils.analytics import AnalyticsMetadata
 
 if _TYPE_CHECKING:
     from datetime import datetime
@@ -160,7 +160,7 @@ class Project:
         *,
         fallback_answer: Optional[str] = None,
         read_only: bool = False,
-        analytics_metadata: Optional[AnalyticsMetadata] = None,
+        analytics_metadata: Optional[_AnalyticsMetadata] = None,
     ) -> tuple[Optional[str], Optional[Entry]]:
         """Query Codex to check if this project contains an answer to the question. Add the question to the project for SME review if it does not.
 
@@ -176,7 +176,7 @@ class Project:
                 If Codex is unable to answer the question, the first element will be `fallback_answer` if provided, otherwise None. The second element will be a new [`Entry`](/codex/api/python/types.entry#class-entry) in the Codex project.
         """
         if not analytics_metadata:
-            analytics_metadata = AnalyticsMetadata(integration_type="backup")
+            analytics_metadata = _AnalyticsMetadata(integration_type=IntegrationType.BACKUP)
 
         return self._query_project(
             question=question,
@@ -191,7 +191,7 @@ class Project:
         *,
         fallback_answer: Optional[str] = None,
         read_only: bool = False,
-        analytics_metadata: Optional[AnalyticsMetadata] = None,
+        analytics_metadata: Optional[_AnalyticsMetadata] = None,
     ) -> tuple[Optional[str], Optional[Entry]]:
         extra_headers = analytics_metadata.to_headers() if analytics_metadata else None
         maybe_entry = self._sdk_client.projects.entries.query(self._id, question=question, extra_headers=extra_headers)

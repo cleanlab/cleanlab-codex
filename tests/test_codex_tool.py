@@ -9,7 +9,7 @@ from langchain_core.tools.structured import StructuredTool
 from llama_index.core.tools import FunctionTool
 
 from cleanlab_codex.codex_tool import CodexTool
-from cleanlab_codex.utils.analytics import AnalyticsMetadata
+from cleanlab_codex.internal.analytics import IntegrationType, _AnalyticsMetadata
 from cleanlab_codex.utils.errors import MissingDependencyError
 
 
@@ -25,7 +25,10 @@ def test_tool_query_passes_metadata(mock_client_from_access_key: MagicMock) -> N
         args, kwargs = mock_project.query.call_args
         assert kwargs["question"] == "what is the capital of France?"
         assert kwargs["fallback_answer"] == CodexTool.DEFAULT_FALLBACK_ANSWER
-        assert kwargs["analytics_metadata"].to_headers() == AnalyticsMetadata(integration_type="tool").to_headers()
+        assert (
+            kwargs["analytics_metadata"].to_headers()
+            == _AnalyticsMetadata(integration_type=IntegrationType.TOOL).to_headers()
+        )
 
 
 def patch_import_with_import_error(missing_module: str) -> None:
