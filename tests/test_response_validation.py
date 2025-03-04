@@ -72,14 +72,14 @@ def mock_tlm() -> MockTLM:
     ("response", "threshold", "fallback_answer", "expected"),
     [
         # Test threshold variations
-        (GOOD_RESPONSE, 30, None, True),
-        (GOOD_RESPONSE, 55, None, False),
+        (GOOD_RESPONSE, 0.3, None, True),
+        (GOOD_RESPONSE, 0.55, None, False),
         # Test default behavior (BAD_RESPONSE should be flagged)
         (BAD_RESPONSE, None, None, True),
         # Test default behavior for different response (GOOD_RESPONSE should not be flagged)
         (GOOD_RESPONSE, None, None, False),
         # Test custom fallback answer
-        (GOOD_RESPONSE, 80, "This is an unhelpful response", False),
+        (GOOD_RESPONSE, 0.8, "This is an unhelpful response", False),
     ],
 )
 def test_is_fallback_response(
@@ -234,14 +234,14 @@ def test_is_bad_response_partial_inputs(
 @pytest.mark.parametrize(
     ("response", "fallback_answer", "expected"),
     [
-        ("This is a test response", "This is a test response", 100),  # exact match
-        ("abcd", "Abcd", 100),  # same response, different case
-        ("This is a test response", "This is a test answer", 86),  # similar response
-        ("This is a test response", "A totally different fallback answer", 39),  # different response
-        ("abcd", "efgh", 0),  # no characters in common
-        ("abcd", "dcba", 40),  # reverse order
-        ("don't know", "I don't know", 100),  # partial match
-        ("I don't know", "don't know", 100),  # partial match, response longer than fallback
+        ("This is a test response", "This is a test response", 1.0),  # exact match
+        ("abcd", "Abcd", 1.0),  # same response, different case
+        ("This is a test response", "This is a test answer", 0.86),  # similar response
+        ("This is a test response", "A totally different fallback answer", 0.39),  # different response
+        ("abcd", "efgh", 0.0),  # no characters in common
+        ("abcd", "dcba", 0.4),  # reverse order
+        ("don't know", "I don't know", 1.0),  # partial match
+        ("I don't know", "don't know", 1.0),  # partial match, response longer than fallback
     ],
 )
 def test_score_fallback_response(response: str, fallback_answer: str, expected: int) -> None:

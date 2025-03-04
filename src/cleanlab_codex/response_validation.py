@@ -109,6 +109,7 @@ Example:
 """
 ValidationScores = SingleScoreDict | NestedScoreDict
 
+
 class ResponseCheck(BaseModel):
     """Result of a response validation check.
 
@@ -215,14 +216,15 @@ def is_bad_response(
         )
 
     # Run all checks and collect results, until one fails
-    scores = OrderedDict()
-    metadata = {}
+    scores: NestedScoreDict = OrderedDict()
+    metadata: dict[str, Any] = {}
     fails_check = False
-    _order = []
     for validation_check_callable in validation_checks:
         check = validation_check_callable()
         # Nest the scores and metadata under the check name
-        scores[check.name] = check.scores
+        score_dict = cast(SingleScoreDict, check.scores)
+        scores[check.name] = score_dict
+        metadata[check.name] = check.metadata
 
         # If any check fails, stop running remaining checks
         if check.fails_check:
@@ -257,7 +259,7 @@ def is_fallback_response(
         ResponseResult: A ResponseResult object containing the results of the validation checks.
     """
 
-    score: int = score_fallback_response(response, fallback_answer)
+    score: float = score_fallback_response(response, fallback_answer)
     return ResponseCheck(
         name="fallback",
         fails_check=score >= threshold,
@@ -269,7 +271,7 @@ def is_fallback_response(
 def score_fallback_response(
     response: str,
     fallback_answer: str = _DEFAULT_FALLBACK_ANSWER,
-) -> int:
+) -> float:
     """Score a response against a known fallback answer, based on how similar they are using fuzzy string matching.
 
     Args:
@@ -277,7 +279,7 @@ def score_fallback_response(
         fallback_answer (str): A known unhelpful/fallback response to compare against.
 
     Returns:
-        int: The score of the response, between 0 and 100.
+        float: The score of the response, between 0.0 and 1.0.
     """
     try:
         from thefuzz import fuzz  # type: ignore
@@ -287,7 +289,7 @@ def score_fallback_response(
             package_url="https://github.com/seatgeek/thefuzz",
         ) from e
 
-    return int(fuzz.partial_ratio(fallback_answer.lower(), response.lower())) / 100
+    return float(fuzz.partial_ratio(fallback_answer.lower(), response.lower())) / 100
 
 
 def is_untrustworthy_response(
