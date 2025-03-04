@@ -295,7 +295,7 @@ def test_score_unhelpful_response(mock_tlm: Mock, tlm_score: float) -> None:
 
 class TestResponseResult:
     def test_response_result_init(self) -> None:
-        for name in ["fallback", "untrustworthy", "unhelpful"]:
+        for name in ["bad", "fallback", "untrustworthy", "unhelpful"]:
             for fails_check in [True, False]:
                 result = ResponseCheck(
                     name=name,  # type: ignore
