@@ -398,8 +398,8 @@ def is_unhelpful_response(
     return ResponseCheck(
         name="unhelpful",
         fails_check=score > confidence_score_threshold,
-        scores={"trustworthiness_score": score},
-        metadata={"threshold": confidence_score_threshold},
+        scores={"confidence_score": score},
+        metadata={"confidence_score_threshold": confidence_score_threshold},
     )
 
 
