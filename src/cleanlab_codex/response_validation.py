@@ -25,7 +25,7 @@ from cleanlab_codex.utils.prompt import default_format_prompt
 _DEFAULT_FALLBACK_ANSWER: str = (
     "Based on the available information, I cannot provide a complete answer to this question."
 )
-_DEFAULT_FALLBACK_SIMILARITY_THRESHOLD: int = 70
+_DEFAULT_FALLBACK_SIMILARITY_THRESHOLD: float = 0.7
 _DEFAULT_TRUSTWORTHINESS_THRESHOLD: float = 0.5
 _DEFAULT_UNHELPFULNESS_CONFIDENCE_THRESHOLD: float = 0.5
 
@@ -47,7 +47,7 @@ class BadResponseDetectionConfig(BaseModel):
         default=_DEFAULT_FALLBACK_ANSWER,
         description="Known unhelpful response to compare against",
     )
-    fallback_similarity_threshold: int = Field(
+    fallback_similarity_threshold: float = Field(
         default=_DEFAULT_FALLBACK_SIMILARITY_THRESHOLD,
         description="Fuzzy matching similarity threshold (0-100). Higher values mean responses must be more similar to fallback_answer to be considered bad.",
         ge=0,
@@ -240,7 +240,7 @@ def is_bad_response(
 def is_fallback_response(
     response: str,
     fallback_answer: str = _DEFAULT_FALLBACK_ANSWER,
-    threshold: int = _DEFAULT_FALLBACK_SIMILARITY_THRESHOLD,
+    threshold: float = _DEFAULT_FALLBACK_SIMILARITY_THRESHOLD,
 ) -> ResponseCheck:
     """Check if a response is too similar to a known fallback answer.
 
@@ -250,8 +250,8 @@ def is_fallback_response(
     Args:
         response (str): The response to check.
         fallback_answer (str): A known unhelpful/fallback response to compare against.
-        threshold (int): Similarity threshold (0-100) above which a response is considered to match the fallback answer.
-                Higher values require more similarity. Default 70 means responses that are 70% or more similar are considered bad.
+        threshold (float): Similarity threshold (0-1.0) above which a response is considered to match the fallback answer.
+                Higher values require more similarity. Default 0.7 means responses that are 70% or more similar are considered bad.
 
     Returns:
         ResponseResult: A ResponseResult object containing the results of the validation checks.
@@ -287,7 +287,7 @@ def score_fallback_response(
             package_url="https://github.com/seatgeek/thefuzz",
         ) from e
 
-    return int(fuzz.partial_ratio(fallback_answer.lower(), response.lower()))
+    return int(fuzz.partial_ratio(fallback_answer.lower(), response.lower())) / 100
 
 
 def is_untrustworthy_response(
