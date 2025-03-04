@@ -7,7 +7,7 @@ name = "cleanlab-codex"
 dynamic = ["version"]
 description = 'Python client library for developers to integrate Cleanlab Codex into RAG systems'
 readme = "README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.9"
 license = "MIT"
 keywords = []
 authors = [
@@ -16,11 +16,11 @@ authors = [
 classifiers = [
   "Development Status :: 5 - Production/Stable",
   "Programming Language :: Python",
-  "Programming Language :: Python :: 3.8",
   "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
   "Programming Language :: Python :: Implementation :: CPython",
   "Programming Language :: Python :: Implementation :: PyPy",
 ]
@@ -43,13 +43,18 @@ extra-dependencies = [
   "mypy>=1.0.0",
   "pytest",
   "llama-index-core",
-  "smolagents",
+  "smolagents; python_version >= '3.10'",
   "cleanlab-tlm",
   "thefuzz",
   "langchain-core",
 ]
+
+[[tool.hatch.envs.types.matrix]]
+python = ["3.9", "3.10", "3.11", "3.12", "3.13"]
+
 [tool.hatch.envs.types.scripts]
 check = "mypy --strict --install-types --non-interactive {args:src/cleanlab_codex tests}"
+
 [tool.hatch.metadata]
 allow-direct-references = true
 
