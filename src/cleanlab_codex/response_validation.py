@@ -89,6 +89,24 @@ BadResponseDetectionConfig.__doc__ = f"""
 
 _DEFAULT_CONFIG = BadResponseDetectionConfig()
 
+# Type aliases for validation scores
+SingleScoreDict = dict[str, float]
+NestedScoreDict = dict[str, dict[str, float]]
+
+"""Type alias for validation scores.
+
+Scores can be either a single score or a nested dictionary of scores.
+
+Example:
+    # Single score
+    scores: ValidationScores = {"score": 0.5}
+    # Nested scores
+    scores: ValidationScores = {
+        "check_a": {"sub_score_a1": 0.5, "sub_score_a2": 0.5},
+        "check_b": {"sub_score_b1": 0.5, "sub_score_b2": 0.5},
+    }
+"""
+ValidationScores = SingleScoreDict | NestedScoreDict
 
 class ResponseCheck(BaseModel):
     """Result of a response validation check.
@@ -96,13 +114,13 @@ class ResponseCheck(BaseModel):
     Attributes:
         name (Literal["fallback", "untrustworthy", "unhelpful"]): Name of the validation check.
         fails_check (bool): Whether the response fails a given validation check.
-        scores (dict[str, float]): Scores for the response from a given validation check.
+        scores (ValidationScores): Scores for the response from a given validation check.
         metadata (dict[str, Any]): Metadata about the validation check.
     """
 
     name: Literal["bad", "fallback", "untrustworthy", "unhelpful"] = Field(description="Name of the validation check")
     fails_check: bool = Field(description="Whether the response fails a given validation check")
-    scores: dict[str, float] = Field(description="Scores for the response from a given validation check")
+    scores: ValidationScores = Field(description="Scores for the response from a given validation check")
     metadata: dict[str, Any] = Field(default_factory=dict, description="Metadata about the validation check")
 
     def __bool__(self) -> bool:
