@@ -92,7 +92,8 @@ _DEFAULT_CONFIG = BadResponseDetectionConfig()
 
 # Type aliases for validation scores
 SingleScoreDict = Dict[str, float]
-NestedScoreDict = OrderedDict[str, SingleScoreDict]
+# In Python 3.8, OrderedDict won't work with generics, so once we drop support for 3.8, we can use NestedScoreDict = OrderedDict[str, SingleScoreDict]
+NestedScoreDict = OrderedDict[str, Dict[str, float]]
 
 """Type alias for validation scores.
 
@@ -107,7 +108,7 @@ Example:
         "check_b": {"sub_score_b1": 0.5, "sub_score_b2": 0.5},
     }
 """
-ValidationScores = SingleScoreDict | NestedScoreDict
+ValidationScores = Union[SingleScoreDict, NestedScoreDict]
 
 
 class ResponseCheck(BaseModel):
