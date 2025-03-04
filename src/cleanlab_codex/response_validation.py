@@ -4,6 +4,7 @@ Validation functions for evaluating LLM responses and determining if they should
 
 from __future__ import annotations
 
+from collections import OrderedDict
 from typing import (
     Any,
     Callable,
@@ -91,7 +92,7 @@ _DEFAULT_CONFIG = BadResponseDetectionConfig()
 
 # Type aliases for validation scores
 SingleScoreDict = dict[str, float]
-NestedScoreDict = dict[str, dict[str, float]]
+NestedScoreDict = OrderedDict[str, SingleScoreDict]
 
 """Type alias for validation scores.
 
@@ -214,7 +215,7 @@ def is_bad_response(
         )
 
     # Run all checks and collect results, until one fails
-    scores = {}
+    scores = OrderedDict()
     metadata = {}
     fails_check = False
     _order = []
@@ -222,19 +223,11 @@ def is_bad_response(
         check = validation_check_callable()
         # Nest the scores and metadata under the check name
         scores[check.name] = check.scores
-        metadata[check.name] = check.metadata
-
-        # Record the order in which checks were run
-        _order.append(check.name)
 
         # If any check fails, stop running remaining checks
         if check.fails_check:
             fails_check = True
             break
-
-    # Add the order of checks to the metadata
-    # Key name is subject to change, use with caution as it may change in the future
-    metadata["_check_order"] = _order
 
     return ResponseCheck(
         name="bad",
@@ -268,8 +261,8 @@ def is_fallback_response(
     return ResponseCheck(
         name="fallback",
         fails_check=score >= threshold,
-        scores={"fallback_similarity_score": score},
-        metadata={"fallback_similarity_threshold": threshold},
+        scores={"similarity_score": score},
+        metadata={"threshold": threshold},
     )
 
 
@@ -335,8 +328,8 @@ def is_untrustworthy_response(
     return ResponseCheck(
         name="untrustworthy",
         fails_check=score < trustworthiness_threshold,
-        scores={"untrustworthiness_score": score},
-        metadata={"untrustworthiness_threshold": trustworthiness_threshold},
+        scores={"trustworthiness_score": score},
+        metadata={"trustworthiness_threshold": trustworthiness_threshold},
     )
 
 
@@ -405,8 +398,8 @@ def is_unhelpful_response(
     return ResponseCheck(
         name="unhelpful",
         fails_check=score > confidence_score_threshold,
-        scores={"unhelpful_score": score},
-        metadata={"unhelpful_score_threshold": confidence_score_threshold},
+        scores={"trustworthiness_score": score},
+        metadata={"threshold": confidence_score_threshold},
     )
 
 
