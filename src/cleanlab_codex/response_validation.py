@@ -92,8 +92,7 @@ _DEFAULT_CONFIG = BadResponseDetectionConfig()
 
 # Type aliases for validation scores
 SingleScoreDict = Dict[str, float]
-# In Python 3.8, OrderedDict won't work with generics, so once we drop support for 3.8, we can use NestedScoreDict = OrderedDict[str, SingleScoreDict]
-NestedScoreDict = Dict[str, SingleScoreDict]
+NestedScoreDict = OrderedDict[str, SingleScoreDict]
 
 """Type alias for validation scores.
 
