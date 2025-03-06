@@ -4,12 +4,10 @@ Validation functions for evaluating LLM responses and determining if they should
 
 from __future__ import annotations
 
-from collections import OrderedDict
 from typing import (
     Any,
     Callable,
     Dict,
-    Literal,
     Optional,
     Union,
     cast,
@@ -18,6 +16,10 @@ from typing import (
 from pydantic import BaseModel, ConfigDict, Field
 
 from cleanlab_codex.internal.utils import generate_pydantic_model_docstring
+from cleanlab_codex.types.response_validation import (
+    AggregatedResponseValidationResult,
+    SingleResponseValidationResult,
+)
 from cleanlab_codex.types.tlm import TLM
 from cleanlab_codex.utils.errors import MissingDependencyError
 from cleanlab_codex.utils.prompt import default_format_prompt
@@ -90,55 +92,6 @@ BadResponseDetectionConfig.__doc__ = f"""
 
 _DEFAULT_CONFIG = BadResponseDetectionConfig()
 
-# Type aliases for validation scores
-SingleScoreDict = Dict[str, float]
-NestedScoreDict = OrderedDict[str, SingleScoreDict]
-
-"""Type alias for validation scores.
-
-Scores can be either a single score or a nested dictionary of scores.
-
-Example:
-    # Single score
-    scores: ValidationScores = {"score": 0.5}
-    # Nested scores
-    scores: ValidationScores = {
-        "check_a": {"sub_score_a1": 0.5, "sub_score_a2": 0.5},
-        "check_b": {"sub_score_b1": 0.5, "sub_score_b2": 0.5},
-    }
-"""
-ValidationScores = Union[SingleScoreDict, NestedScoreDict]
-
-
-class ResponseCheck(BaseModel):
-    """Result of a response validation check.
-
-    Attributes:
-        name (Literal["fallback", "untrustworthy", "unhelpful"]): Name of the validation check.
-        fails_check (bool): Whether the response fails a given validation check.
-        scores (ValidationScores): Scores for the response from a given validation check.
-        metadata (Dict[str, Any]): Metadata about the validation check.
-    """
-
-    name: Literal["bad", "fallback", "untrustworthy", "unhelpful"] = Field(description="Name of the validation check")
-    fails_check: bool = Field(description="Whether the response fails a given validation check")
-    scores: ValidationScores = Field(description="Scores for the response from a given validation check")
-    metadata: Dict[str, Any] = Field(default_factory=dict, description="Metadata about the validation check")
-
-    def __bool__(self) -> bool:
-        """Convert ResponseResult to bool.
-
-        Returns:
-            bool: True if the response fails a given validation check, False otherwise.
-        """
-        return self.fails_check
-
-    def __repr__(self) -> str:
-        """Return a string representation of the ResponseResult."""
-        pass_or_fail = "Passed Check" if self.fails_check else "Failed Check"
-        metadata_str = ", metadata=..." if self.metadata else ""
-        return f"ResponseResult(name={self.name}, {pass_or_fail}, scores={self.scores}{metadata_str})"
-
 
 def is_bad_response(
     response: str,
@@ -146,11 +99,11 @@ def is_bad_response(
     context: Optional[str] = None,
     query: Optional[str] = None,
     config: Union[BadResponseDetectionConfig, Dict[str, Any]] = _DEFAULT_CONFIG,
-) -> ResponseCheck:
+) -> AggregatedResponseValidationResult:
     """Run a series of checks to determine if a response is bad.
 
-    The function returns a `ResponseCheck` object containing results from multiple validation checks.
-    If any check fails (detects an issue), the ResponseCheck will evaluate to True when used in a boolean context.
+    The function returns a `AggregatedResponseValidationResult` object containing results from multiple validation checks.
+    If any check fails (detects an issue), the AggregatedResponseValidationResult will evaluate to True when used in a boolean context.
     This means code like `if is_bad_response(...)` will enter the if-block when problems are detected.
 
     For example:
@@ -175,11 +128,11 @@ def is_bad_response(
         config (BadResponseDetectionConfig, optional): Optional, configuration parameters for validation checks. See [BadResponseDetectionConfig](#class-badresponsedetectionconfig) for details. If not provided, default values will be used.
 
     Returns:
-        ResponseResult: A ResponseResult object containing the results of the validation checks.
+        AggregatedResponseValidationResult: A AggregatedResponseValidationResult object containing the results of the validation checks.
     """
     config = BadResponseDetectionConfig.model_validate(config)
 
-    validation_checks: list[Callable[[], ResponseCheck]] = []
+    validation_checks: list[Callable[[], SingleResponseValidationResult]] = []
 
     # All required inputs are available for checking fallback responses
     validation_checks.append(
@@ -215,36 +168,21 @@ def is_bad_response(
             )
         )
 
+    results = []
     # Run all checks and collect results, until one fails
-    scores: NestedScoreDict = OrderedDict()
-    metadata: dict[str, Any] = {}
-    fails_check = False
-    for validation_check_callable in validation_checks:
-        check = validation_check_callable()
-        # Nest the scores and metadata under the check name
-        score_dict = cast(SingleScoreDict, check.scores)
-        scores[check.name] = score_dict
-        metadata[check.name] = check.metadata
-        metadata[check.name]["fails_check"] = check.fails_check
-
-        # If any check fails, stop running remaining checks
+    for check in (check() for check in validation_checks):
+        results.append(check)
         if check.fails_check:
-            fails_check = True
             break
 
-    return ResponseCheck(
-        name="bad",
-        fails_check=fails_check,
-        scores=scores,
-        metadata=metadata,
-    )
+    return AggregatedResponseValidationResult(name="bad", results=results)
 
 
 def is_fallback_response(
     response: str,
     fallback_answer: str = _DEFAULT_FALLBACK_ANSWER,
     threshold: float = _DEFAULT_FALLBACK_SIMILARITY_THRESHOLD,
-) -> ResponseCheck:
+) -> SingleResponseValidationResult:
     """Check if a response is too similar to a known fallback answer.
 
     Uses fuzzy string matching to compare the response against a known fallback answer.
@@ -257,14 +195,14 @@ def is_fallback_response(
                 Higher values require more similarity. Default 0.7 means responses that are 70% or more similar are considered bad.
 
     Returns:
-        ResponseResult: A ResponseResult object containing the results of the validation checks.
+        SingleResponseValidationResult: A SingleResponseValidationResult object containing the results of the validation checks.
     """
 
     score: float = score_fallback_response(response, fallback_answer)
-    return ResponseCheck(
+    return SingleResponseValidationResult(
         name="fallback",
         fails_check=score >= threshold,
-        scores={"similarity_score": score},
+        score={"similarity_score": score},
         metadata={"threshold": threshold},
     )
 
@@ -300,7 +238,7 @@ def is_untrustworthy_response(
     tlm: TLM,
     trustworthiness_threshold: float = _DEFAULT_TRUSTWORTHINESS_THRESHOLD,
     format_prompt: Callable[[str, str], str] = default_format_prompt,
-) -> ResponseCheck:
+) -> SingleResponseValidationResult:
     """Check if a response is untrustworthy.
 
     Uses [TLM](/tlm) to evaluate whether a response is trustworthy given the context and query.
@@ -319,7 +257,7 @@ def is_untrustworthy_response(
                       be evaluated using the same prompt that was used to generate the response.
 
     Returns:
-        ResponseResult: A ResponseResult object containing the results of the validation checks.
+        SingleResponseValidationResult: A SingleResponseValidationResult object containing the results of the validation checks.
     """
     score: float = score_untrustworthy_response(
         response=response,
@@ -328,10 +266,10 @@ def is_untrustworthy_response(
         tlm=tlm,
         format_prompt=format_prompt,
     )
-    return ResponseCheck(
+    return SingleResponseValidationResult(
         name="untrustworthy",
         fails_check=score < trustworthiness_threshold,
-        scores={"trustworthiness_score": score},
+        score={"trustworthiness_score": score},
         metadata={"trustworthiness_threshold": trustworthiness_threshold},
     )
 
@@ -375,7 +313,7 @@ def is_unhelpful_response(
     query: str,
     tlm: TLM,
     confidence_score_threshold: float = _DEFAULT_UNHELPFULNESS_CONFIDENCE_THRESHOLD,
-) -> ResponseCheck:
+) -> SingleResponseValidationResult:
     """Check if a response is unhelpful by asking [TLM](/tlm) to evaluate it.
 
     Uses TLM to evaluate whether a response is helpful by asking it to make a Yes/No judgment.
@@ -391,17 +329,17 @@ def is_unhelpful_response(
                                        E.g. if confidence_score_threshold is 0.5, then responses with scores higher than 0.5 are considered unhelpful.
 
     Returns:
-        ResponseResult: A ResponseResult object containing the results of the validation checks.
+        SingleResponseValidationResult: A SingleResponseValidationResult object containing the results of the validation checks.
     """
     score: float = score_unhelpful_response(response, query, tlm)
 
     # Current implementation assumes question is phrased to expect "Yes" for unhelpful responses
     # Changing the question would require restructuring this logic and potentially adjusting
     # the threshold value in BadResponseDetectionConfig
-    return ResponseCheck(
+    return SingleResponseValidationResult(
         name="unhelpful",
         fails_check=score > confidence_score_threshold,
-        scores={"confidence_score": score},
+        score={"confidence_score": score},
         metadata={"confidence_score_threshold": confidence_score_threshold},
     )
 

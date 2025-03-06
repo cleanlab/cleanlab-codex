@@ -9,7 +9,6 @@ import pytest
 
 from cleanlab_codex.response_validation import (
     _DEFAULT_UNHELPFULNESS_CONFIDENCE_THRESHOLD,
-    ResponseCheck,
     is_bad_response,
     is_fallback_response,
     is_unhelpful_response,
@@ -18,6 +17,7 @@ from cleanlab_codex.response_validation import (
     score_unhelpful_response,
     score_untrustworthy_response,
 )
+from cleanlab_codex.types.response_validation import AggregatedResponseValidationResult, SingleResponseValidationResult
 
 # Mock responses for testing
 GOOD_RESPONSE = "This is a helpful and specific response that answers the question completely."
@@ -293,24 +293,24 @@ def test_score_unhelpful_response(mock_tlm: Mock, tlm_score: float) -> None:
     )
 
 
-class TestResponseResult:
-    def test_response_result_init(self) -> None:
-        for name in ["bad", "fallback", "untrustworthy", "unhelpful"]:
+class TestSingleResponseValidationResult:
+    def test_single_response_validation_result_init(self) -> None:
+        for name in ["fallback", "untrustworthy", "unhelpful"]:
             for fails_check in [True, False]:
-                result = ResponseCheck(
+                result = SingleResponseValidationResult(
                     name=name,  # type: ignore
                     fails_check=fails_check,
-                    scores={"similarity_score": 0.5},
+                    score={"similarity_score": 0.5},
                     metadata={"context": "Some context"},
                 )
                 assert result.name == name
                 assert result.fails_check == fails_check
-                assert result.scores == {"similarity_score": 0.5}
+                assert result.score == {"similarity_score": 0.5}
                 assert result.metadata == {"context": "Some context"}
 
     def test_bool_conversion(self) -> None:
-        result = ResponseCheck(
-            name="fallback", fails_check=True, scores={"similarity_score": 0.5}, metadata={"context": "Some context"}
+        result = SingleResponseValidationResult(
+            name="fallback", fails_check=True, score={"similarity_score": 0.5}, metadata={"context": "Some context"}
         )
         assert bool(result)
         result.fails_check = False
@@ -319,10 +319,48 @@ class TestResponseResult:
     def test_invalid_name(self) -> None:
         from pydantic_core import ValidationError
 
-        with pytest.raises(ValidationError):
-            ResponseCheck(
-                name="invalid",  # type: ignore
-                fails_check=True,
-                scores={},
-                metadata={},
-            )
+        for invalid_name in ["bad", "invalid"]:
+            with pytest.raises(ValidationError):
+                SingleResponseValidationResult(
+                    name=invalid_name,  # type: ignore
+                    fails_check=True,
+                    score={},
+                    metadata={},
+                )
+
+
+class TestAggregatedResponseValidationResult:
+    @pytest.fixture
+    def fallback_result(self) -> SingleResponseValidationResult:
+        return SingleResponseValidationResult(
+            name="fallback", fails_check=True, score={"similarity_score": 0.5}, metadata={"context": "Some context"}
+        )
+
+    def test_aggregated_response_validation_result_init(self, fallback_result: SingleResponseValidationResult) -> None:
+        result = AggregatedResponseValidationResult(name="bad", results=[fallback_result])
+        assert result.name == "bad"
+        assert result.fails_check == fallback_result.fails_check
+        assert result.results == [fallback_result]
+
+    def test_bool_conversion(self, fallback_result: SingleResponseValidationResult) -> None:
+        result = AggregatedResponseValidationResult(name="bad", results=[fallback_result])
+        assert bool(result)
+
+        failed_single_response_result = SingleResponseValidationResult(
+            name="fallback", fails_check=False, score={"similarity_score": 0.5}, metadata={"context": "Some context"}
+        )
+        result = AggregatedResponseValidationResult(
+            name="bad",
+            results=[failed_single_response_result],
+        )
+        assert not bool(result)
+
+    def test_invalid_name(self) -> None:
+        from pydantic_core import ValidationError
+
+        for invalid_name in ["invalid", "fallback", "untrustworthy", "unhelpful"]:
+            with pytest.raises(ValidationError):
+                AggregatedResponseValidationResult(
+                    name=invalid_name,  # type: ignore
+                    results=[],
+                )
