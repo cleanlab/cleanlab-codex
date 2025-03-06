@@ -51,9 +51,9 @@ class BadResponseDetectionConfig(BaseModel):
     )
     fallback_similarity_threshold: float = Field(
         default=_DEFAULT_FALLBACK_SIMILARITY_THRESHOLD,
-        description="Fuzzy matching similarity threshold (0-100). Higher values mean responses must be more similar to fallback_answer to be considered bad.",
-        ge=0,
-        le=100,
+        description="Fuzzy matching similarity threshold (0.0-1.0). Higher values mean responses must be more similar to fallback_answer to be considered bad.",
+        ge=0.0,
+        le=1.0,
     )
 
     # Untrustworthy check config
