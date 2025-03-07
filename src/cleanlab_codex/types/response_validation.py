@@ -46,7 +46,7 @@ class SingleResponseValidationResult(BaseResponseValidationResult):
     name: ResponseValidationMethod = Field(description="The name of the validation check.")
     fails_check: bool = Field(description="Whether the check failed. True if the check failed, False otherwise.")
     score: Dict[str, float] = Field(
-        description="The score of the response. Typically a single scorevalue between 0.0 and 1.0, yet this can vary by check."
+        description="The score of the response. Typically a single score's value is between 0.0 and 1.0, but this can vary by check."
     )
     metadata: Dict[str, Any] = Field(
         description="Additional metadata about the response. This can include the threshold values, or other information relevant to the check."
