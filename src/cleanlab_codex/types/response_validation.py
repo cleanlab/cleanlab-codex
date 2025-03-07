@@ -47,7 +47,7 @@ class SingleResponseValidationResult(BaseResponseValidationResult):
 
     def __repr__(self) -> str:
         """Return a string representation of the SingleResponseValidationResult."""
-        pass_or_fail = "Passed Check" if self.fails_check else "Failed Check"
+        pass_or_fail = "Failed Check" if self.fails_check else "Passed Check"
         metadata_str = ", metadata=..." if self.metadata else ""
         return f"SingleResponseValidationResult(name={self.name}, {pass_or_fail}, score={self.score}{metadata_str})"
 

@@ -316,6 +316,15 @@ class TestSingleResponseValidationResult:
         result.fails_check = False
         assert not bool(result)
 
+    def test_repr(self) -> None:
+        result = SingleResponseValidationResult(
+            name="fallback", fails_check=True, score={"similarity_score": 0.5}, metadata={"context": "Some context"}
+        )
+        assert "Failed Check" in repr(result)
+
+        result.fails_check = False
+        assert "Passed Check" in repr(result)
+
     def test_invalid_name(self) -> None:
         from pydantic_core import ValidationError
 
