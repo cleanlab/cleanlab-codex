@@ -90,6 +90,15 @@ Automated releases are handled by the [release workflow][release-workflow] which
 [hatch-version]: https://hatch.pypa.io/latest/version/#updating
 [changelog]: CHANGELOG.md
 
+
+### How to build and install the package locally
+
+You may want to build and install the package locally - for example, to see how your changes affect other Python code in a script or Jupyter notebook.
+
+To do this, you can build the package with `hatch build` and then install it in your local environment with `pip install dist/cleanlab_codex-<version>-py3-none-any.whl`.
+
+Alternatively, you can use `pip install -e /path/to/cleanlab-codex` to install the package from your local code. Note that if you make further local changes after that, you may need to reload the module, i.e. `reload(cleanlab_codex)`, or restart the kernel.
+
 ## Continuous integration
 
 Testing, type checking, and formatting/linting is [checked in CI][ci].

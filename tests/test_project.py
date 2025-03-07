@@ -8,6 +8,7 @@ from codex.types.project_create_params import Config
 from codex.types.projects.access_key_retrieve_project_id_response import AccessKeyRetrieveProjectIDResponse
 from codex.types.projects.entry import Entry as SDKEntry
 
+from cleanlab_codex.__about__ import __version__ as package_version
 from cleanlab_codex.project import MissingProjectError, Project
 from cleanlab_codex.types.entry import EntryCreate
 
@@ -135,8 +136,13 @@ def test_query_read_only(mock_client_from_access_key: MagicMock) -> None:
 
     project = Project(mock_client_from_access_key, FAKE_PROJECT_ID)
     res = project.query("What is the capital of France?", read_only=True)
+    expected_headers = {
+        "X-Integration-Type": "backup",
+        "X-Source": "cleanlab-codex-python",
+        "X-Client-Library-Version": package_version,
+    }
     mock_client_from_access_key.projects.entries.query.assert_called_once_with(
-        FAKE_PROJECT_ID, question="What is the capital of France?"
+        FAKE_PROJECT_ID, question="What is the capital of France?", extra_headers=expected_headers
     )
     mock_client_from_access_key.projects.entries.add_question.assert_not_called()
     assert res[0] is None
