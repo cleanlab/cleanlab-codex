@@ -6,7 +6,7 @@ from cleanlab_codex.__about__ import __version__ as package_version
 
 
 class IntegrationType(str, Enum):
-    """Types of integrations that can use the SDK."""
+    """Supported methods for integrating Codex into a RAG system using this library."""
 
     BACKUP = "backup"
     TOOL = "tool"
