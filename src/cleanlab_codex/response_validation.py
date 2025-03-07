@@ -333,8 +333,8 @@ def is_unhelpful_response(
     """
     score: float = score_unhelpful_response(response, query, tlm)
 
-    # Current implementation assumes question is phrased to expect "Yes" for unhelpful responses
-    # Changing the question would require restructuring this logic and potentially adjusting
+    # Current implementation of `score_unhelpful_response` produces a score where a higher value means the response if more likely to be unhelpful
+    # Changing the TLM prompt used in `score_unhelpful_response` may require restructuring the logic for `fails_check` and potentially adjusting
     # the threshold value in BadResponseDetectionConfig
     return SingleResponseValidationResult(
         name="unhelpful",
