@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- Extract scores and metadata from detection functions in `response_validation.py`.
+- Normalize scores used by `is_fallback_response` function to be between 0 and 1.
+
 ## [1.0.2] - 2025-03-07
 
 - Pass metadata in headers for query requests.
