@@ -13,7 +13,11 @@ from cleanlab_codex.response_validation import (
     is_fallback_response,
     is_unhelpful_response,
     is_untrustworthy_response,
+    score_fallback_response,
+    score_unhelpful_response,
+    score_untrustworthy_response,
 )
+from cleanlab_codex.types.response_validation import AggregatedResponseValidationResult, SingleResponseValidationResult
 
 # Mock responses for testing
 GOOD_RESPONSE = "This is a helpful and specific response that answers the question completely."
@@ -68,14 +72,14 @@ def mock_tlm() -> MockTLM:
     ("response", "threshold", "fallback_answer", "expected"),
     [
         # Test threshold variations
-        (GOOD_RESPONSE, 30, None, True),
-        (GOOD_RESPONSE, 55, None, False),
+        (GOOD_RESPONSE, 0.3, None, True),
+        (GOOD_RESPONSE, 0.55, None, False),
         # Test default behavior (BAD_RESPONSE should be flagged)
         (BAD_RESPONSE, None, None, True),
         # Test default behavior for different response (GOOD_RESPONSE should not be flagged)
         (GOOD_RESPONSE, None, None, False),
         # Test custom fallback answer
-        (GOOD_RESPONSE, 80, "This is an unhelpful response", False),
+        (GOOD_RESPONSE, 0.8, "This is an unhelpful response", False),
     ],
 )
 def test_is_fallback_response(
@@ -92,18 +96,18 @@ def test_is_fallback_response(
     if fallback_answer is not None:
         kwargs["fallback_answer"] = fallback_answer
 
-    assert is_fallback_response(response, **kwargs) is expected  # type: ignore
+    assert bool(is_fallback_response(response, **kwargs)) == expected  # type: ignore
 
 
 def test_is_untrustworthy_response(mock_tlm: Mock) -> None:
     """Test untrustworthy response detection."""
     # Test trustworthy response
     mock_tlm.trustworthiness_score = 0.8
-    assert is_untrustworthy_response(GOOD_RESPONSE, CONTEXT, QUERY, mock_tlm, trustworthiness_threshold=0.5) is False
+    assert not bool(is_untrustworthy_response(GOOD_RESPONSE, CONTEXT, QUERY, mock_tlm, trustworthiness_threshold=0.5))
 
     # Test untrustworthy response
     mock_tlm.trustworthiness_score = 0.3
-    assert is_untrustworthy_response(BAD_RESPONSE, CONTEXT, QUERY, mock_tlm, trustworthiness_threshold=0.5) is True
+    assert bool(is_untrustworthy_response(BAD_RESPONSE, CONTEXT, QUERY, mock_tlm, trustworthiness_threshold=0.5))
 
 
 @pytest.mark.parametrize(
@@ -144,7 +148,7 @@ def test_is_unhelpful_response(
     else:
         result = is_unhelpful_response(GOOD_RESPONSE, QUERY, mock_tlm)
 
-    assert result is expected_unhelpful
+    assert bool(result) == expected_unhelpful
 
 
 @pytest.mark.parametrize(
@@ -174,13 +178,15 @@ def test_is_bad_response(
     ]
 
     assert (
-        is_bad_response(
-            response,
-            context=CONTEXT,
-            query=QUERY,
-            config={"tlm": mock_tlm},
+        bool(
+            is_bad_response(
+                response,
+                context=CONTEXT,
+                query=QUERY,
+                config={"tlm": mock_tlm},
+            )
         )
-        is expected
+        == expected
     )
 
 
@@ -214,10 +220,156 @@ def test_is_bad_response_partial_inputs(
             tlm = mock_tlm
 
         assert (
-            is_bad_response(
-                response,
-                query=query,
-                config={"tlm": tlm},
+            bool(
+                is_bad_response(
+                    response,
+                    query=query,
+                    config={"tlm": tlm},
+                )
             )
-            is expected
+            == expected
         )
+
+
+@pytest.mark.parametrize(
+    ("response", "fallback_answer", "expected"),
+    [
+        ("This is a test response", "This is a test response", 1.0),  # exact match
+        ("abcd", "Abcd", 1.0),  # same response, different case
+        ("This is a test response", "This is a test answer", 0.86),  # similar response
+        ("This is a test response", "A totally different fallback answer", 0.39),  # different response
+        ("abcd", "efgh", 0.0),  # no characters in common
+        ("abcd", "dcba", 0.4),  # reverse order
+        ("don't know", "I don't know", 1.0),  # partial match
+        ("I don't know", "don't know", 1.0),  # partial match, response longer than fallback
+    ],
+)
+def test_score_fallback_response(response: str, fallback_answer: str, expected: int) -> None:
+    assert score_fallback_response(response, fallback_answer) == expected
+
+
+@pytest.mark.parametrize(
+    ("tlm_score"),
+    [
+        (0.5),
+        (0.8),
+        (0.3),
+        (0.0),
+    ],
+)
+def test_score_untrustworthy_response(mock_tlm: Mock, tlm_score: float) -> None:
+    """Test score_untrustworthy_response function."""
+    mock_tlm.get_trustworthiness_score = Mock(return_value={"trustworthiness_score": tlm_score})
+    assert (
+        score_untrustworthy_response(
+            response="A response",
+            context="Some context",
+            query="A query",
+            tlm=mock_tlm,
+        )
+        == tlm_score
+    )
+
+
+@pytest.mark.parametrize(
+    ("tlm_score"),
+    [
+        (0.5),
+        (0.8),
+        (0.3),
+        (0.0),
+    ],
+)
+def test_score_unhelpful_response(mock_tlm: Mock, tlm_score: float) -> None:
+    """Test score_unhelpful_response function."""
+    mock_tlm.get_trustworthiness_score = Mock(return_value={"trustworthiness_score": tlm_score})
+    assert (
+        score_unhelpful_response(
+            response="A response",
+            query="A query",
+            tlm=mock_tlm,
+        )
+        == tlm_score
+    )
+
+
+class TestSingleResponseValidationResult:
+    def test_single_response_validation_result_init(self) -> None:
+        for name in ["fallback", "untrustworthy", "unhelpful"]:
+            for fails_check in [True, False]:
+                result = SingleResponseValidationResult(
+                    name=name,  # type: ignore
+                    fails_check=fails_check,
+                    score={"similarity_score": 0.5},
+                    metadata={"context": "Some context"},
+                )
+                assert result.name == name
+                assert result.fails_check == fails_check
+                assert result.score == {"similarity_score": 0.5}
+                assert result.metadata == {"context": "Some context"}
+
+    def test_bool_conversion(self) -> None:
+        result = SingleResponseValidationResult(
+            name="fallback", fails_check=True, score={"similarity_score": 0.5}, metadata={"context": "Some context"}
+        )
+        assert bool(result)
+        result.fails_check = False
+        assert not bool(result)
+
+    def test_repr(self) -> None:
+        result = SingleResponseValidationResult(
+            name="fallback", fails_check=True, score={"similarity_score": 0.5}, metadata={"context": "Some context"}
+        )
+        assert "Failed Check" in repr(result)
+
+        result.fails_check = False
+        assert "Passed Check" in repr(result)
+
+    def test_invalid_name(self) -> None:
+        from pydantic_core import ValidationError
+
+        for invalid_name in ["bad", "invalid"]:
+            with pytest.raises(ValidationError):
+                SingleResponseValidationResult(
+                    name=invalid_name,  # type: ignore
+                    fails_check=True,
+                    score={},
+                    metadata={},
+                )
+
+
+class TestAggregatedResponseValidationResult:
+    @pytest.fixture
+    def fallback_result(self) -> SingleResponseValidationResult:
+        return SingleResponseValidationResult(
+            name="fallback", fails_check=True, score={"similarity_score": 0.5}, metadata={"context": "Some context"}
+        )
+
+    def test_aggregated_response_validation_result_init(self, fallback_result: SingleResponseValidationResult) -> None:
+        result = AggregatedResponseValidationResult(name="bad", results=[fallback_result])
+        assert result.name == "bad"
+        assert result.fails_check == fallback_result.fails_check
+        assert result.results == [fallback_result]
+
+    def test_bool_conversion(self, fallback_result: SingleResponseValidationResult) -> None:
+        result = AggregatedResponseValidationResult(name="bad", results=[fallback_result])
+        assert bool(result)
+
+        failed_single_response_result = SingleResponseValidationResult(
+            name="fallback", fails_check=False, score={"similarity_score": 0.5}, metadata={"context": "Some context"}
+        )
+        result = AggregatedResponseValidationResult(
+            name="bad",
+            results=[failed_single_response_result],
+        )
+        assert not bool(result)
+
+    def test_invalid_name(self) -> None:
+        from pydantic_core import ValidationError
+
+        for invalid_name in ["invalid", "fallback", "untrustworthy", "unhelpful"]:
+            with pytest.raises(ValidationError):
+                AggregatedResponseValidationResult(
+                    name=invalid_name,  # type: ignore
+                    results=[],
+                )

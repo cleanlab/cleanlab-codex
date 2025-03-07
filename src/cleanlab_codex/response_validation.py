@@ -16,6 +16,10 @@ from typing import (
 from pydantic import BaseModel, ConfigDict, Field
 
 from cleanlab_codex.internal.utils import generate_pydantic_model_docstring
+from cleanlab_codex.types.response_validation import (
+    AggregatedResponseValidationResult,
+    SingleResponseValidationResult,
+)
 from cleanlab_codex.types.tlm import TLM
 from cleanlab_codex.utils.errors import MissingDependencyError
 from cleanlab_codex.utils.prompt import default_format_prompt
@@ -23,7 +27,7 @@ from cleanlab_codex.utils.prompt import default_format_prompt
 _DEFAULT_FALLBACK_ANSWER: str = (
     "Based on the available information, I cannot provide a complete answer to this question."
 )
-_DEFAULT_FALLBACK_SIMILARITY_THRESHOLD: int = 70
+_DEFAULT_FALLBACK_SIMILARITY_THRESHOLD: float = 0.7
 _DEFAULT_TRUSTWORTHINESS_THRESHOLD: float = 0.5
 _DEFAULT_UNHELPFULNESS_CONFIDENCE_THRESHOLD: float = 0.5
 
@@ -45,11 +49,11 @@ class BadResponseDetectionConfig(BaseModel):
         default=_DEFAULT_FALLBACK_ANSWER,
         description="Known unhelpful response to compare against",
     )
-    fallback_similarity_threshold: int = Field(
+    fallback_similarity_threshold: float = Field(
         default=_DEFAULT_FALLBACK_SIMILARITY_THRESHOLD,
-        description="Fuzzy matching similarity threshold (0-100). Higher values mean responses must be more similar to fallback_answer to be considered bad.",
-        ge=0,
-        le=100,
+        description="Fuzzy matching similarity threshold (0.0-1.0). Higher values mean responses must be more similar to fallback_answer to be considered bad.",
+        ge=0.0,
+        le=1.0,
     )
 
     # Untrustworthy check config
@@ -95,12 +99,24 @@ def is_bad_response(
     context: Optional[str] = None,
     query: Optional[str] = None,
     config: Union[BadResponseDetectionConfig, Dict[str, Any]] = _DEFAULT_CONFIG,
-) -> bool:
+) -> AggregatedResponseValidationResult:
     """Run a series of checks to determine if a response is bad.
 
-    If any check detects an issue (i.e. fails), the function returns `True`, indicating the response is bad.
+    The function returns a `AggregatedResponseValidationResult` object containing results from multiple validation checks.
+    If any check fails (detects an issue), the AggregatedResponseValidationResult will evaluate to `True` when used in a boolean context.
+    This means code like `if is_bad_response(...)` will enter the if-block when problems are detected.
+
+    For example:
+
+    ```python
+    is_bad = is_bad_response(...)
+    if is_bad:  # True if any validation check failed
+        print("Response had issues")
+        # Access detailed results through is_bad.results
+    ```
 
     This function runs three possible validation checks:
+
     1. **Fallback check**: Detects if response is too similar to a known fallback answer.
     2. **Untrustworthy check**: Assesses response trustworthiness based on the given context and query.
     3. **Unhelpful check**: Predicts if the response adequately answers the query or not, in a useful way.
@@ -115,11 +131,11 @@ def is_bad_response(
         config (BadResponseDetectionConfig, optional): Optional, configuration parameters for validation checks. See [BadResponseDetectionConfig](#class-badresponsedetectionconfig) for details. If not provided, default values will be used.
 
     Returns:
-        bool: `True` if any validation check fails, `False` if all pass.
+        AggregatedResponseValidationResult: The results of the validation checks.
     """
     config = BadResponseDetectionConfig.model_validate(config)
 
-    validation_checks: list[Callable[[], bool]] = []
+    validation_checks: list[Callable[[], SingleResponseValidationResult]] = []
 
     # All required inputs are available for checking fallback responses
     validation_checks.append(
@@ -155,14 +171,21 @@ def is_bad_response(
             )
         )
 
-    return any(check() for check in validation_checks)
+    results = []
+    # Run all checks and collect results, until one fails
+    for check in (check() for check in validation_checks):
+        results.append(check)
+        if check.fails_check:
+            break
+
+    return AggregatedResponseValidationResult(name="bad", results=results)
 
 
 def is_fallback_response(
     response: str,
     fallback_answer: str = _DEFAULT_FALLBACK_ANSWER,
-    threshold: int = _DEFAULT_FALLBACK_SIMILARITY_THRESHOLD,
-) -> bool:
+    threshold: float = _DEFAULT_FALLBACK_SIMILARITY_THRESHOLD,
+) -> SingleResponseValidationResult:
     """Check if a response is too similar to a known fallback answer.
 
     Uses fuzzy string matching to compare the response against a known fallback answer.
@@ -171,11 +194,34 @@ def is_fallback_response(
     Args:
         response (str): The response to check.
         fallback_answer (str): A known unhelpful/fallback response to compare against.
-        threshold (int): Similarity threshold (0-100) above which a response is considered to match the fallback answer.
-                Higher values require more similarity. Default 70 means responses that are 70% or more similar are considered bad.
+        threshold (float): Similarity threshold (0-1.0) above which a response is considered to match the fallback answer.
+                Higher values require more similarity. Default 0.7 means responses that are 70% or more similar are considered bad.
 
     Returns:
-        bool: `True` if the response is too similar to the fallback answer, `False` otherwise.
+        SingleResponseValidationResult: The results of the validation check.
+    """
+
+    score: float = score_fallback_response(response, fallback_answer)
+    return SingleResponseValidationResult(
+        name="fallback",
+        fails_check=score >= threshold,
+        score={"similarity_score": score},
+        metadata={"threshold": threshold},
+    )
+
+
+def score_fallback_response(
+    response: str,
+    fallback_answer: str = _DEFAULT_FALLBACK_ANSWER,
+) -> float:
+    """Score a response against a known fallback answer, based on how similar they are using fuzzy string matching.
+
+    Args:
+        response (str): The response to check.
+        fallback_answer (str): A known unhelpful/fallback response to compare against.
+
+    Returns:
+        float: The score of the response, between 0.0 and 1.0.
     """
     try:
         from thefuzz import fuzz  # type: ignore
@@ -185,8 +231,7 @@ def is_fallback_response(
             package_url="https://github.com/seatgeek/thefuzz",
         ) from e
 
-    partial_ratio: int = fuzz.partial_ratio(fallback_answer.lower(), response.lower())
-    return bool(partial_ratio >= threshold)
+    return float(fuzz.partial_ratio(fallback_answer.lower(), response.lower())) / 100
 
 
 def is_untrustworthy_response(
@@ -196,7 +241,7 @@ def is_untrustworthy_response(
     tlm: TLM,
     trustworthiness_threshold: float = _DEFAULT_TRUSTWORTHINESS_THRESHOLD,
     format_prompt: Callable[[str, str], str] = default_format_prompt,
-) -> bool:
+) -> SingleResponseValidationResult:
     """Check if a response is untrustworthy.
 
     Uses [TLM](/tlm) to evaluate whether a response is trustworthy given the context and query.
@@ -215,7 +260,43 @@ def is_untrustworthy_response(
                       be evaluated using the same prompt that was used to generate the response.
 
     Returns:
-        bool: `True` if the response is deemed untrustworthy by TLM, `False` otherwise.
+        SingleResponseValidationResult: The results of the validation check.
+    """
+    score: float = score_untrustworthy_response(
+        response=response,
+        context=context,
+        query=query,
+        tlm=tlm,
+        format_prompt=format_prompt,
+    )
+    return SingleResponseValidationResult(
+        name="untrustworthy",
+        fails_check=score < trustworthiness_threshold,
+        score={"trustworthiness_score": score},
+        metadata={"trustworthiness_threshold": trustworthiness_threshold},
+    )
+
+
+def score_untrustworthy_response(
+    response: str,
+    context: str,
+    query: str,
+    tlm: TLM,
+    format_prompt: Callable[[str, str], str] = default_format_prompt,
+) -> float:
+    """Scores a response's trustworthiness using [TLM](/tlm), given a context and query.
+
+    Args:
+        response (str): The response to check from the assistant.
+        context (str): The context information available for answering the query.
+        query (str): The user's question or request.
+        tlm (TLM): The TLM model to use for evaluation.
+        format_prompt (Callable[[str, str], str]): Function that takes (query, context) and returns a formatted prompt string.
+                    Users should provide the prompt formatting function for their RAG application here so that the response can
+                    be evaluated using the same prompt that was used to generate the response.
+
+    Returns:
+        float: The score of the response, between 0.0 and 1.0. A lower score indicates the response is less trustworthy.
     """
     try:
         from cleanlab_tlm import TLM  # noqa: F401
@@ -225,11 +306,9 @@ def is_untrustworthy_response(
             package_name="cleanlab-tlm",
             package_url="https://github.com/cleanlab/cleanlab-tlm",
         ) from e
-
     prompt = format_prompt(query, context)
     result = tlm.get_trustworthiness_score(prompt, response)
-    score: float = result["trustworthiness_score"]
-    return score < trustworthiness_threshold
+    return float(result["trustworthiness_score"])
 
 
 def is_unhelpful_response(
@@ -237,7 +316,7 @@ def is_unhelpful_response(
     query: str,
     tlm: TLM,
     confidence_score_threshold: float = _DEFAULT_UNHELPFULNESS_CONFIDENCE_THRESHOLD,
-) -> bool:
+) -> SingleResponseValidationResult:
     """Check if a response is unhelpful by asking [TLM](/tlm) to evaluate it.
 
     Uses TLM to evaluate whether a response is helpful by asking it to make a Yes/No judgment.
@@ -253,8 +332,35 @@ def is_unhelpful_response(
                                        E.g. if confidence_score_threshold is 0.5, then responses with scores higher than 0.5 are considered unhelpful.
 
     Returns:
-        bool: `True` if TLM determines the response is unhelpful with sufficient confidence,
-              `False` otherwise.
+        SingleResponseValidationResult: The results of the validation check.
+    """
+    score: float = score_unhelpful_response(response, query, tlm)
+
+    # Current implementation of `score_unhelpful_response` produces a score where a higher value means the response if more likely to be unhelpful
+    # Changing the TLM prompt used in `score_unhelpful_response` may require restructuring the logic for `fails_check` and potentially adjusting
+    # the threshold value in BadResponseDetectionConfig
+    return SingleResponseValidationResult(
+        name="unhelpful",
+        fails_check=score > confidence_score_threshold,
+        score={"confidence_score": score},
+        metadata={"confidence_score_threshold": confidence_score_threshold},
+    )
+
+
+def score_unhelpful_response(
+    response: str,
+    query: str,
+    tlm: TLM,
+) -> float:
+    """Scores a response's unhelpfulness using [TLM](/tlm), given a query.
+
+    Args:
+        response (str): The response to check.
+        query (str): User query that will be used to evaluate if the response is helpful.
+        tlm (TLM): The TLM model to use for evaluation.
+
+    Returns:
+        float: The score of the response, between 0.0 and 1.0. A higher score corresponds to a less helpful response.
     """
     try:
         from cleanlab_tlm import TLM  # noqa: F401
@@ -268,7 +374,7 @@ def is_unhelpful_response(
     # IMPORTANT: The current implementation couples three things that must stay in sync:
     # 1. The question phrasing ("is unhelpful?")
     # 2. The expected_unhelpful_response ("Yes")
-    # 3. The threshold logic (score > threshold)
+    # 3. The threshold logic (score > threshold), see `is_unhelpful_response` for details
     #
     # If changing the question to "is helpful?", you would need to:
     # If changing the question to "is helpful?", you would need to either:
@@ -299,12 +405,5 @@ def is_unhelpful_response(
         f"AI Assistant Response: {response}\n\n"
         f"{question}"
     )
-
-    output = tlm.get_trustworthiness_score(
-        prompt, response=expected_unhelpful_response, constrain_outputs=["Yes", "No"]
-    )
-
-    # Current implementation assumes question is phrased to expect "Yes" for unhelpful responses
-    # Changing the question would require restructuring this logic and potentially adjusting
-    # the threshold value in BadResponseDetectionConfig
-    return float(output["trustworthiness_score"]) > confidence_score_threshold
+    result = tlm.get_trustworthiness_score(prompt, response=expected_unhelpful_response)
+    return float(result["trustworthiness_score"])
