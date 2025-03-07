@@ -103,17 +103,20 @@ def is_bad_response(
     """Run a series of checks to determine if a response is bad.
 
     The function returns a `AggregatedResponseValidationResult` object containing results from multiple validation checks.
-    If any check fails (detects an issue), the AggregatedResponseValidationResult will evaluate to True when used in a boolean context.
+    If any check fails (detects an issue), the AggregatedResponseValidationResult will evaluate to `True` when used in a boolean context.
     This means code like `if is_bad_response(...)` will enter the if-block when problems are detected.
 
     For example:
+    
     ```python
     is_bad = is_bad_response(...)
     if is_bad:  # True if any validation check failed
         print("Response had issues")
         # Access detailed results through is_bad.results
     ```
+    
     This function runs three possible validation checks:
+    
     1. **Fallback check**: Detects if response is too similar to a known fallback answer.
     2. **Untrustworthy check**: Assesses response trustworthiness based on the given context and query.
     3. **Unhelpful check**: Predicts if the response adequately answers the query or not, in a useful way.
@@ -128,7 +131,7 @@ def is_bad_response(
         config (BadResponseDetectionConfig, optional): Optional, configuration parameters for validation checks. See [BadResponseDetectionConfig](#class-badresponsedetectionconfig) for details. If not provided, default values will be used.
 
     Returns:
-        AggregatedResponseValidationResult: A AggregatedResponseValidationResult object containing the results of the validation checks.
+        AggregatedResponseValidationResult: The results of the validation checks.
     """
     config = BadResponseDetectionConfig.model_validate(config)
 
@@ -195,7 +198,7 @@ def is_fallback_response(
                 Higher values require more similarity. Default 0.7 means responses that are 70% or more similar are considered bad.
 
     Returns:
-        SingleResponseValidationResult: A SingleResponseValidationResult object containing the results of the validation checks.
+        SingleResponseValidationResult: The results of the validation check.
     """
 
     score: float = score_fallback_response(response, fallback_answer)
@@ -257,7 +260,7 @@ def is_untrustworthy_response(
                       be evaluated using the same prompt that was used to generate the response.
 
     Returns:
-        SingleResponseValidationResult: A SingleResponseValidationResult object containing the results of the validation checks.
+        SingleResponseValidationResult: The results of the validation check.
     """
     score: float = score_untrustworthy_response(
         response=response,
@@ -281,7 +284,7 @@ def score_untrustworthy_response(
     tlm: TLM,
     format_prompt: Callable[[str, str], str] = default_format_prompt,
 ) -> float:
-    """Scores a response's untrustworthiness using [TLM](/tlm), given a context and query.
+    """Scores a response's trustworthiness using [TLM](/tlm), given a context and query.
 
     Args:
         response (str): The response to check from the assistant.
@@ -293,7 +296,7 @@ def score_untrustworthy_response(
                     be evaluated using the same prompt that was used to generate the response.
 
     Returns:
-        float: The score of the response, between 0.0 and 1.0.
+        float: The score of the response, between 0.0 and 1.0. A lower score indicates the response is less trustworthy.
     """
     try:
         from cleanlab_tlm import TLM  # noqa: F401
@@ -329,7 +332,7 @@ def is_unhelpful_response(
                                        E.g. if confidence_score_threshold is 0.5, then responses with scores higher than 0.5 are considered unhelpful.
 
     Returns:
-        SingleResponseValidationResult: A SingleResponseValidationResult object containing the results of the validation checks.
+        SingleResponseValidationResult: The results of the validation check.
     """
     score: float = score_unhelpful_response(response, query, tlm)
 
@@ -357,7 +360,7 @@ def score_unhelpful_response(
         tlm (TLM): The TLM model to use for evaluation.
 
     Returns:
-        float: The score of the response, between 0.0 and 1.0.
+        float: The score of the response, between 0.0 and 1.0. A higher score corresponds to a less helpful response.
     """
     try:
         from cleanlab_tlm import TLM  # noqa: F401
