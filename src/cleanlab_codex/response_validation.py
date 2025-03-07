@@ -107,16 +107,16 @@ def is_bad_response(
     This means code like `if is_bad_response(...)` will enter the if-block when problems are detected.
 
     For example:
-    
+
     ```python
     is_bad = is_bad_response(...)
     if is_bad:  # True if any validation check failed
         print("Response had issues")
         # Access detailed results through is_bad.results
     ```
-    
+
     This function runs three possible validation checks:
-    
+
     1. **Fallback check**: Detects if response is too similar to a known fallback answer.
     2. **Untrustworthy check**: Assesses response trustworthiness based on the given context and query.
     3. **Unhelpful check**: Predicts if the response adequately answers the query or not, in a useful way.

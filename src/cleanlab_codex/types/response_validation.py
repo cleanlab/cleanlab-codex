@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from collections import OrderedDict
 from typing import Any, Dict, List, Literal, Union
 
-from pydantic import BaseModel, computed_field, Field
+from pydantic import BaseModel, Field, computed_field
 
 # Type aliases for validation scores
 SingleScoreDict = Dict[str, float]
@@ -42,10 +42,9 @@ class SingleResponseValidationResult(BaseResponseValidationResult):
     This class represents the outcome of an individual validation check performed
     on an AI response.
     """
+
     name: ResponseValidationMethod = Field(description="The name of the validation check.")
-    fails_check: bool = Field(
-        description="Whether the check failed. True if the check failed, False otherwise."
-    )
+    fails_check: bool = Field(description="Whether the check failed. True if the check failed, False otherwise.")
     score: Dict[str, float] = Field(
         description="The score of the response. Typically a single scorevalue between 0.0 and 1.0, yet this can vary by check."
     )
@@ -64,7 +63,7 @@ class SingleResponseValidationResult(BaseResponseValidationResult):
 
 class AggregatedResponseValidationResult(BaseResponseValidationResult):
     """Result of multiple combined response validation checks.
-    
+
     This class aggregates multiple SingleResponseValidationResults and provides
     a combined validation outcome.
 
@@ -73,9 +72,7 @@ class AggregatedResponseValidationResult(BaseResponseValidationResult):
     accessible, via the `results` field.
     """
 
-    name: AggregatedResponseValidationMethod = Field(
-        description="The name of the aggregated validation check."
-    )
+    name: AggregatedResponseValidationMethod = Field(description="The name of the aggregated validation check.")
     results: List[SingleResponseValidationResult] = Field(
         description="The individual results of the validation checks."
     )
