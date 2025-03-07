@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from collections import OrderedDict
 from typing import Any, Dict, List, Literal, Union
 
-from pydantic import BaseModel, computed_field
+from pydantic import BaseModel, computed_field, Field
 
 # Type aliases for validation scores
 SingleScoreDict = Dict[str, float]
@@ -37,34 +37,58 @@ class BaseResponseValidationResult(BaseModel, ABC):
 
 
 class SingleResponseValidationResult(BaseResponseValidationResult):
-    name: ResponseValidationMethod
-    fails_check: bool
-    score: Dict[str, float]
-    metadata: Dict[str, Any]
+    """Result of a single response validation check.
+
+    This class represents the outcome of an individual validation check performed
+    on an AI response.
+    """
+    name: ResponseValidationMethod = Field(description="The name of the validation check.")
+    fails_check: bool = Field(
+        description="Whether the check failed. True if the check failed, False otherwise."
+    )
+    score: Dict[str, float] = Field(
+        description="The score of the response. Typically a single scorevalue between 0.0 and 1.0, yet this can vary by check."
+    )
+    metadata: Dict[str, Any] = Field(
+        description="Additional metadata about the response. This can include the threshold values, or other information relevant to the check."
+    )
 
     def __bool__(self) -> bool:
         return self.fails_check
 
     def __repr__(self) -> str:
-        """Return a string representation of the SingleResponseValidationResult."""
         pass_or_fail = "Failed Check" if self.fails_check else "Passed Check"
         metadata_str = ", metadata=..." if self.metadata else ""
         return f"SingleResponseValidationResult(name={self.name}, {pass_or_fail}, score={self.score}{metadata_str})"
 
 
 class AggregatedResponseValidationResult(BaseResponseValidationResult):
-    name: AggregatedResponseValidationMethod
-    results: List[SingleResponseValidationResult]
+    """Result of multiple combined response validation checks.
+    
+    This class aggregates multiple SingleResponseValidationResults and provides
+    a combined validation outcome.
+
+    The class is typically used in a boolean context to determine if any of the
+    underlying checks failed. But each of the individual results are also
+    accessible, via the `results` field.
+    """
+
+    name: AggregatedResponseValidationMethod = Field(
+        description="The name of the aggregated validation check."
+    )
+    results: List[SingleResponseValidationResult] = Field(
+        description="The individual results of the validation checks."
+    )
 
     @computed_field  # type: ignore
     @property
     def fails_check(self) -> bool:
+        """Whether any of the underlying checks failed."""
         return any(result.fails_check for result in self.results)
 
     def __bool__(self) -> bool:
         return self.fails_check
 
     def __repr__(self) -> str:
-        """Return a string representation of the AggregatedResponseValidationResult."""
         pass_or_fail = "Passed Check" if self.fails_check else "Failed Check"
         return f"AggregatedResponseValidationResult(name={self.name}, {pass_or_fail}, results={self.results})"
