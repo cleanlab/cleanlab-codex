@@ -37,15 +37,15 @@ framework_specific_codex_tool = codex_tool.to_<framework_name>_tool() # i.e. cod
 response = rag(question, system_prompt, [framework_specific_codex_tool])
 ```
 
-(Note: exact code will depend on the RAG/Agentic framework you are using)
+(Note: Exact code will depend on the RAG/Agentic framework you are using. [Other integrations](https://help.cleanlab.ai/codex/concepts/integrations/) are available if you prefer to avoid Tool Calls.)
 <!-- TODO: add demo video -->
 <!-- Video should show Codex tool added to a RAG system, question asked that requires knowledge from an outside expert, Codex tool used to ask an outside expert, and expert response returned to the user -->
 
 ## Why Codex?
-- **Identify Knowledge Gaps**: Codex captures knowledge gaps in your application so that you can easily identify which questions require expert input.
-- **Efficiently Leverage SMEs**: Codex ensures the SMEs see the most critical knowledge gaps first.
-- **Easy Integration**: Integrate Codex into your RAG/Agentic application with just a few lines of code.
-- **Immediate Impact**: SME responses instantly enhance your AI applications.
+- **Detect Knowledge Gaps and Hallucinations**: Codex identifies knowledge gaps and incorrect/untrustworthy responses in your AI application, to help you know which questions require expert input.
+- **Save SME time**: Codex ensures that SMEs see the most critical knowledge gaps first.
+- **Easy Integration**: Integrate Codex into any RAG/Agentic application with just a few lines of code.
+- **Immediate Impact**: SME answers instantly improve your AI, without any additional Engineering/technical work.
 
 ## Documentation
 
