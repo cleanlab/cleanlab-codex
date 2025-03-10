@@ -1,18 +1,64 @@
-from typing import Any, Dict, Protocol, Sequence, Union, runtime_checkable
+from typing import Literal, Optional
+
+from codex.types.tlm_prompt_params import Options
+from codex.types.tlm_prompt_response import TlmPromptResponse as _TlmPromptResponse
+from codex.types.tlm_score_response import TlmScoreResponse as _TlmScoreResponse
+from pydantic import BaseModel, Field
+
+from cleanlab_codex.internal.utils import generate_class_docstring, generate_pydantic_model_docstring
+
+TLMQualityPreset = Literal["best", "high", "medium", "low", "base"]
 
 
-@runtime_checkable
-class TLM(Protocol):
-    def get_trustworthiness_score(
-        self,
-        prompt: Union[str, Sequence[str]],
-        response: Union[str, Sequence[str]],
-        **kwargs: Any,
-    ) -> Dict[str, Any]: ...
+class TLMOptions(Options): ...
 
-    def prompt(
-        self,
-        prompt: Union[str, Sequence[str]],
-        /,
-        **kwargs: Any,
-    ) -> Dict[str, Any]: ...
+
+TLMOptions.__doc__ = f"""
+Customization options for querying TLM. For details, see the [TLM documentation](/tlm/api/python/tlm/#class-tlmoptions)
+
+{generate_class_docstring(Options, name=TLMOptions.__name__)}
+"""
+
+
+class TLMPromptResponse(_TlmPromptResponse): ...
+
+
+TLMPromptResponse.__doc__ = f"""
+The response from prompting TLM.
+
+{generate_class_docstring(_TlmPromptResponse, name=TLMPromptResponse.__name__)}
+"""
+
+
+class TLMScoreResponse(_TlmScoreResponse): ...
+
+
+TLMScoreResponse.__doc__ = f"""
+The result of scoring a response with TLM.
+
+{generate_class_docstring(_TlmScoreResponse, name=TLMScoreResponse.__name__)}
+"""
+
+
+class TLMConfig(BaseModel):
+    """Advanced configuration options for the TLM client."""
+
+    quality_preset: Optional[TLMQualityPreset] = Field(
+        default=None,
+        description="See [TLM documentation for more information](https://docs.cleanlab.ai/reference/tlm/api/python/tlm/#class-tlm).",
+    )
+    task: Optional[str] = Field(
+        default=None,
+        description="See [TLM documentation for more information](https://docs.cleanlab.ai/reference/tlm/api/python/tlm/#class-tlm).",
+    )
+    options: Optional[TLMOptions] = Field(
+        default=None,
+        description="See [TLM documentation for more information](https://docs.cleanlab.ai/reference/tlm/api/python/tlm/#class-tlmoptions).",
+    )
+
+
+TLMConfig.__doc__ = f"""
+{TLMConfig.__doc__}
+
+{generate_pydantic_model_docstring(TLMConfig, name=TLMConfig.__name__)}
+"""
