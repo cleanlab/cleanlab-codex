@@ -1,6 +1,7 @@
 from typing import Generator
 from unittest.mock import MagicMock, patch
 
+from cleanlab_codex.internal.analytics import _AnalyticsMetadata
 import pytest
 
 
@@ -18,3 +19,8 @@ def mock_client_from_api_key() -> Generator[MagicMock, None, None]:
         mock_client = MagicMock()
         mock_init.return_value = mock_client
         yield mock_client
+
+
+@pytest.fixture
+def default_headers() -> dict[str, str]:
+    return _AnalyticsMetadata().to_headers()

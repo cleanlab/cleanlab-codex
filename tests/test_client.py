@@ -50,7 +50,7 @@ def test_client_uses_specified_organization(mock_client_from_api_key: MagicMock)
     mock_client_from_api_key.users.myself.organizations.list.assert_not_called()
 
 
-def test_create_project_without_description(mock_client_from_api_key: MagicMock) -> None:
+def test_create_project_without_description(mock_client_from_api_key: MagicMock, default_headers: dict[str, str]) -> None:
     """Test creating project with no description"""
     mock_client_from_api_key.projects.create.return_value = ProjectReturnSchema(
         id=FAKE_PROJECT_ID,
@@ -69,6 +69,7 @@ def test_create_project_without_description(mock_client_from_api_key: MagicMock)
         organization_id=FAKE_ORGANIZATION_ID,
         name=FAKE_PROJECT_NAME,
         description=None,
+        extra_headers=default_headers,
     )
     assert project.id == FAKE_PROJECT_ID
 
@@ -113,7 +114,7 @@ def test_list_organizations(mock_client_from_api_key: MagicMock) -> None:
     assert organizations[0].user_id == FAKE_USER_ID
 
 
-def test_create_project(mock_client_from_api_key: MagicMock) -> None:
+def test_create_project(mock_client_from_api_key: MagicMock, default_headers: dict[str, str]) -> None:
     mock_client_from_api_key.projects.create.return_value = ProjectReturnSchema(
         id=FAKE_PROJECT_ID,
         config=ProjectReturnConfig(),
@@ -132,6 +133,7 @@ def test_create_project(mock_client_from_api_key: MagicMock) -> None:
         organization_id=FAKE_ORGANIZATION_ID,
         name=FAKE_PROJECT_NAME,
         description=FAKE_PROJECT_DESCRIPTION,
+        extra_headers=default_headers,
     )
     assert project.id == FAKE_PROJECT_ID
     assert mock_client_from_api_key.projects.retrieve.call_count == 0

@@ -13,7 +13,7 @@ class IntegrationType(str, Enum):
 
 
 class _AnalyticsMetadata:
-    def __init__(self, *, integration_type: IntegrationType):
+    def __init__(self, *, integration_type: IntegrationType | None = None):
         self._integration_type = integration_type
         self._package_version = package_version
         self._source = "cleanlab-codex-python"

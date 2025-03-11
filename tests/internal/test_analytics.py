@@ -14,8 +14,3 @@ def test_analytics_metadata_to_headers_uses_defaults() -> None:
         "X-Source": "cleanlab-codex-python",
         "X-Client-Library-Version": package_version,
     }
-
-
-def test_analytics_metadata_requires_integration_type() -> None:
-    with pytest.raises(TypeError):
-        _AnalyticsMetadata()  # type: ignore[call-arg]
