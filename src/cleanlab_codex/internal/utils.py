@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING as _TYPE_CHECKING
 
+from pydantic_core import PydanticUndefinedType
 from typing_extensions import get_origin, get_type_hints, is_typeddict
 
 if _TYPE_CHECKING:
@@ -59,7 +60,7 @@ def format_annotation_from_field_info(field_name: str, field_info: FieldInfo) ->
     annotation = field_name
     if field_info.annotation:
         annotation += f": '{annotation_to_str(field_info.annotation)}'"
-    if field_info.default:
+    if field_info.default and not isinstance(field_info.default, PydanticUndefinedType):
         annotation += f" = {field_info.default}"
     return annotation
 

@@ -104,7 +104,7 @@ def is_bad_response(
 ) -> AggregatedResponseValidationResult:
     """Run a series of checks to determine if a response is bad.
 
-    The function returns a `AggregatedResponseValidationResult` object containing results from multiple validation checks.
+    The function returns an `AggregatedResponseValidationResult` object containing results from multiple validation checks.
     If any check fails (detects an issue), the AggregatedResponseValidationResult will evaluate to `True` when used in a boolean context.
     This means code like `if is_bad_response(...)` will enter the if-block when problems are detected.
 
