@@ -1,8 +1,12 @@
+"""Types for response validation."""
+
 from abc import ABC, abstractmethod
 from collections import OrderedDict
 from typing import Any, Dict, List, Literal, Union
 
 from pydantic import BaseModel, Field, computed_field
+
+from cleanlab_codex.internal.utils import generate_pydantic_model_docstring
 
 # Type aliases for validation scores
 SingleScoreDict = Dict[str, float]
@@ -61,6 +65,13 @@ class SingleResponseValidationResult(BaseResponseValidationResult):
         return f"SingleResponseValidationResult(name={self.name}, {pass_or_fail}, score={self.score}{metadata_str})"
 
 
+SingleResponseValidationResult.__doc__ = f"""
+{SingleResponseValidationResult.__doc__}
+
+{generate_pydantic_model_docstring(SingleResponseValidationResult, name=SingleResponseValidationResult.__name__)}
+"""
+
+
 class AggregatedResponseValidationResult(BaseResponseValidationResult):
     """Result of multiple combined response validation checks.
 
@@ -89,3 +100,10 @@ class AggregatedResponseValidationResult(BaseResponseValidationResult):
     def __repr__(self) -> str:
         pass_or_fail = "Passed Check" if self.fails_check else "Failed Check"
         return f"AggregatedResponseValidationResult(name={self.name}, {pass_or_fail}, results={self.results})"
+
+
+AggregatedResponseValidationResult.__doc__ = f"""
+{AggregatedResponseValidationResult.__doc__}
+
+{generate_pydantic_model_docstring(AggregatedResponseValidationResult, name=AggregatedResponseValidationResult.__name__)}
+"""

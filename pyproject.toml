@@ -25,9 +25,8 @@ classifiers = [
   "Programming Language :: Python :: Implementation :: PyPy",
 ]
 dependencies = [
-  "codex-sdk==0.1.0a9",
+  "codex-sdk==0.1.0a12",
   "pydantic>=2.0.0, <3",
-  "cleanlab-tlm",
 ]
 
 [project.urls]
@@ -44,7 +43,6 @@ extra-dependencies = [
   "pytest",
   "llama-index-core",
   "smolagents; python_version >= '3.10'",
-  "cleanlab-tlm",
   "thefuzz",
   "langchain-core",
 ]
@@ -62,7 +60,6 @@ allow-direct-references = true
 extra-dependencies = [
   "llama-index-core",
   "smolagents; python_version >= '3.10'",
-  "cleanlab-tlm",
   "thefuzz",
   "langchain-core",
 ]
