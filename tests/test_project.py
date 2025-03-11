@@ -2,7 +2,6 @@ import uuid
 from datetime import datetime, timezone
 from unittest.mock import MagicMock, Mock
 
-from cleanlab_codex.internal.analytics import _AnalyticsMetadata, IntegrationType
 import pytest
 from codex import AuthenticationError
 from codex.types.project_create_params import Config
@@ -10,6 +9,7 @@ from codex.types.projects.access_key_retrieve_project_id_response import AccessK
 from codex.types.projects.entry import Entry as SDKEntry
 
 from cleanlab_codex.__about__ import __version__ as package_version
+from cleanlab_codex.internal.analytics import IntegrationType, _AnalyticsMetadata
 from cleanlab_codex.project import MissingProjectError, Project
 from cleanlab_codex.types.entry import EntryCreate
 

@@ -1,8 +1,9 @@
 from typing import Generator
 from unittest.mock import MagicMock, patch
 
-from cleanlab_codex.internal.analytics import _AnalyticsMetadata
 import pytest
+
+from cleanlab_codex.internal.analytics import _AnalyticsMetadata
 
 
 @pytest.fixture

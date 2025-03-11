@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import pytest
-
 from cleanlab_codex.__about__ import __version__ as package_version
 from cleanlab_codex.internal.analytics import IntegrationType, _AnalyticsMetadata
 

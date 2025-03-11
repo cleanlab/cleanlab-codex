@@ -20,7 +20,7 @@ class _AnalyticsMetadata:
 
     def to_headers(self) -> dict[str, str]:
         return {
-            "X-Integration-Type": self._integration_type,
+            "X-Integration-Type": self._integration_type or "None",
             "X-Client-Library-Version": self._package_version,
             "X-Source": self._source,
         }
