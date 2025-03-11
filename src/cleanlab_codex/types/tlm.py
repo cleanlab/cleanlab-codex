@@ -1,3 +1,5 @@
+"""Types for TLM."""
+
 from typing import Literal, Optional
 
 from codex.types.tlm_prompt_params import Options

@@ -1,3 +1,5 @@
+"""Types for response validation."""
+
 from abc import ABC, abstractmethod
 from collections import OrderedDict
 from typing import Any, Dict, List, Literal, Union
