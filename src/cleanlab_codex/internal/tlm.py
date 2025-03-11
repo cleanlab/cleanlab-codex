@@ -2,7 +2,11 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
 
-from cleanlab_codex.internal.sdk_client import client_from_access_key
+from cleanlab_codex.internal.sdk_client import (
+    MissingAuthKeyError,
+    client_from_access_key,
+    client_from_api_key,
+)
 from cleanlab_codex.types.tlm import (
     TLMConfig,
     TLMOptions,
@@ -21,7 +25,11 @@ class TLM:
         options: Optional[TLMOptions] = None,
         codex_access_key: Optional[str] = None,
     ):
-        self._sdk_client = client_from_access_key(key=codex_access_key)
+        try:
+            self._sdk_client = client_from_access_key(key=codex_access_key)
+        except MissingAuthKeyError:
+            self._sdk_client = client_from_api_key()
+
         self._tlm_kwargs: Dict[str, Any] = {}
         if quality_preset:
             self._tlm_kwargs["quality_preset"] = quality_preset
