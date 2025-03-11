@@ -43,19 +43,19 @@ The result of scoring a response with TLM.
 
 
 class TLMConfig(BaseModel):
-    """Advanced configuration options for the TLM client."""
+    """Advanced configuration options for TLM."""
 
     quality_preset: Optional[TLMQualityPreset] = Field(
         default=None,
-        description="See [TLM documentation for more information](/tlm/api/python/tlm/#class-tlm).",
+        description="See [TLM documentation for more information](/tlm/api/python/tlm/#class-tlm). If not provided, the default preset used is 'low'.",
     )
     task: Optional[str] = Field(
         default=None,
-        description="See [TLM documentation for more information](/tlm/api/python/tlm/#class-tlm).",
+        description="See [TLM documentation for more information](/tlm/api/python/tlm/#class-tlm). If not provided, the default task used is 'default'.",
     )
     options: Optional[TLMOptions] = Field(
         default=None,
-        description="See [TLM documentation for more information](/tlm/api/python/tlm/#class-tlmoptions).",
+        description="See [TLM documentation for more information](/tlm/api/python/tlm/#class-tlmoptions) (including defaults).",
     )
 
 
