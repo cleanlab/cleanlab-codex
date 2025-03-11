@@ -16,7 +16,7 @@ class TLMOptions(Options): ...
 
 
 TLMOptions.__doc__ = f"""
-Customization options for querying TLM. For details, see the [TLM documentation](/tlm/api/python/tlm/#class-tlmoptions)
+Customization options for querying TLM. For details, see the [TLM documentation](/tlm/api/python/tlm/#class-tlmoptions).
 
 {generate_class_docstring(Options, name=TLMOptions.__name__)}
 """
@@ -47,15 +47,15 @@ class TLMConfig(BaseModel):
 
     quality_preset: Optional[TLMQualityPreset] = Field(
         default=None,
-        description="See [TLM documentation for more information](https://docs.cleanlab.ai/reference/tlm/api/python/tlm/#class-tlm).",
+        description="See [TLM documentation for more information](/tlm/api/python/tlm/#class-tlm).",
     )
     task: Optional[str] = Field(
         default=None,
-        description="See [TLM documentation for more information](https://docs.cleanlab.ai/reference/tlm/api/python/tlm/#class-tlm).",
+        description="See [TLM documentation for more information](/tlm/api/python/tlm/#class-tlm).",
     )
     options: Optional[TLMOptions] = Field(
         default=None,
-        description="See [TLM documentation for more information](https://docs.cleanlab.ai/reference/tlm/api/python/tlm/#class-tlmoptions).",
+        description="See [TLM documentation for more information](/tlm/api/python/tlm/#class-tlmoptions).",
     )
 
 

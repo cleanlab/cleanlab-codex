@@ -40,7 +40,7 @@ def generate_pydantic_model_docstring(cls: type[BaseModel], name: str) -> str:
     formatted_annotations = "\n    ".join(
         format_annotation_from_field_info(field_name, field_info) for field_name, field_info in cls.model_fields.items()
     )
-    formatted_fields = "\n  ".join(
+    formatted_fields = "\n".join(
         format_pydantic_field_docstring(field_name, field_info) for field_name, field_info in cls.model_fields.items()
     )
     return f"""
