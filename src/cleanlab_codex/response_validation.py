@@ -15,12 +15,13 @@ from typing import (
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from cleanlab_codex.internal.tlm import TLM
 from cleanlab_codex.internal.utils import generate_pydantic_model_docstring
 from cleanlab_codex.types.response_validation import (
     AggregatedResponseValidationResult,
     SingleResponseValidationResult,
 )
-from cleanlab_codex.types.tlm import TLM
+from cleanlab_codex.types.tlm import TLMConfig
 from cleanlab_codex.utils.errors import MissingDependencyError
 from cleanlab_codex.utils.prompt import default_format_prompt
 
@@ -30,6 +31,7 @@ _DEFAULT_FALLBACK_ANSWER: str = (
 _DEFAULT_FALLBACK_SIMILARITY_THRESHOLD: float = 0.7
 _DEFAULT_TRUSTWORTHINESS_THRESHOLD: float = 0.5
 _DEFAULT_UNHELPFULNESS_CONFIDENCE_THRESHOLD: float = 0.5
+_DEFAULT_TLM_CONFIG: TLMConfig = TLMConfig()
 
 Query = str
 Context = str
@@ -77,13 +79,12 @@ class BadResponseDetectionConfig(BaseModel):
     )
 
     # Shared config (for untrustworthiness and unhelpfulness checks)
-    tlm: Optional[TLM] = Field(
-        default=None,
-        description="TLM model to use for evaluation (required for untrustworthiness and unhelpfulness checks).",
+    tlm_config: TLMConfig = Field(
+        default=_DEFAULT_TLM_CONFIG,
+        description="TLM model configuration to use for untrustworthiness and unhelpfulness checks.",
     )
 
 
-# hack to generate better documentation for help.cleanlab.ai
 BadResponseDetectionConfig.__doc__ = f"""
 {BadResponseDetectionConfig.__doc__}
 
@@ -99,10 +100,11 @@ def is_bad_response(
     context: Optional[str] = None,
     query: Optional[str] = None,
     config: Union[BadResponseDetectionConfig, Dict[str, Any]] = _DEFAULT_CONFIG,
+    codex_access_key: Optional[str] = None,
 ) -> AggregatedResponseValidationResult:
     """Run a series of checks to determine if a response is bad.
 
-    The function returns a `AggregatedResponseValidationResult` object containing results from multiple validation checks.
+    The function returns an `AggregatedResponseValidationResult` object containing results from multiple validation checks.
     If any check fails (detects an issue), the AggregatedResponseValidationResult will evaluate to `True` when used in a boolean context.
     This means code like `if is_bad_response(...)` will enter the if-block when problems are detected.
 
@@ -146,7 +148,7 @@ def is_bad_response(
         )
     )
 
-    can_run_untrustworthy_check = query is not None and context is not None and config.tlm is not None
+    can_run_untrustworthy_check = query is not None and context is not None and config.tlm_config is not None
     if can_run_untrustworthy_check:
         # The if condition guarantees these are not None
         validation_checks.append(
@@ -154,20 +156,22 @@ def is_bad_response(
                 response=response,
                 context=cast(str, context),
                 query=cast(str, query),
-                tlm=cast(TLM, config.tlm),
+                tlm_config=config.tlm_config,
                 trustworthiness_threshold=config.trustworthiness_threshold,
                 format_prompt=config.format_prompt,
+                codex_access_key=codex_access_key,
             )
         )
 
-    can_run_unhelpful_check = query is not None and config.tlm is not None
+    can_run_unhelpful_check = query is not None and config.tlm_config is not None
     if can_run_unhelpful_check:
         validation_checks.append(
             lambda: is_unhelpful_response(
                 response=response,
                 query=cast(str, query),
-                tlm=cast(TLM, config.tlm),
+                tlm_config=config.tlm_config,
                 confidence_score_threshold=config.unhelpfulness_confidence_threshold,
+                codex_access_key=codex_access_key,
             )
         )
 
@@ -238,9 +242,11 @@ def is_untrustworthy_response(
     response: str,
     context: str,
     query: str,
-    tlm: TLM,
+    tlm_config: TLMConfig = _DEFAULT_TLM_CONFIG,
     trustworthiness_threshold: float = _DEFAULT_TRUSTWORTHINESS_THRESHOLD,
     format_prompt: Callable[[str, str], str] = default_format_prompt,
+    *,
+    codex_access_key: Optional[str] = None,
 ) -> SingleResponseValidationResult:
     """Check if a response is untrustworthy.
 
@@ -252,7 +258,7 @@ def is_untrustworthy_response(
         response (str): The response to check from the assistant.
         context (str): The context information available for answering the query.
         query (str): The user's question or request.
-        tlm (TLM): The TLM model to use for evaluation.
+        tlm_config (TLMConfig): The TLM configuration to use for evaluation.
         trustworthiness_threshold (float): Score threshold (0.0-1.0) under which a response is considered untrustworthy.
                   Lower values allow less trustworthy responses. Default 0.5 means responses with scores less than 0.5 are considered untrustworthy.
         format_prompt (Callable[[str, str], str]): Function that takes (query, context) and returns a formatted prompt string.
@@ -266,8 +272,9 @@ def is_untrustworthy_response(
         response=response,
         context=context,
         query=query,
-        tlm=tlm,
+        tlm_config=tlm_config,
         format_prompt=format_prompt,
+        codex_access_key=codex_access_key,
     )
     return SingleResponseValidationResult(
         name="untrustworthy",
@@ -281,8 +288,10 @@ def score_untrustworthy_response(
     response: str,
     context: str,
     query: str,
-    tlm: TLM,
+    tlm_config: TLMConfig = _DEFAULT_TLM_CONFIG,
     format_prompt: Callable[[str, str], str] = default_format_prompt,
+    *,
+    codex_access_key: Optional[str] = None,
 ) -> float:
     """Scores a response's trustworthiness using [TLM](/tlm), given a context and query.
 
@@ -298,24 +307,20 @@ def score_untrustworthy_response(
     Returns:
         float: The score of the response, between 0.0 and 1.0. A lower score indicates the response is less trustworthy.
     """
-    try:
-        from cleanlab_tlm import TLM  # noqa: F401
-    except ImportError as e:
-        raise MissingDependencyError(
-            import_name=e.name or "cleanlab_tlm",
-            package_name="cleanlab-tlm",
-            package_url="https://github.com/cleanlab/cleanlab-tlm",
-        ) from e
     prompt = format_prompt(query, context)
-    result = tlm.get_trustworthiness_score(prompt, response)
-    return float(result["trustworthiness_score"])
+    result = TLM.from_config(tlm_config, codex_access_key=codex_access_key).get_trustworthiness_score(
+        prompt, response=response
+    )
+    return float(result.trustworthiness_score)
 
 
 def is_unhelpful_response(
     response: str,
     query: str,
-    tlm: TLM,
+    tlm_config: TLMConfig = _DEFAULT_TLM_CONFIG,
     confidence_score_threshold: float = _DEFAULT_UNHELPFULNESS_CONFIDENCE_THRESHOLD,
+    *,
+    codex_access_key: Optional[str] = None,
 ) -> SingleResponseValidationResult:
     """Check if a response is unhelpful by asking [TLM](/tlm) to evaluate it.
 
@@ -327,14 +332,14 @@ def is_unhelpful_response(
     Args:
         response (str): The response to check.
         query (str): User query that will be used to evaluate if the response is helpful.
-        tlm (TLM): The TLM model to use for evaluation.
+        tlm_config (TLMConfig): The configuration
         confidence_score_threshold (float): Confidence threshold (0.0-1.0) above which a response is considered unhelpful.
                                        E.g. if confidence_score_threshold is 0.5, then responses with scores higher than 0.5 are considered unhelpful.
 
     Returns:
         SingleResponseValidationResult: The results of the validation check.
     """
-    score: float = score_unhelpful_response(response, query, tlm)
+    score: float = score_unhelpful_response(response, query, tlm_config, codex_access_key=codex_access_key)
 
     # Current implementation of `score_unhelpful_response` produces a score where a higher value means the response if more likely to be unhelpful
     # Changing the TLM prompt used in `score_unhelpful_response` may require restructuring the logic for `fails_check` and potentially adjusting
@@ -350,27 +355,20 @@ def is_unhelpful_response(
 def score_unhelpful_response(
     response: str,
     query: str,
-    tlm: TLM,
+    tlm_config: TLMConfig = _DEFAULT_TLM_CONFIG,
+    *,
+    codex_access_key: Optional[str] = None,
 ) -> float:
     """Scores a response's unhelpfulness using [TLM](/tlm), given a query.
 
     Args:
         response (str): The response to check.
         query (str): User query that will be used to evaluate if the response is helpful.
-        tlm (TLM): The TLM model to use for evaluation.
+        tlm_config (TLMConfig): The TLM model to use for evaluation.
 
     Returns:
         float: The score of the response, between 0.0 and 1.0. A higher score corresponds to a less helpful response.
     """
-    try:
-        from cleanlab_tlm import TLM  # noqa: F401
-    except ImportError as e:
-        raise MissingDependencyError(
-            import_name=e.name or "cleanlab_tlm",
-            package_name="cleanlab-tlm",
-            package_url="https://github.com/cleanlab/cleanlab-tlm",
-        ) from e
-
     # IMPORTANT: The current implementation couples three things that must stay in sync:
     # 1. The question phrasing ("is unhelpful?")
     # 2. The expected_unhelpful_response ("Yes")
@@ -405,5 +403,7 @@ def score_unhelpful_response(
         f"AI Assistant Response: {response}\n\n"
         f"{question}"
     )
-    result = tlm.get_trustworthiness_score(prompt, response=expected_unhelpful_response)
-    return float(result["trustworthiness_score"])
+    result = TLM.from_config(tlm_config, codex_access_key=codex_access_key).get_trustworthiness_score(
+        prompt, response=expected_unhelpful_response
+    )
+    return float(result.trustworthiness_score)
