@@ -13,14 +13,14 @@ class IntegrationType(str, Enum):
 
 
 class _AnalyticsMetadata:
-    def __init__(self, *, integration_type: IntegrationType):
+    def __init__(self, *, integration_type: IntegrationType | None = None):
         self._integration_type = integration_type
         self._package_version = package_version
         self._source = "cleanlab-codex-python"
 
     def to_headers(self) -> dict[str, str]:
         return {
-            "X-Integration-Type": self._integration_type,
+            "X-Integration-Type": self._integration_type or "None",
             "X-Client-Library-Version": self._package_version,
             "X-Source": self._source,
         }

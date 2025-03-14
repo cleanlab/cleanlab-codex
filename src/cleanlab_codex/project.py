@@ -109,6 +109,7 @@ class Project:
             organization_id=organization_id,
             name=name,
             description=description,
+            extra_headers=_AnalyticsMetadata().to_headers(),
         ).id
 
         return Project(sdk_client, project_id, verify_existence=False)
@@ -130,7 +131,11 @@ class Project:
         """
         try:
             return self._sdk_client.projects.access_keys.create(
-                project_id=self.id, name=name, description=description, expires_at=expiration
+                project_id=self.id,
+                name=name,
+                description=description,
+                expires_at=expiration,
+                extra_headers=_AnalyticsMetadata().to_headers(),
             ).token
         except AuthenticationError as e:
             raise AuthenticationError(_ERROR_CREATE_ACCESS_KEY, response=e.response, body=e.body) from e
@@ -149,7 +154,10 @@ class Project:
             # TODO: implement batch creation of entries in backend and update this function
             for entry in entries:
                 self._sdk_client.projects.entries.create(
-                    self.id, question=entry["question"], answer=entry.get("answer")
+                    self.id,
+                    question=entry["question"],
+                    answer=entry.get("answer"),
+                    extra_headers=_AnalyticsMetadata().to_headers(),
                 )
         except AuthenticationError as e:
             raise AuthenticationError(_ERROR_ADD_ENTRIES, response=e.response, body=e.body) from e
@@ -205,7 +213,9 @@ class Project:
 
         if not read_only:
             created_entry = Entry.model_validate(
-                self._sdk_client.projects.entries.add_question(self._id, question=question).model_dump()
+                self._sdk_client.projects.entries.add_question(
+                    self._id, question=question, extra_headers=extra_headers
+                ).model_dump()
             )
             return fallback_answer, created_entry
 

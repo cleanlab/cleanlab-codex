@@ -3,6 +3,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+from cleanlab_codex.internal.analytics import _AnalyticsMetadata
+
 
 @pytest.fixture
 def mock_client_from_access_key() -> Generator[MagicMock, None, None]:
@@ -18,3 +20,8 @@ def mock_client_from_api_key() -> Generator[MagicMock, None, None]:
         mock_client = MagicMock()
         mock_init.return_value = mock_client
         yield mock_client
+
+
+@pytest.fixture
+def default_headers() -> dict[str, str]:
+    return _AnalyticsMetadata().to_headers()

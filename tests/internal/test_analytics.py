@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import pytest
-
 from cleanlab_codex.__about__ import __version__ as package_version
 from cleanlab_codex.internal.analytics import IntegrationType, _AnalyticsMetadata
 
@@ -14,8 +12,3 @@ def test_analytics_metadata_to_headers_uses_defaults() -> None:
         "X-Source": "cleanlab-codex-python",
         "X-Client-Library-Version": package_version,
     }
-
-
-def test_analytics_metadata_requires_integration_type() -> None:
-    with pytest.raises(TypeError):
-        _AnalyticsMetadata()  # type: ignore[call-arg]
