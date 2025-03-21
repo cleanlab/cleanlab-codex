@@ -22,7 +22,8 @@ EVAL_METRICS = ["response_helpfulness"]
 BAD_RESPONSE_EVAL_METRICS = ["trustworthiness", *EVAL_METRICS]
 
 
-class IsBadResponseConfig(BaseModel):
+
+class BadResponseThresholds(BaseModel):
     """Config for determining if a response is bad.
     Each key is an evaluation metric and the value is a threshold such that if the score is below the threshold, the response is bad.
     """
@@ -50,12 +51,6 @@ def get_default_evaluations() -> list[Eval]:
     return [evaluation for evaluation in get_default_evals() if evaluation.name in EVAL_METRICS]
 
 
-DEFAULT_IS_BAD_RESPONSE_CONFIG: IsBadResponseConfig = IsBadResponseConfig(
-    trustworthiness=0.5,
-    response_helpfulness=0.5,
-)
-
-
 DEFAULT_TRUSTWORTHYRAG_CONFIG = {
     "options": {
         "log": ["explanation"],
@@ -68,19 +63,11 @@ def get_default_trustworthyrag_config() -> dict[str, Any]:
     return DEFAULT_TRUSTWORTHYRAG_CONFIG
 
 
-def is_bad_response(scores: TrustworthyRAGScore, is_bad_response_config: IsBadResponseConfig | None = None) -> bool:
+def is_bad_response(scores: TrustworthyRAGScore, thresholds: dict[str, float]) -> bool:
     """
     Check if the response is bad based on the scores computed by TrustworthyRAG and the config containing thresholds.
     """
-    is_bad_response_config_dict: dict[str, float] = IsBadResponseConfig.model_validate(
-        is_bad_response_config or DEFAULT_IS_BAD_RESPONSE_CONFIG
-    ).model_dump()
-    for eval_metric in BAD_RESPONSE_EVAL_METRICS:
-        score = scores[eval_metric]["score"]
-        if score is None:
-            error_msg = f"Score for {eval_metric} is None"
-            raise ValueError(error_msg)
-        threshold = is_bad_response_config_dict[eval_metric]
-        if score < threshold:
+    for eval_metric, threshold in thresholds.items():
+        if scores[eval_metric]["score"] < threshold:
             return True
     return False

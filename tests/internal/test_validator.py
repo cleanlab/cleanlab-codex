@@ -3,7 +3,7 @@ from typing import cast
 import pytest
 from cleanlab_tlm.utils.rag import TrustworthyRAGScore
 
-from cleanlab_codex.internal.validator import IsBadResponseConfig, get_default_evaluations, is_bad_response
+from cleanlab_codex.internal.validator import BadResponseThresholds, get_default_evaluations, is_bad_response
 
 
 def make_scores(trustworthiness: float, response_helpfulness: float) -> TrustworthyRAGScore:
@@ -18,8 +18,8 @@ def make_scores(trustworthiness: float, response_helpfulness: float) -> Trustwor
     return cast(TrustworthyRAGScore, scores)
 
 
-def make_is_bad_response_config(trustworthiness: float, response_helpfulness: float) -> IsBadResponseConfig:
-    return IsBadResponseConfig(
+def make_is_bad_response_config(trustworthiness: float, response_helpfulness: float) -> BadResponseThresholds:
+    return BadResponseThresholds(
         trustworthiness=trustworthiness,
         response_helpfulness=response_helpfulness,
     )
@@ -35,7 +35,7 @@ class TestIsBadResponse:
         return make_scores(0.92, 0.75)
 
     @pytest.fixture
-    def custom_is_bad_response_config(self) -> IsBadResponseConfig:
+    def custom_is_bad_response_config(self) -> BadResponseThresholds:
         return make_is_bad_response_config(0.6, 0.7)
 
     def test_thresholds(self, scores: TrustworthyRAGScore) -> None:
@@ -50,6 +50,6 @@ class TestIsBadResponse:
         is_bad_response_config = make_is_bad_response_config(0.5, 0.751)
         assert is_bad_response(scores, is_bad_response_config)
 
-    def test_scores(self, custom_is_bad_response_config: IsBadResponseConfig) -> None:
+    def test_scores(self, custom_is_bad_response_config: BadResponseThresholds) -> None:
         scores = make_scores(0.59, 0.7)
         assert is_bad_response(scores, custom_is_bad_response_config)
