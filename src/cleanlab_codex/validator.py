@@ -64,17 +64,17 @@ class Validator:
         Returns:
             dict[str, Any]: A dictionary containing:
                 - 'is_bad_response': True if the response is determined to be bad, False otherwise.
-                - 'alt_answer': The alternative response from Codex, or None if no response could be fetched from Codex.
+                - 'expert_answer': The alternative response from Codex, or None if no response could be fetched from Codex.
                 - Other evaluation metrics from TrustworthyRAG.
         """
         scores, is_bad_response = self.detect(query, context, response)
-        alt_answer = None
+        expert_answer = None
         if is_bad_response:
-            alt_answer = self.remediate(query)
+            expert_answer = self.remediate(query)
 
         return {
             "is_bad_response": is_bad_response,
-            "alt_answer": alt_answer,
+            "expert_answer": expert_answer,
             **scores,
         }
 
