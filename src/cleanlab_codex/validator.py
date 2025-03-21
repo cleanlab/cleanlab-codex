@@ -95,8 +95,7 @@ class Validator:
         """
         scores = cast(TrustworthyRAGScore, self._tlm_rag.score(response=response, query=query, context=context))
         
-        thresholds_dict = self._bad_response_thresholds.model_dump()
-        is_bad_response = _is_bad_response(scores, thresholds_dict)
+        is_bad_response = _is_bad_response(scores, self._bad_response_thresholds)
         return scores, is_bad_response
 
     def remediate(self, query: str) -> str | None:
