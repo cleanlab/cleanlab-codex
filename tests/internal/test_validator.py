@@ -3,7 +3,8 @@ from typing import cast
 import pytest
 from cleanlab_tlm.utils.rag import TrustworthyRAGScore
 
-from cleanlab_codex.internal.validator import BadResponseThresholds, get_default_evaluations, is_bad_response
+from cleanlab_codex.internal.validator import get_default_evaluations, is_bad_response
+from cleanlab_codex.validator import BadResponseThresholds
 
 
 def make_scores(trustworthiness: float, response_helpfulness: float) -> TrustworthyRAGScore:
