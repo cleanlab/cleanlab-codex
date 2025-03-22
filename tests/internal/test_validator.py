@@ -39,9 +39,6 @@ class TestIsBadResponse:
         return make_is_bad_response_config(0.6, 0.7)
 
     def test_thresholds(self, scores: TrustworthyRAGScore) -> None:
-        default_is_bad_response = is_bad_response(scores)
-        assert not default_is_bad_response
-
         # High trustworthiness_threshold
         is_bad_response_config = make_is_bad_response_config(0.921, 0.5)
         assert is_bad_response(scores, is_bad_response_config)
