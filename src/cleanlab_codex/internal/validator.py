@@ -42,7 +42,7 @@ def get_default_trustworthyrag_config() -> dict[str, Any]:
 def update_scores_based_on_thresholds(
     scores: ThresholdedTrustworthyRAGScore, thresholds: BadResponseThresholds
 ) -> None:
-    """Adds a `is_bad` flag to the scores dictionary."""
+    """Adds a `is_bad` flag to the scores dictionaries based on the thresholds."""
     for eval_name, score_dict in scores.items():
         score_dict.setdefault("is_bad", False)
         if (score := score_dict["score"]) is not None:
