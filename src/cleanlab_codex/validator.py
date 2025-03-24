@@ -4,7 +4,7 @@ Leverage Cleanlab's Evals and Codex to detect and remediate bad responses in RAG
 
 from __future__ import annotations
 
-from typing import Any, Optional, cast
+from typing import Any, Callable, Optional, cast
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -13,6 +13,7 @@ from cleanlab_codex.internal.validator import (
     get_default_trustworthyrag_config,
 )
 from cleanlab_codex.internal.validator import is_bad_response as _is_bad_response
+from cleanlab_codex.internal.validator import update_scores_based_on_thresholds as _update_scores_based_on_thresholds
 from cleanlab_codex.project import Project
 from cleanlab_codex.types.validator import ThresholdedTrustworthyRAGScore
 from cleanlab_codex.utils.errors import MissingDependencyError
@@ -123,7 +124,14 @@ class Validator:
             error_msg = f"Found thresholds for non-existent evaluation metrics: {_extra_thresholds}"
             raise ValueError(error_msg)
 
-    def validate(self, query: str, context: str, response: str) -> dict[str, Any]:
+    def validate(
+        self,
+        query: str,
+        context: str,
+        response: str,
+        prompt: Optional[str] = None,
+        form_prompt: Optional[Callable[[str, str], str]] = None,
+    ) -> dict[str, Any]:
         """Evaluate whether the AI-generated response is bad, and if so, request an alternate expert response.
 
         Args:
@@ -137,7 +145,7 @@ class Validator:
                 - 'expert_answer': Alternate SME-provided answer from Codex, or None if no answer could be found in the Codex Project.
                 - Additional keys: Various keys from a [`ThresholdedTrustworthyRAGScore`](/cleanlab_codex/types/validator/#class-thresholdedtrustworthyragscore) dictionary, with raw scores from [TrustworthyRAG](/tlm/api/python/utils.rag/#class-trustworthyrag) for each evaluation metric.  `is_bad` indicating whether the score is below the threshold.
         """
-        scores, is_bad_response = self.detect(query, context, response)
+        scores, is_bad_response = self.detect(query, context, response, prompt, form_prompt)
         expert_answer = None
         if is_bad_response:
             expert_answer = self.remediate(query)
@@ -148,7 +156,14 @@ class Validator:
             **scores,
         }
 
-    def detect(self, query: str, context: str, response: str) -> tuple[ThresholdedTrustworthyRAGScore, bool]:
+    def detect(
+        self,
+        query: str,
+        context: str,
+        response: str,
+        prompt: Optional[str] = None,
+        form_prompt: Optional[Callable[[str, str], str]] = None,
+    ) -> tuple[ThresholdedTrustworthyRAGScore, bool]:
         """Evaluate the response quality using TrustworthyRAG and determine if it is a bad response.
 
         Args:
@@ -164,14 +179,17 @@ class Validator:
                   and configured thresholds, False otherwise.
         """
         scores = cast(
-            ThresholdedTrustworthyRAGScore, self._tlm_rag.score(response=response, query=query, context=context)
+            ThresholdedTrustworthyRAGScore,
+            self._tlm_rag.score(
+                response=response,
+                query=query,
+                context=context,
+                prompt=prompt,
+                form_prompt=form_prompt,
+            ),
         )
 
-        # Enhance each score dictionary with its threshold check
-        for eval_name, score_dict in scores.items():
-            score_dict.setdefault("is_bad", False)
-            if (score := score_dict["score"]) is not None:
-                score_dict["is_bad"] = score < self._bad_response_thresholds.get_threshold(eval_name)
+        _update_scores_based_on_thresholds(scores, thresholds=self._bad_response_thresholds)
 
         is_bad_response = _is_bad_response(scores, self._bad_response_thresholds)
         return scores, is_bad_response
