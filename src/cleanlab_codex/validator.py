@@ -151,8 +151,8 @@ class Validator:
             expert_answer = self.remediate(query)
 
         return {
-            "is_bad_response": is_bad_response,
             "expert_answer": expert_answer,
+            "is_bad_response": is_bad_response,
             **scores,
         }
 
