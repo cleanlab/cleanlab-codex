@@ -1,19 +1,12 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Optional, Sequence, cast
 
-from cleanlab_codex.utils.errors import MissingDependencyError
+from cleanlab_tlm.utils.rag import Eval, TrustworthyRAGScore, get_default_evals
 
-try:
-    from cleanlab_tlm.utils.rag import Eval, TrustworthyRAGScore, get_default_evals
-except ImportError as e:
-    raise MissingDependencyError(
-        import_name=e.name or "cleanlab-tlm",
-        package_url="https://github.com/cleanlab/cleanlab-tlm",
-    ) from e
+from cleanlab_codex.types.validator import ThresholdedTrustworthyRAGScore
 
 if TYPE_CHECKING:
-    from cleanlab_codex.types.validator import ThresholdedTrustworthyRAGScore
     from cleanlab_codex.validator import BadResponseThresholds
 
 
@@ -40,26 +33,21 @@ def get_default_trustworthyrag_config() -> dict[str, Any]:
 
 
 def update_scores_based_on_thresholds(
-    scores: ThresholdedTrustworthyRAGScore, thresholds: BadResponseThresholds
-) -> None:
+    scores: TrustworthyRAGScore | Sequence[TrustworthyRAGScore], thresholds: BadResponseThresholds
+) -> ThresholdedTrustworthyRAGScore:
     """Adds a `is_bad` flag to the scores dictionaries based on the thresholds."""
+
+    # Helper function to check if a score is bad
+    def is_bad(score: Optional[float], threshold: float) -> bool:
+        return score is not None and score < threshold
+
+    if isinstance(scores, Sequence):
+        raise NotImplementedError("Batching is not supported yet.")
+
+    thresholded_scores = {}
     for eval_name, score_dict in scores.items():
-        score_dict.setdefault("is_bad", False)
-        if (score := score_dict["score"]) is not None:
-            score_dict["is_bad"] = score < thresholds.get_threshold(eval_name)
-
-
-def is_bad_response(
-    scores: TrustworthyRAGScore | ThresholdedTrustworthyRAGScore,
-    thresholds: BadResponseThresholds,
-) -> bool:
-    """
-    Check if the response is bad based on the scores computed by TrustworthyRAG and the config containing thresholds.
-    """
-    for eval_metric, score_dict in scores.items():
-        score = score_dict["score"]
-        if score is None:
-            continue
-        if score < thresholds.get_threshold(eval_metric):
-            return True
-    return False
+        thresholded_scores[eval_name] = {
+            **score_dict,
+            "is_bad": is_bad(score_dict["score"], thresholds.get_threshold(eval_name)),
+        }
+    return cast(ThresholdedTrustworthyRAGScore, thresholded_scores)

@@ -4,27 +4,20 @@ Leverage Cleanlab's Evals and Codex to detect and remediate bad responses in RAG
 
 from __future__ import annotations
 
-from typing import Any, Callable, Optional, cast
+from typing import TYPE_CHECKING, Any, Callable, Optional, cast
 
+from cleanlab_tlm import TrustworthyRAG
 from pydantic import BaseModel, Field, field_validator
 
 from cleanlab_codex.internal.validator import (
     get_default_evaluations,
     get_default_trustworthyrag_config,
 )
-from cleanlab_codex.internal.validator import is_bad_response as _is_bad_response
 from cleanlab_codex.internal.validator import update_scores_based_on_thresholds as _update_scores_based_on_thresholds
 from cleanlab_codex.project import Project
-from cleanlab_codex.types.validator import ThresholdedTrustworthyRAGScore
-from cleanlab_codex.utils.errors import MissingDependencyError
 
-try:
-    from cleanlab_tlm import TrustworthyRAG
-except ImportError as e:
-    raise MissingDependencyError(
-        import_name=e.name or "cleanlab-tlm",
-        package_url="https://github.com/cleanlab/cleanlab-tlm",
-    ) from e
+if TYPE_CHECKING:
+    from cleanlab_codex.types.validator import ThresholdedTrustworthyRAGScore
 
 
 class BadResponseThresholds(BaseModel):
@@ -141,8 +134,8 @@ class Validator:
 
         Returns:
             dict[str, Any]: A dictionary containing:
-                - 'is_bad_response': True if the response is flagged as potentially bad, False otherwise.
-                - 'expert_answer': Alternate SME-provided answer from Codex, or None if no answer could be found in the Codex Project.
+                - 'expert_answer': Alternate SME-provided answer from Codex if the response was flagged as bad and an answer was found, or None otherwise.
+                - 'is_bad_response': True if the response is flagged as potentially bad (when True, a lookup in Codex is performed), False otherwise.
                 - Additional keys: Various keys from a [`ThresholdedTrustworthyRAGScore`](/cleanlab_codex/types/validator/#class-thresholdedtrustworthyragscore) dictionary, with raw scores from [TrustworthyRAG](/tlm/api/python/utils.rag/#class-trustworthyrag) for each evaluation metric.  `is_bad` indicating whether the score is below the threshold.
         """
         scores, is_bad_response = self.detect(query, context, response, prompt, form_prompt)
@@ -164,7 +157,7 @@ class Validator:
         prompt: Optional[str] = None,
         form_prompt: Optional[Callable[[str, str], str]] = None,
     ) -> tuple[ThresholdedTrustworthyRAGScore, bool]:
-        """Evaluate the response quality using TrustworthyRAG and determine if it is a bad response.
+        """Evaluate the response quality using TrustworthyRAG and determine if it is a bad response via thresholding.
 
         Args:
             query (str): The user query that was used to generate the response.
@@ -178,21 +171,21 @@ class Validator:
                 - bool: True if the response is determined to be bad based on the evaluation scores
                   and configured thresholds, False otherwise.
         """
-        scores = cast(
-            ThresholdedTrustworthyRAGScore,
-            self._tlm_rag.score(
-                response=response,
-                query=query,
-                context=context,
-                prompt=prompt,
-                form_prompt=form_prompt,
-            ),
+        scores = self._tlm_rag.score(
+            response=response,
+            query=query,
+            context=context,
+            prompt=prompt,
+            form_prompt=form_prompt,
         )
 
-        _update_scores_based_on_thresholds(scores, thresholds=self._bad_response_thresholds)
+        thresholded_scores = _update_scores_based_on_thresholds(
+            scores=scores,
+            thresholds=self._bad_response_thresholds,
+        )
 
-        is_bad_response = _is_bad_response(scores, self._bad_response_thresholds)
-        return scores, is_bad_response
+        is_bad_response = any(score_dict["is_bad"] for score_dict in thresholded_scores.values())
+        return thresholded_scores, is_bad_response
 
     def remediate(self, query: str) -> str | None:
         """Request a SME-provided answer for this query, if one is available in Codex.
