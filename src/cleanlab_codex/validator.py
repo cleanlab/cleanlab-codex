@@ -141,8 +141,8 @@ class Validator:
         """
         expert_task = asyncio.create_task(self.remediate_async(query))
         scores, is_bad_response = self.detect(query, context, response, prompt, form_prompt)
+        expert_answer, maybe_entry = asyncio.run(expert_task)
         if is_bad_response:
-            expert_answer, maybe_entry = asyncio.run(expert_task)
             if expert_answer == None:
                 self._project.add_entries([maybe_entry])
         else:
