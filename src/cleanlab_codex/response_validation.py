@@ -1,4 +1,6 @@
 """
+This module is now superseded by this [Validator API](/codex/api/validator/).
+
 Validation functions for evaluating LLM responses and determining if they should be replaced with Codex-generated alternatives.
 """
 
