@@ -139,12 +139,16 @@ class Validator:
                 - 'is_bad_response': True if the response is flagged as potentially bad (when True, a lookup in Codex is performed), False otherwise.
                 - Additional keys: Various keys from a [`ThresholdedTrustworthyRAGScore`](/cleanlab_codex/types/validator/#class-thresholdedtrustworthyragscore) dictionary, with raw scores from [TrustworthyRAG](/tlm/api/python/utils.rag/#class-trustworthyrag) for each evaluation metric.  `is_bad` indicating whether the score is below the threshold.
         """
-        expert_task = asyncio.create_task(self.remediate_async(query))
+        loop = asyncio.get_event_loop()
+        expert_task = loop.create_task(self.remediate_async(query))
         scores, is_bad_response = self.detect(query, context, response, prompt, form_prompt)
-        expert_answer, maybe_entry = asyncio.run(expert_task)
+        expert_answer, maybe_entry = loop.run_until_complete(expert_task)
+
         if is_bad_response:
             if expert_answer == None:
-                self._project.add_entries([maybe_entry])
+                self._project._sdk_client.projects.entries.add_question(
+                    self._project._id, question=query,
+                ).model_dump()
         else:
             expert_answer = None
 
