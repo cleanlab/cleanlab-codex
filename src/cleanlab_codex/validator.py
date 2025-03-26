@@ -5,6 +5,7 @@ Leverage Cleanlab's Evals and Codex to detect and remediate bad responses in RAG
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Callable, Optional, cast
+import asyncio
 
 from cleanlab_tlm import TrustworthyRAG
 from pydantic import BaseModel, Field, field_validator
@@ -138,10 +139,14 @@ class Validator:
                 - 'is_bad_response': True if the response is flagged as potentially bad (when True, a lookup in Codex is performed), False otherwise.
                 - Additional keys: Various keys from a [`ThresholdedTrustworthyRAGScore`](/cleanlab_codex/types/validator/#class-thresholdedtrustworthyragscore) dictionary, with raw scores from [TrustworthyRAG](/tlm/api/python/utils.rag/#class-trustworthyrag) for each evaluation metric.  `is_bad` indicating whether the score is below the threshold.
         """
+        expert_task = asyncio.create_task(self.remediate_async(query))
         scores, is_bad_response = self.detect(query, context, response, prompt, form_prompt)
-        expert_answer = None
         if is_bad_response:
-            expert_answer = self.remediate(query)
+            expert_answer, maybe_entry = asyncio.run(expert_task)
+            if expert_answer == None:
+                self._project.add_entries([maybe_entry])
+        else:
+            expert_answer = None
 
         return {
             "expert_answer": expert_answer,
@@ -198,3 +203,7 @@ class Validator:
         """
         codex_answer, _ = self._project.query(question=query)
         return codex_answer
+
+    async def remediate_async(self, query: str):
+        codex_answer, entry = self._project.query(question=query, read_only=True)
+        return codex_answer, entry
