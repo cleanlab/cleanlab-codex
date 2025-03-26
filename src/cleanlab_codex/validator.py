@@ -141,7 +141,7 @@ class Validator:
         scores, is_bad_response = self.detect(query, context, response, prompt, form_prompt)
         expert_answer = None
         if is_bad_response:
-            expert_answer = self.remediate(query)
+            expert_answer = self._remediate(query)
 
         return {
             "expert_answer": expert_answer,
@@ -187,7 +187,7 @@ class Validator:
         is_bad_response = any(score_dict["is_bad"] for score_dict in thresholded_scores.values())
         return thresholded_scores, is_bad_response
 
-    def remediate(self, query: str) -> str | None:
+    def _remediate(self, query: str) -> str | None:
         """Request a SME-provided answer for this query, if one is available in Codex.
 
         Args:
