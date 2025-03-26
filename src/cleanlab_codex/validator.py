@@ -23,6 +23,11 @@ if TYPE_CHECKING:
 class BadResponseThresholds(BaseModel):
     """Config for determining if a response is bad.
     Each key is an evaluation metric and the value is a threshold such that if the score is below the threshold, the response is bad.
+    
+    Default Thresholds:
+        - trustworthiness: 0.5
+        - response_helpfulness: 0.5
+        - Any custom eval: 0.5 (if not explicitly specified in bad_response_thresholds)    
     """
 
     trustworthiness: float = Field(
@@ -82,15 +87,41 @@ class Validator:
         trustworthy_rag_config: Optional[dict[str, Any]] = None,
         bad_response_thresholds: Optional[dict[str, float]] = None,
     ):
-        """Evaluates the quality of responses generated in RAG applications and remediates them if needed.
+        """Real-time detection and remediation of bad responses in RAG applications, powered by Cleanlab's TrustworthyRAG and Codex.
 
-        This object combines Cleanlab's various Evals with thresholding to detect bad responses and remediates them with Codex.
+        This object combines Cleanlab's TrustworthyRAG evaluation scores with configurable thresholds to detect potentially bad responses 
+        in your RAG application. When a bad response is detected, it automatically attempts to remediate by retrieving an expert-provided 
+        answer from your Codex project.
+
+        For most use cases, we recommend using the `validate()` method which provides a complete validation workflow including 
+        both detection and Codex remediation. The `detect()` method is available separately for testing and threshold tuning purposes
+        without triggering a Codex lookup.
+
+        By default, this uses the same default configurations as [`TrustworthyRAG`](/tlm/api/python/utils.rag/#class-trustworthyrag), except:
+            - Explanations are returned in logs for better debugging
+            - Only the `response_helpfulness` eval is run
 
         Args:
-            codex_access_key (str): The [access key](/codex/web_tutorials/create_project/#access-keys) for a Codex project.
-            tlm_api_key (Optional[str]): The API key for [TrustworthyRAG](/tlm/api/python/utils.rag/#class-trustworthyrag).
-            trustworthy_rag_config (Optional[dict[str, Any]]): Optional initialization arguments for [TrustworthyRAG](/tlm/api/python/utils.rag/#class-trustworthyrag), which is used to detect response issues.
-            bad_response_thresholds (Optional[dict[str, float]]): Detection score thresholds used to flag whether or not a response is considered bad. Each key in this dict corresponds to an Eval from TrustworthyRAG, and the value indicates a threshold below which scores from this Eval are considered detected issues.  A response is flagged as bad if any issues are detected for it.
+            codex_access_key (str): The [access key](/codex/web_tutorials/create_project/#access-keys) for a Codex project. Used to retrieve expert-provided answers 
+                when bad responses are detected.
+
+            tlm_api_key (str, optional): API key for accessing [TrustworthyRAG](/tlm/api/python/utils.rag/#class-trustworthyrag). If not provided, this must be specified 
+                in trustworthy_rag_config.
+
+            trustworthy_rag_config (dict[str, Any], optional): Optional initialization arguments for [TrustworthyRAG](/tlm/api/python/utils.rag/#class-trustworthyrag), 
+                which is used to detect response issues. If not provided, default configuration will be used.
+
+            bad_response_thresholds (dict[str, float], optional): Detection score thresholds used to flag whether 
+                a response is considered bad. Each key corresponds to an Eval from TrustworthyRAG, and the value 
+                indicates a threshold (between 0 and 1) below which scores are considered detected issues. A response 
+                is flagged as bad if any issues are detected. If not provided, default thresholds will be used. See 
+                [`BadResponseThresholds`](/codex/api/python/validator/#class-badresponsethresholds) for more details.
+                
+        Raises:
+            ValueError: If both tlm_api_key and api_key in trustworthy_rag_config are provided.
+            ValueError: If bad_response_thresholds contains thresholds for non-existent evaluation metrics.
+            TypeError: If any threshold value is not a number.
+            ValueError: If any threshold value is not between 0 and 1.
         """
         trustworthy_rag_config = trustworthy_rag_config or get_default_trustworthyrag_config()
         if tlm_api_key is not None and "api_key" in trustworthy_rag_config:
@@ -157,7 +188,12 @@ class Validator:
         prompt: Optional[str] = None,
         form_prompt: Optional[Callable[[str, str], str]] = None,
     ) -> tuple[ThresholdedTrustworthyRAGScore, bool]:
-        """Evaluate the response quality using TrustworthyRAG and determine if it is a bad response via thresholding.
+        """Score response quality using TrustworthyRAG and flag bad responses based on configured thresholds.
+        
+        Note:
+            This method is primarily intended for testing and threshold tuning purposes. For production use cases,
+            we recommend using the `validate()` method which provides a complete validation workflow including 
+            Codex remediation.
 
         Args:
             query (str): The user query that was used to generate the response.
