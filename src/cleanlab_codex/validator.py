@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Callable, Optional, cast
 import asyncio
-
+import sys
 from cleanlab_tlm import TrustworthyRAG
 from pydantic import BaseModel, Field, field_validator
 
@@ -19,6 +19,14 @@ from cleanlab_codex.project import Project
 
 if TYPE_CHECKING:
     from cleanlab_codex.types.validator import ThresholdedTrustworthyRAGScore
+
+def is_notebook() -> bool:
+    """Returns True if running in a notebook, False otherwise."""
+    try:
+        get_ipython = sys.modules["IPython"].get_ipython
+        return bool("IPKernelApp" in get_ipython().config)
+    except Exception:
+        return False
 
 
 class BadResponseThresholds(BaseModel):
@@ -124,6 +132,11 @@ class Validator:
             TypeError: If any threshold value is not a number.
             ValueError: If any threshold value is not between 0 and 1.
         """
+        is_notebook_flag = is_notebook()
+        if is_notebook_flag:
+            import nest_asyncio  # type: ignore
+
+            nest_asyncio.apply()
         trustworthy_rag_config = trustworthy_rag_config or get_default_trustworthyrag_config()
         if tlm_api_key is not None and "api_key" in trustworthy_rag_config:
             error_msg = "Cannot specify both tlm_api_key and api_key in trustworthy_rag_config"
