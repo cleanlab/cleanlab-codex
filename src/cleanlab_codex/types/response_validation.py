@@ -1,5 +1,5 @@
 """
-This module is now superseded by this [Validator API](/codex/api/validator/).
+This module is now superseded by this [Validator API](/codex/api/python/validator/).
 
 Deprecated types for response validation."""
 
