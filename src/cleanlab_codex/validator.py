@@ -182,7 +182,7 @@ class Validator:
         loop.close()
         if is_bad_response:
             if expert_answer == None:
-                # TODO: Make this async as well
+                # TODO: Make this async as well in the future (only if add_question takes nontrivial amt of time on the client)
                 self._project._sdk_client.projects.entries.add_question(
                     self._project._id, question=query,
                 ).model_dump()
