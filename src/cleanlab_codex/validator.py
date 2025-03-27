@@ -299,7 +299,5 @@ class Validator:
         return codex_answer
 
     async def remediate_async(self, query: str):
-        print("IN REMEDIATE")
         codex_answer, entry = self._project.query(question=query, read_only=True)
-        print(f"RETURNED REMEDIATE,{codex_answer}")
         return codex_answer, entry
