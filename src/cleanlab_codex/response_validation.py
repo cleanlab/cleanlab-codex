@@ -1,5 +1,5 @@
 """
-Alternative validation functions for evaluating LLM responses and determining if they should be replaced with Codex-generated alternatives.
+Deprecated validation functions for evaluating LLM responses and determining if they should be replaced with Codex-generated alternatives.
 
 For Codex-as-a-Backup integrations, please use the Validator class instead of these standalone functions.
 """
