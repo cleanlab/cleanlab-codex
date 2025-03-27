@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- Add `Validator` API
+- Deprecate `response_validation.py` module.
+
 ## [1.0.4] - 2025-03-14
 
 - Pass analytics metadata in headers for all Codex API requests.
