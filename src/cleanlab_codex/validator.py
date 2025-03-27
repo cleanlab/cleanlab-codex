@@ -1,9 +1,9 @@
 """
 Detect and remediate bad responses in RAG applications, by integrating Codex as-a-Backup.
 """
-
 from __future__ import annotations
 
+from concurrent.futures import ThreadPoolExecutor
 from typing import TYPE_CHECKING, Any, Callable, Optional, cast
 import asyncio
 import sys
@@ -87,7 +87,6 @@ class BadResponseThresholds(BaseModel):
         "extra": "allow"  # Allow additional fields for custom eval thresholds
     }
 
-
 class Validator:
     def __init__(
         self,
@@ -162,6 +161,35 @@ class Validator:
             error_msg = f"Found thresholds for non-existent evaluation metrics: {_extra_thresholds}"
             raise ValueError(error_msg)
 
+    async def _validate_async(self, query, context, response, prompt, form_prompt):
+        try:
+            # Create proper tasks from the coroutines
+            detect_task = asyncio.create_task(asyncio.to_thread(
+                self.detect, query, context, response, prompt, form_prompt
+            ))
+            remediate_task = asyncio.create_task(self.remediate_async(query))
+
+            # Run them concurrently
+            done, pending = await asyncio.wait(
+                {detect_task, remediate_task},
+                return_when=asyncio.ALL_COMPLETED
+            )
+
+            # Extract results
+            scores, is_bad_response = await detect_task
+            expert_answer, maybe_entry = await remediate_task
+
+            return expert_answer, scores, is_bad_response
+
+        finally:
+            # Cleanup any pending tasks
+            for task in pending:
+                task.cancel()
+                try:
+                    await task
+                except:
+                    pass
+
     def validate(
         self,
         query: str,
@@ -186,30 +214,32 @@ class Validator:
                 - 'is_bad_response': True if the response is flagged as potentially bad, False otherwise. When True, a Codex lookup is performed, which logs this query into the Codex Project for SMEs to answer.
                 - Additional keys from a [`ThresholdedTrustworthyRAGScore`](/cleanlab_codex/types/validator/#class-thresholdedtrustworthyragscore) dictionary: each corresponds to a [TrustworthyRAG](/tlm/api/python/utils.rag/#class-trustworthyrag) evaluation metric, and points to the score for this evaluation as well as a boolean `is_bad` flagging whether the score falls below the corresponding threshold.
         """
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
         try:
-            loop = asyncio.get_running_loop()
-        except RuntimeError:  # No running loop
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-        expert_task = loop.create_task(self.remediate_async(query))
-        detect_task = loop.run_in_executor(None, self.detect, query, context, response, prompt, form_prompt)
-        expert_answer, maybe_entry = loop.run_until_complete(expert_task)
-        scores, is_bad_response = loop.run_until_complete(detect_task)
-        loop.close()
-        if is_bad_response:
-            if expert_answer == None:
-                # TODO: Make this async as well in the future (only if add_question takes nontrivial amt of time on the client)
-                self._project._sdk_client.projects.entries.add_question(
-                    self._project._id, question=query,
-                ).model_dump()
-        else:
-            expert_answer = None
+            expert_answer, scores, is_bad_response = loop.run_until_complete(
+                self._validate_async(query, context, response, prompt, form_prompt)
+            )
 
-        return {
-            "expert_answer": expert_answer,
-            "is_bad_response": is_bad_response,
-            **scores,
-        }
+            if is_bad_response and expert_answer is None:
+                # Run sync operation in separate thread to avoid loop contamination
+                with ThreadPoolExecutor(max_workers=1) as executor:
+                    executor.submit(
+                        self._project._sdk_client.projects.entries.add_question,
+                        self._project._id, question=query
+                    ).result()
+
+            return {
+                "expert_answer": expert_answer,
+                "is_bad_response": is_bad_response,
+                **scores,
+            }
+        finally:
+            # Properly shutdown the loop to prevent callback issues
+            loop.run_until_complete(loop.shutdown_asyncgens())
+            loop.close()
+
+
 
     def detect(
         self,
@@ -269,5 +299,7 @@ class Validator:
         return codex_answer
 
     async def remediate_async(self, query: str):
+        print("IN REMEDIATE")
         codex_answer, entry = self._project.query(question=query, read_only=True)
+        print(f"RETURNED REMEDIATE,{codex_answer}")
         return codex_answer, entry
