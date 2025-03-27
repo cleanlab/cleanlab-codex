@@ -163,6 +163,8 @@ class Validator:
             query (str): The user query that was used to generate the response.
             context (str): The context that was retrieved from the RAG Knowledge Base and used to generate the response.
             response (str): A reponse from your LLM/RAG system.
+            prompt (str, optional): Optional prompt representing the actual inputs (combining query, context, and system instructions into one string) to the LLM that generated the response.
+            form_prompt (Callable[[str, str], str], optional): Optional function to format the prompt based on query and context. Cannot be provided together with prompt, provide one or the other. This function should take query and context as parameters and return a formatted prompt string. If not provided, a default prompt formatter will be used. To include a system prompt or any other special instructions for your LLM, incorporate them directly in your custom form_prompt() function definition.
 
         Returns:
             dict[str, Any]: A dictionary containing:
@@ -200,6 +202,8 @@ class Validator:
             query (str): The user query that was used to generate the response.
             context (str): The context that was retrieved from the RAG Knowledge Base and used to generate the response.
             response (str): A reponse from your LLM/RAG system.
+            prompt (str, optional): Optional prompt representing the actual inputs (combining query, context, and system instructions into one string) to the LLM that generated the response.
+            form_prompt (Callable[[str, str], str], optional): Optional function to format the prompt based on query and context. Cannot be provided together with prompt, provide one or the other. This function should take query and context as parameters and return a formatted prompt string. If not provided, a default prompt formatter will be used. To include a system prompt or any other special instructions for your LLM, incorporate them directly in your custom form_prompt() function definition.
 
         Returns:
             tuple[ThresholdedTrustworthyRAGScore, bool]: A tuple containing:
