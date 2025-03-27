@@ -20,65 +20,6 @@ if TYPE_CHECKING:
     from cleanlab_codex.types.validator import ThresholdedTrustworthyRAGScore
 
 
-class BadResponseThresholds(BaseModel):
-    """Config for determining if a response is bad.
-    Each key is an evaluation metric and the value is a threshold such that a response is considered bad whenever the corresponding evaluation score falls below the threshold.
-
-    Default Thresholds:
-        - trustworthiness: 0.5
-        - response_helpfulness: 0.5
-        - Any custom eval: 0.5 (if not explicitly specified in bad_response_thresholds)
-    """
-
-    trustworthiness: float = Field(
-        description="Threshold for trustworthiness.",
-        default=0.5,
-        ge=0.0,
-        le=1.0,
-    )
-    response_helpfulness: float = Field(
-        description="Threshold for response helpfulness.",
-        default=0.5,
-        ge=0.0,
-        le=1.0,
-    )
-
-    @property
-    def default_threshold(self) -> float:
-        """The default threshold to use when an evaluation metric's threshold is not specified. This threshold is set to 0.5."""
-        return 0.5
-
-    def get_threshold(self, eval_name: str) -> float:
-        """Get threshold for an eval, if it exists.
-
-        For fields defined in the model, returns their value (which may be the field's default).
-        For custom evals not defined in the model, returns the default threshold value (see `default_threshold`).
-        """
-
-        # For fields defined in the model, use their value (which may be the field's default)
-        if eval_name in self.model_fields:
-            return cast(float, getattr(self, eval_name))
-
-        # For custom evals, use the default threshold
-        return getattr(self, eval_name, self.default_threshold)
-
-    @field_validator("*")
-    @classmethod
-    def validate_threshold(cls, v: Any) -> float:
-        """Validate that all fields (including dynamic ones) are floats between 0 and 1."""
-        if not isinstance(v, (int, float)):
-            error_msg = f"Threshold must be a number, got {type(v)}"
-            raise TypeError(error_msg)
-        if not 0 <= float(v) <= 1:
-            error_msg = f"Threshold must be between 0 and 1, got {v}"
-            raise ValueError(error_msg)
-        return float(v)
-
-    model_config = {
-        "extra": "allow"  # Allow additional fields for custom eval thresholds
-    }
-
-
 class Validator:
     def __init__(
         self,
@@ -239,3 +180,62 @@ class Validator:
         """
         codex_answer, _ = self._project.query(question=query)
         return codex_answer
+
+
+class BadResponseThresholds(BaseModel):
+    """Config for determining if a response is bad.
+    Each key is an evaluation metric and the value is a threshold such that a response is considered bad whenever the corresponding evaluation score falls below the threshold.
+
+    Default Thresholds:
+        - trustworthiness: 0.5
+        - response_helpfulness: 0.5
+        - Any custom eval: 0.5 (if not explicitly specified in bad_response_thresholds)
+    """
+
+    trustworthiness: float = Field(
+        description="Threshold for trustworthiness.",
+        default=0.5,
+        ge=0.0,
+        le=1.0,
+    )
+    response_helpfulness: float = Field(
+        description="Threshold for response helpfulness.",
+        default=0.5,
+        ge=0.0,
+        le=1.0,
+    )
+
+    @property
+    def default_threshold(self) -> float:
+        """The default threshold to use when an evaluation metric's threshold is not specified. This threshold is set to 0.5."""
+        return 0.5
+
+    def get_threshold(self, eval_name: str) -> float:
+        """Get threshold for an eval, if it exists.
+
+        For fields defined in the model, returns their value (which may be the field's default).
+        For custom evals not defined in the model, returns the default threshold value (see `default_threshold`).
+        """
+
+        # For fields defined in the model, use their value (which may be the field's default)
+        if eval_name in self.model_fields:
+            return cast(float, getattr(self, eval_name))
+
+        # For custom evals, use the default threshold
+        return getattr(self, eval_name, self.default_threshold)
+
+    @field_validator("*")
+    @classmethod
+    def validate_threshold(cls, v: Any) -> float:
+        """Validate that all fields (including dynamic ones) are floats between 0 and 1."""
+        if not isinstance(v, (int, float)):
+            error_msg = f"Threshold must be a number, got {type(v)}"
+            raise TypeError(error_msg)
+        if not 0 <= float(v) <= 1:
+            error_msg = f"Threshold must be between 0 and 1, got {v}"
+            raise ValueError(error_msg)
+        return float(v)
+
+    model_config = {
+        "extra": "allow"  # Allow additional fields for custom eval thresholds
+    }
