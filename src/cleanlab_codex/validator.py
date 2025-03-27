@@ -97,7 +97,7 @@ class Validator:
         For production, use the `validate()` method which provides a complete validation workflow including both detection and remediation.
         A `detect()` method is separately available for you to test/tune detection configurations like score thresholds and TrustworthyRAG settings
         without triggering any Codex lookups that otherwise could affect the state of the corresponding Codex Project.
-        
+
         Args:
             codex_access_key (str): The [access key](/codex/web_tutorials/create_project/#access-keys) for a Codex project. Used to retrieve expert-provided answers
                 when bad responses are detected, or otherwise log the corresponding queries for SMEs to answer.
