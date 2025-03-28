@@ -222,7 +222,7 @@ class Validator:
             )
 
             if is_bad_response and expert_answer is None:
-                # Run sync operation in separate thread to avoid loop contamination
+                # TODO: Make this async as well in the future (right now it takes 8% of the time)
                 with ThreadPoolExecutor(max_workers=1) as executor:
                     executor.submit(
                         self._project._sdk_client.projects.entries.add_question,
