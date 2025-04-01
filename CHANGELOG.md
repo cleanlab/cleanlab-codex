@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- Remove `response_validation.py` module.
+
 ## [1.0.6] - 2025-03-27
 
 - Fix links to docs
