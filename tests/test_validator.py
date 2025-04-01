@@ -133,7 +133,7 @@ class TestValidator:
         mock_project.from_access_key.return_value.query.return_value = ("expert answer", None)
 
         validator = Validator(codex_access_key="test")
-        result = validator._remediate("test query")
+        result = validator._remediate("test query")  # noqa: SLF001
 
         # Verify project.query was called
         mock_project.from_access_key.return_value.query.assert_called_once_with(question="test query")

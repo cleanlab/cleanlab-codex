@@ -1,4 +1,7 @@
-"""Types for response validation."""
+"""
+This module is now superseded by this [Validator API](/codex/api/python/validator/).
+
+Deprecated types for response validation."""
 
 from abc import ABC, abstractmethod
 from collections import OrderedDict
