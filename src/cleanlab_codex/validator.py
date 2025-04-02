@@ -22,7 +22,6 @@ if TYPE_CHECKING:
     from cleanlab_codex.types.validator import ThresholdedTrustworthyRAGScore
 
 
-
 class Validator:
     def __init__(
         self,
@@ -212,6 +211,7 @@ class Validator:
     async def remediate_async(self, query: str) -> Tuple[Optional[str], Optional[Entry]]:
         codex_answer, entry = self._project.query(question=query, read_only=True)
         return codex_answer, entry
+
 
 class BadResponseThresholds(BaseModel):
     """Config for determining if a response is bad.
