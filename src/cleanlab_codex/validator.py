@@ -4,9 +4,8 @@ Detect and remediate bad responses in RAG applications, by integrating Codex as-
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Callable, Optional, cast, Tuple
 import asyncio
-
+from typing import TYPE_CHECKING, Any, Callable, Optional, Tuple, cast
 
 from cleanlab_tlm import TrustworthyRAG
 from pydantic import BaseModel, Field, field_validator
@@ -18,10 +17,9 @@ from cleanlab_codex.internal.validator import (
 from cleanlab_codex.internal.validator import update_scores_based_on_thresholds as _update_scores_based_on_thresholds
 from cleanlab_codex.project import Project
 
-from src.cleanlab_codex.types.entry import Entry
-
 if TYPE_CHECKING:
     from cleanlab_codex.types.validator import ThresholdedTrustworthyRAGScore
+    from src.cleanlab_codex.types.entry import Entry
 
 
 class Validator:
