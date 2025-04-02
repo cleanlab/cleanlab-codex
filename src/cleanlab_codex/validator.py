@@ -19,7 +19,8 @@ from cleanlab_codex.project import Project
 
 if TYPE_CHECKING:
     from cleanlab_codex.types.validator import ThresholdedTrustworthyRAGScore
-    from src.cleanlab_codex.types.entry import Entry
+    from cleanlab_codex.types.entry import Entry
+
 
 
 class Validator:
