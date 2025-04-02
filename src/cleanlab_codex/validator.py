@@ -98,6 +98,7 @@ class Validator:
         response: str,
         prompt: Optional[str] = None,
         form_prompt: Optional[Callable[[str, str], str]] = None,
+        run_async: bool = False,
     ) -> dict[str, Any]:
         """Evaluate whether the AI-generated response is bad, and if so, request an alternate expert answer.
         If no expert answer is available, this query is still logged for SMEs to answer.
@@ -115,29 +116,30 @@ class Validator:
                 - 'is_bad_response': True if the response is flagged as potentially bad, False otherwise. When True, a Codex lookup is performed, which logs this query into the Codex Project for SMEs to answer.
                 - Additional keys from a [`ThresholdedTrustworthyRAGScore`](/codex/api/python/types.validator/#class-thresholdedtrustworthyragscore) dictionary: each corresponds to a [TrustworthyRAG](/tlm/api/python/utils.rag/#class-trustworthyrag) evaluation metric, and points to the score for this evaluation as well as a boolean `is_bad` flagging whether the score falls below the corresponding threshold.
         """
-        try:
-            loop = asyncio.get_running_loop()
-        except RuntimeError:  # No running loop
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-        expert_task = loop.create_task(self.remediate_async(query))
-        detect_task = loop.run_in_executor(None, self.detect, query, context, response, prompt, form_prompt)
-        expert_answer, maybe_entry = loop.run_until_complete(expert_task)
-        scores, is_bad_response = loop.run_until_complete(detect_task)
-        loop.close()
-        if is_bad_response:
-            if expert_answer == None:
-                # TODO: Make this async as well
-                self._project._sdk_client.projects.entries.add_question(
-                    self._project._id, question=query,
-                ).model_dump()
+        if run_async:
+            try:
+                loop = asyncio.get_running_loop()
+            except RuntimeError:  # No running loop
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+            expert_task = loop.create_task(self.remediate_async(query))
+            detect_task = loop.run_in_executor(None, self.detect, query, context, response, prompt, form_prompt)
+            expert_answer, maybe_entry = loop.run_until_complete(expert_task)
+            scores, is_bad_response = loop.run_until_complete(detect_task)
+            loop.close()
+            if is_bad_response:
+                if expert_answer == None:
+                    # TODO: Make this async as well
+                    self._project._sdk_client.projects.entries.add_question(
+                        self._project._id, question=query,
+                    ).model_dump()
+            else:
+                expert_answer = None
         else:
+            scores, is_bad_response = self.detect(query, context, response, prompt, form_prompt)
             expert_answer = None
-
-        scores, is_bad_response = self.detect(query, context, response, prompt, form_prompt)
-        expert_answer = None
-        if is_bad_response:
-            expert_answer = self._remediate(query)
+            if is_bad_response:
+                expert_answer = self._remediate(query)
 
         return {
             "expert_answer": expert_answer,
