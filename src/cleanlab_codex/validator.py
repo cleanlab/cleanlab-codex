@@ -133,8 +133,8 @@ class Validator:
             if is_bad_response:
                 if expert_answer is None:
                     # TODO: Make this async as well
-                    project_id = self._project._id
-                    question_entry = self._project._sdk_client.projects.entries.add_question(
+                    project_id = self._project._id  # noqa: SLF001
+                    self._project._sdk_client.projects.entries.add_question(  # noqa: SLF001
                         project_id,
                         question=query,
                     ).model_dump()
