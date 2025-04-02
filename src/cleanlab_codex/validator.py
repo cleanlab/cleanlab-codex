@@ -97,9 +97,9 @@ class Validator:
         query: str,
         context: str,
         response: str,
+        run_async: bool = False,
         prompt: Optional[str] = None,
         form_prompt: Optional[Callable[[str, str], str]] = None,
-        run_async: bool = False,
     ) -> dict[str, Any]:
         """Evaluate whether the AI-generated response is bad, and if so, request an alternate expert answer.
         If no expert answer is available, this query is still logged for SMEs to answer.
@@ -108,6 +108,7 @@ class Validator:
             query (str): The user query that was used to generate the response.
             context (str): The context that was retrieved from the RAG Knowledge Base and used to generate the response.
             response (str): A reponse from your LLM/RAG system.
+            run_async (bool): If True, runs detect asynchronously
             prompt (str, optional): Optional prompt representing the actual inputs (combining query, context, and system instructions into one string) to the LLM that generated the response.
             form_prompt (Callable[[str, str], str], optional): Optional function to format the prompt based on query and context. Cannot be provided together with prompt, provide one or the other. This function should take query and context as parameters and return a formatted prompt string. If not provided, a default prompt formatter will be used. To include a system prompt or any other special instructions for your LLM, incorporate them directly in your custom form_prompt() function definition.
 
