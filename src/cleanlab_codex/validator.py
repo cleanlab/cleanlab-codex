@@ -97,6 +97,7 @@ class Validator:
         query: str,
         context: str,
         response: str,
+        *,
         run_async: bool = False,
         prompt: Optional[str] = None,
         form_prompt: Optional[Callable[[str, str], str]] = None,
@@ -132,8 +133,10 @@ class Validator:
             if is_bad_response:
                 if expert_answer is None:
                     # TODO: Make this async as well
-                    self._project._sdk_client.projects.entries.add_question(
-                        self._project._id, question=query,
+                    project_id = self._project._id
+                    question_entry = self._project._sdk_client.projects.entries.add_question(
+                        project_id,
+                        question=query,
                     ).model_dump()
             else:
                 expert_answer = None
