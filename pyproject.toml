@@ -26,7 +26,7 @@ classifiers = [
 ]
 dependencies = [
   "cleanlab-tlm~=1.0.12",
-  "codex-sdk @ git+ssh://git@github.com/stainless-sdks/codex-python.git@axl1313/dev",
+  "codex-sdk==0.1.0-alpha.13",
   "pydantic>=2.0.0, <3",
 ]
 
