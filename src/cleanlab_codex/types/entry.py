@@ -1,7 +1,7 @@
 """Types for Codex entries."""
 
-from codex.types.projects.entry import Entry as _Entry
 from codex.types.projects.entry_create_params import EntryCreateParams
+from codex.types.projects.entry_query_response import Entry as _Entry
 
 from cleanlab_codex.internal.utils import generate_class_docstring
 

@@ -1,15 +1,15 @@
 import uuid
-from datetime import datetime, timezone
 from unittest.mock import MagicMock, Mock
 
 import pytest
 from codex import AuthenticationError
 from codex.types.project_create_params import Config
-from codex.types.projects.access_key_retrieve_project_id_response import AccessKeyRetrieveProjectIDResponse
-from codex.types.projects.entry import Entry as SDKEntry
+from codex.types.projects.access_key_retrieve_project_id_response import (
+    AccessKeyRetrieveProjectIDResponse,
+)
+from codex.types.projects.entry_query_response import Entry as SDKEntry
+from codex.types.projects.entry_query_response import EntryQueryResponse
 
-from cleanlab_codex.__about__ import __version__ as package_version
-from cleanlab_codex.internal.analytics import IntegrationType, _AnalyticsMetadata
 from cleanlab_codex.project import MissingProjectError, Project
 from cleanlab_codex.types.entry import EntryCreate
 
@@ -35,7 +35,9 @@ def test_from_access_key(mock_client_from_access_key: MagicMock) -> None:
     assert mock_client_from_access_key.projects.access_keys.retrieve_project_id.call_count == 1
 
 
-def test_from_access_key_missing_project(mock_client_from_access_key: MagicMock) -> None:
+def test_from_access_key_missing_project(
+    mock_client_from_access_key: MagicMock,
+) -> None:
     """Test from_access_key when project_id is None"""
     mock_client_from_access_key.projects.access_keys.retrieve_project_id.side_effect = Exception("project ID not found")
     with pytest.raises(MissingProjectError):
@@ -47,7 +49,10 @@ def test_create_project(mock_client_from_api_key: MagicMock, default_headers: di
     mock_client_from_api_key.projects.create.return_value.id = FAKE_PROJECT_ID
     mock_client_from_api_key.organization_id = FAKE_ORGANIZATION_ID
     project = Project.create(
-        mock_client_from_api_key, FAKE_ORGANIZATION_ID, FAKE_PROJECT_NAME, FAKE_PROJECT_DESCRIPTION
+        mock_client_from_api_key,
+        FAKE_ORGANIZATION_ID,
+        FAKE_PROJECT_NAME,
+        FAKE_PROJECT_DESCRIPTION,
     )
     mock_client_from_api_key.projects.create.assert_called_once_with(
         config=DEFAULT_PROJECT_CONFIG,
@@ -112,7 +117,9 @@ def test_create_access_key(mock_client_from_api_key: MagicMock, default_headers:
     )
 
 
-def test_create_access_key_no_access_key(mock_client_from_access_key: MagicMock) -> None:
+def test_create_access_key_no_access_key(
+    mock_client_from_access_key: MagicMock,
+) -> None:
     mock_error = Mock(response=Mock(status=401), body={"error": "Unauthorized"})
 
     mock_client_from_access_key.projects.access_keys.create.side_effect = AuthenticationError(
@@ -133,33 +140,14 @@ def test_init_nonexistent_project_id(mock_client_from_access_key: MagicMock) -> 
     assert mock_client_from_access_key.projects.retrieve.call_count == 1
 
 
-def test_query_read_only(mock_client_from_access_key: MagicMock) -> None:
-    mock_client_from_access_key.access_key = None
-    mock_client_from_access_key.projects.entries.query.return_value = None
+def test_query_question_found_fallback_answer(
+    mock_client_from_access_key: MagicMock,
+) -> None:
+    unanswered_entry = SDKEntry(id=str(uuid.uuid4()), question="What is the capital of France?", answer=None)
 
-    project = Project(mock_client_from_access_key, FAKE_PROJECT_ID)
-    res = project.query("What is the capital of France?", read_only=True)
-    expected_headers = {
-        "X-Integration-Type": "backup",
-        "X-Source": "cleanlab-codex-python",
-        "X-Client-Library-Version": package_version,
-    }
-    mock_client_from_access_key.projects.entries.query.assert_called_once_with(
-        FAKE_PROJECT_ID, question="What is the capital of France?", extra_headers=expected_headers
+    mock_client_from_access_key.projects.entries.query.return_value = EntryQueryResponse(
+        entry=unanswered_entry, answer=None
     )
-    mock_client_from_access_key.projects.entries.add_question.assert_not_called()
-    assert res[0] is None
-    assert res[1] is None
-
-
-def test_query_question_found_fallback_answer(mock_client_from_access_key: MagicMock) -> None:
-    unanswered_entry = SDKEntry(
-        id=str(uuid.uuid4()),
-        created_at=datetime.now(tz=timezone.utc),
-        question="What is the capital of France?",
-        answer=None,
-    )
-    mock_client_from_access_key.projects.entries.query.return_value = unanswered_entry
     project = Project(mock_client_from_access_key, FAKE_PROJECT_ID)
     res = project.query("What is the capital of France?")
     assert res[0] is None
@@ -167,15 +155,11 @@ def test_query_question_found_fallback_answer(mock_client_from_access_key: Magic
     assert res[1].model_dump() == unanswered_entry.model_dump()
 
 
-def test_query_question_not_found_fallback_answer(mock_client_from_access_key: MagicMock) -> None:
-    mock_client_from_access_key.projects.entries.query.return_value = None
-    mock_entry = SDKEntry(
-        id="fake-id",
-        created_at=datetime.now(tz=timezone.utc),
-        question="What is the capital of France?",
-        answer=None,
-    )
-    mock_client_from_access_key.projects.entries.add_question.return_value = mock_entry
+def test_query_question_not_found_fallback_answer(
+    mock_client_from_access_key: MagicMock,
+) -> None:
+    mock_entry = SDKEntry(id="fake-id", question="What is the capital of France?", answer=None)
+    mock_client_from_access_key.projects.entries.query.return_value = EntryQueryResponse(entry=mock_entry, answer=None)
 
     project = Project(mock_client_from_access_key, FAKE_PROJECT_ID)
     res = project.query("What is the capital of France?", fallback_answer="Paris")
@@ -184,37 +168,15 @@ def test_query_question_not_found_fallback_answer(mock_client_from_access_key: M
     assert res[1].model_dump() == mock_entry.model_dump()
 
 
-def test_query_add_question_when_not_found(mock_client_from_access_key: MagicMock) -> None:
-    """Test that query adds question when not found and not read_only"""
-    mock_client_from_access_key.projects.entries.query.return_value = None
-    new_entry = SDKEntry(
-        id=str(uuid.uuid4()),
-        created_at=datetime.now(tz=timezone.utc),
-        question="What is the capital of France?",
-        answer=None,
-    )
-    mock_client_from_access_key.projects.entries.add_question.return_value = new_entry
-
-    project = Project(mock_client_from_access_key, FAKE_PROJECT_ID)
-    res = project.query("What is the capital of France?")
-    expected_headers = _AnalyticsMetadata(integration_type=IntegrationType.BACKUP).to_headers()
-
-    mock_client_from_access_key.projects.entries.add_question.assert_called_once_with(
-        FAKE_PROJECT_ID, question="What is the capital of France?", extra_headers=expected_headers
-    )
-    assert res[0] is None
-    assert res[1] is not None
-    assert res[1].model_dump() == new_entry.model_dump()
-
-
 def test_query_answer_found(mock_client_from_access_key: MagicMock) -> None:
     answered_entry = SDKEntry(
         id=str(uuid.uuid4()),
-        created_at=datetime.now(tz=timezone.utc),
         question="What is the capital of France?",
         answer="Paris",
     )
-    mock_client_from_access_key.projects.entries.query.return_value = answered_entry
+    mock_client_from_access_key.projects.entries.query.return_value = EntryQueryResponse(
+        answer="Paris", entry=answered_entry
+    )
     project = Project(mock_client_from_access_key, FAKE_PROJECT_ID)
     res = project.query("What is the capital of France?")
     assert res[0] == answered_entry.answer
