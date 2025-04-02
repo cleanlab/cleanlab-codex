@@ -4,7 +4,7 @@ Detect and remediate bad responses in RAG applications, by integrating Codex as-
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Callable, Optional, cast
+from typing import TYPE_CHECKING, Any, Callable, Optional, cast, Tuple
 import asyncio
 
 
@@ -17,6 +17,8 @@ from cleanlab_codex.internal.validator import (
 )
 from cleanlab_codex.internal.validator import update_scores_based_on_thresholds as _update_scores_based_on_thresholds
 from cleanlab_codex.project import Project
+
+from src.cleanlab_codex.types.entry import Entry
 
 if TYPE_CHECKING:
     from cleanlab_codex.types.validator import ThresholdedTrustworthyRAGScore
@@ -128,7 +130,7 @@ class Validator:
             scores, is_bad_response = loop.run_until_complete(detect_task)
             loop.close()
             if is_bad_response:
-                if expert_answer == None:
+                if expert_answer is None:
                     # TODO: Make this async as well
                     self._project._sdk_client.projects.entries.add_question(
                         self._project._id, question=query,
@@ -204,7 +206,7 @@ class Validator:
         codex_answer, _ = self._project.query(question=query)
         return codex_answer
 
-    async def remediate_async(self, query: str):
+    async def remediate_async(self, query: str) -> Tuple[Optional[str], Optional[Entry]]:
         codex_answer, entry = self._project.query(question=query, read_only=True)
         return codex_answer, entry
 
