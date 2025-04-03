@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- Remove `response_validation.py` module.
+
 ## [1.0.7] - 2025-04-02
 
 - Update `Project.query()` method based on API changes from question grouping feature.
