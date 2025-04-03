@@ -189,7 +189,7 @@ def test_query_answer_found_with_metadata(mock_client_from_access_key: MagicMock
         id=str(uuid.uuid4()),
         question="What is the capital of France?",
         answer="Paris",
-        metadata={"trustworthiness_score": 0.95},
+        client_query_metadata=[{"trustworthiness_score": 0.95}],
     )
     mock_client_from_access_key.projects.entries.query.return_value = EntryQueryResponse(
         answer="Paris", entry=answered_entry
