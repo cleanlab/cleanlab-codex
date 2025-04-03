@@ -89,7 +89,13 @@ class Project:
         return Project(sdk_client, project_id, verify_existence=False)
 
     @classmethod
-    def create(cls, sdk_client: _Codex, organization_id: str, name: str, description: str | None = None) -> Project:
+    def create(
+        cls,
+        sdk_client: _Codex,
+        organization_id: str,
+        name: str,
+        description: str | None = None,
+    ) -> Project:
         """Create a new Codex project. This method is not meant to be used directly. Instead, use the [`create_project`](/codex/api/python/client#method-create_project) method on the `Client` class.
 
         Args:
@@ -114,7 +120,12 @@ class Project:
 
         return Project(sdk_client, project_id, verify_existence=False)
 
-    def create_access_key(self, name: str, description: str | None = None, expiration: datetime | None = None) -> str:
+    def create_access_key(
+        self,
+        name: str,
+        description: str | None = None,
+        expiration: datetime | None = None,
+    ) -> str:
         """Create a new access key for this project. Must be authenticated with a user-level API key to use this method.
         See [`Client.create_project()`](/codex/api/python/client#method-create_project) or [`Client.get_project()`](/codex/api/python/client#method-get_project).
 
@@ -167,19 +178,16 @@ class Project:
         question: str,
         *,
         fallback_answer: Optional[str] = None,
-        read_only: bool = False,
         analytics_metadata: Optional[_AnalyticsMetadata] = None,
-    ) -> tuple[Optional[str], Optional[Entry]]:
-        """Query Codex to check if this project contains an answer to the question. Add the question to the project for SME review if it does not.
+    ) -> tuple[Optional[str], Entry]:
+        """Query Codex to check if this project contains an answer to the question. If the question is not yet in the project, it will be added for SME review.
 
         Args:
             question (str): The question to ask the Codex API.
             fallback_answer (str, optional): Optional fallback answer to return if Codex is unable to answer the question.
-            read_only (bool, optional): Whether to query the Codex API in read-only mode. If True, the question will not be added to the Codex project for SME review.
-                This can be useful for testing purposes when setting up your project configuration.
 
         Returns:
-            tuple[Optional[str], Optional[Entry]]: A tuple representing the answer for the query and the existing or new entry in the Codex project.
+            tuple[Optional[str], Entry]: A tuple representing the answer for the query and the existing or new entry in the Codex project.
                 If Codex is able to answer the question, the first element will be the answer returned by Codex and the second element will be the existing [`Entry`](/codex/api/python/types.entry#class-entry) in the Codex project.
                 If Codex is unable to answer the question, the first element will be `fallback_answer` if provided, otherwise None. The second element will be a new [`Entry`](/codex/api/python/types.entry#class-entry) in the Codex project.
         """
@@ -189,7 +197,6 @@ class Project:
         return self._query_project(
             question=question,
             fallback_answer=fallback_answer,
-            read_only=read_only,
             analytics_metadata=analytics_metadata,
         )
 
@@ -198,25 +205,13 @@ class Project:
         question: str,
         *,
         fallback_answer: Optional[str] = None,
-        read_only: bool = False,
         analytics_metadata: Optional[_AnalyticsMetadata] = None,
-    ) -> tuple[Optional[str], Optional[Entry]]:
+    ) -> tuple[Optional[str], Entry]:
         extra_headers = analytics_metadata.to_headers() if analytics_metadata else None
-        maybe_entry = self._sdk_client.projects.entries.query(self._id, question=question, extra_headers=extra_headers)
+        query_res = self._sdk_client.projects.entries.query(self._id, question=question, extra_headers=extra_headers)
 
-        if maybe_entry is not None:
-            entry = Entry.model_validate(maybe_entry.model_dump())
-            if entry.answer is not None:
-                return entry.answer, entry
+        entry = Entry.model_validate(query_res.entry.model_dump())
+        if query_res.answer is not None:
+            return query_res.answer, entry
 
-            return fallback_answer, entry
-
-        if not read_only:
-            created_entry = Entry.model_validate(
-                self._sdk_client.projects.entries.add_question(
-                    self._id, question=question, extra_headers=extra_headers
-                ).model_dump()
-            )
-            return fallback_answer, created_entry
-
-        return fallback_answer, None
+        return fallback_answer, entry
