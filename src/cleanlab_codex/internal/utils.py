@@ -56,7 +56,9 @@ class {name}(BaseModel):
 """
 
 
-def format_annotation_from_field_info(field_name: str, field_info: FieldInfo) -> str:  # no cov  # TODO: unignore once used
+def format_annotation_from_field_info(
+    field_name: str, field_info: FieldInfo
+) -> str:  # no cov  # TODO: unignore once used
     annotation = field_name
     if field_info.annotation:
         annotation += f": '{annotation_to_str(field_info.annotation)}'"
@@ -65,7 +67,9 @@ def format_annotation_from_field_info(field_name: str, field_info: FieldInfo) ->
     return annotation
 
 
-def format_pydantic_field_docstring(field_name: str, field_info: FieldInfo) -> str:  # no cov  # TODO: unignore once used
+def format_pydantic_field_docstring(
+    field_name: str, field_info: FieldInfo
+) -> str:  # no cov  # TODO: unignore once used
     arg_str = f"- **`{field_name}`**"
     if field_info.annotation:
         arg_str += f" ({annotation_to_str(field_info.annotation)})"
