@@ -186,7 +186,7 @@ class Project:
         Args:
             question (str): The question to ask the Codex API.
             fallback_answer (str, optional): Optional fallback answer to return if Codex is unable to answer the question.
-            metadata (dict, optional): Additional custom metadata to associate with the query for analytics purposes.
+            metadata (dict, optional): Additional custom metadata to associate with the query.
 
         Returns:
             tuple[Optional[str], Entry]: A tuple representing the answer for the query and the existing or new entry in the Codex project.
