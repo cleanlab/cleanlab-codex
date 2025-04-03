@@ -114,7 +114,7 @@ class CodexTool:
         return self._project.query(
             question=question,
             fallback_answer=self._fallback_answer,
-            analytics_metadata=_AnalyticsMetadata(integration_type=IntegrationType.TOOL),
+            _analytics_metadata=_AnalyticsMetadata(integration_type=IntegrationType.TOOL),
         )[0]
 
     def to_openai_tool(self) -> dict[str, Any]:

@@ -26,7 +26,7 @@ def test_tool_query_passes_metadata(mock_client_from_access_key: MagicMock) -> N
         assert kwargs["question"] == "what is the capital of France?"
         assert kwargs["fallback_answer"] == CodexTool.DEFAULT_FALLBACK_ANSWER
         assert (
-            kwargs["analytics_metadata"].to_headers()
+            kwargs["_analytics_metadata"].to_headers()
             == _AnalyticsMetadata(integration_type=IntegrationType.TOOL).to_headers()
         )
 
