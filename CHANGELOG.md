@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.8] - 2025-04-03
+
+- Update `Project.query()` method with optional `metadata` property to log and store arbitrary metadata.
 - Remove `response_validation.py` module.
 
 ## [1.0.7] - 2025-04-02
@@ -44,7 +47,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial release of the `cleanlab-codex` client library.
 
-[Unreleased]: https://github.com/cleanlab/cleanlab-codex/compare/v1.0.7...HEAD
+[Unreleased]: https://github.com/cleanlab/cleanlab-codex/compare/v1.0.8...HEAD
+[1.0.8]: https://github.com/cleanlab/cleanlab-codex/compare/v1.0.7...v1.0.8
 [1.0.7]: https://github.com/cleanlab/cleanlab-codex/compare/v1.0.6...v1.0.7
 [1.0.6]: https://github.com/cleanlab/cleanlab-codex/compare/v1.0.5...v1.0.6
 [1.0.5]: https://github.com/cleanlab/cleanlab-codex/compare/v1.0.4...v1.0.5
