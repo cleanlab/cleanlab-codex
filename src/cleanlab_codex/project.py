@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from typing import TYPE_CHECKING as _TYPE_CHECKING
-from typing import Optional
+from typing import Any, Optional
 
 from codex import AuthenticationError
 
@@ -178,26 +178,29 @@ class Project:
         question: str,
         *,
         fallback_answer: Optional[str] = None,
-        analytics_metadata: Optional[_AnalyticsMetadata] = None,
+        metadata: Optional[dict[str, Any]] = None,
+        _analytics_metadata: Optional[_AnalyticsMetadata] = None,
     ) -> tuple[Optional[str], Entry]:
         """Query Codex to check if this project contains an answer to the question. If the question is not yet in the project, it will be added for SME review.
 
         Args:
             question (str): The question to ask the Codex API.
             fallback_answer (str, optional): Optional fallback answer to return if Codex is unable to answer the question.
+            metadata (dict, optional): Additional custom metadata to associate with the query.
 
         Returns:
             tuple[Optional[str], Entry]: A tuple representing the answer for the query and the existing or new entry in the Codex project.
                 If Codex is able to answer the question, the first element will be the answer returned by Codex and the second element will be the existing [`Entry`](/codex/api/python/types.entry#class-entry) in the Codex project.
                 If Codex is unable to answer the question, the first element will be `fallback_answer` if provided, otherwise None. The second element will be a new [`Entry`](/codex/api/python/types.entry#class-entry) in the Codex project.
         """
-        if not analytics_metadata:
-            analytics_metadata = _AnalyticsMetadata(integration_type=IntegrationType.BACKUP)
+        if not _analytics_metadata:
+            _analytics_metadata = _AnalyticsMetadata(integration_type=IntegrationType.BACKUP)
 
         return self._query_project(
             question=question,
             fallback_answer=fallback_answer,
-            analytics_metadata=analytics_metadata,
+            client_metadata=metadata,
+            analytics_metadata=_analytics_metadata,
         )
 
     def _query_project(
@@ -205,10 +208,13 @@ class Project:
         question: str,
         *,
         fallback_answer: Optional[str] = None,
+        client_metadata: Optional[dict[str, Any]] = None,
         analytics_metadata: Optional[_AnalyticsMetadata] = None,
     ) -> tuple[Optional[str], Entry]:
         extra_headers = analytics_metadata.to_headers() if analytics_metadata else None
-        query_res = self._sdk_client.projects.entries.query(self._id, question=question, extra_headers=extra_headers)
+        query_res = self._sdk_client.projects.entries.query(
+            self._id, question=question, client_metadata=client_metadata, extra_headers=extra_headers
+        )
 
         entry = Entry.model_validate(query_res.entry.model_dump())
         if query_res.answer is not None:
