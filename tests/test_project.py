@@ -183,6 +183,7 @@ def test_query_answer_found(mock_client_from_access_key: MagicMock) -> None:
     assert res[1] is not None
     assert res[1].model_dump() == answered_entry.model_dump()
 
+
 def test_query_answer_found_with_metadata(mock_client_from_access_key: MagicMock) -> None:
     answered_entry = SDKEntry(
         id=str(uuid.uuid4()),
@@ -197,7 +198,8 @@ def test_query_answer_found_with_metadata(mock_client_from_access_key: MagicMock
     res = project.query("What is the capital of France?", metadata={"trustworthiness_score": 0.95})
     assert res[0] == answered_entry.answer
     assert res[1] is not None
-    assert res[1].model_dump() == answered_entry.model_dump() # metadata should be included in the entry
+    assert res[1].model_dump() == answered_entry.model_dump()  # metadata should be included in the entry
+
 
 def test_add_entries_empty_list(mock_client_from_access_key: MagicMock) -> None:
     """Test adding an empty list of entries"""
