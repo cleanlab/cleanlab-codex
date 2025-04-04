@@ -187,20 +187,20 @@ class BadResponseThresholds(BaseModel):
     Each key is an evaluation metric and the value is a threshold such that a response is considered bad whenever the corresponding evaluation score falls below the threshold.
 
     Default Thresholds:
-        - trustworthiness: 0.5
-        - response_helpfulness: 0.5
+        - trustworthiness: 0.7
+        - response_helpfulness: 0.7
         - Any custom eval: 0.5 (if not explicitly specified in bad_response_thresholds)
     """
 
     trustworthiness: float = Field(
         description="Threshold for trustworthiness.",
-        default=0.5,
+        default=0.7,
         ge=0.0,
         le=1.0,
     )
     response_helpfulness: float = Field(
         description="Threshold for response helpfulness.",
-        default=0.5,
+        default=0.7,
         ge=0.0,
         le=1.0,
     )

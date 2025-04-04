@@ -18,8 +18,8 @@ class TestBadResponseThresholds:
 
     def test_default_threshold(self) -> None:
         thresholds = BadResponseThresholds()
-        assert thresholds.get_threshold("trustworthiness") == 0.5
-        assert thresholds.get_threshold("response_helpfulness") == 0.5
+        assert thresholds.get_threshold("trustworthiness") == 0.7
+        assert thresholds.get_threshold("response_helpfulness") == 0.7
 
     def test_unspecified_threshold(self) -> None:
         thresholds = BadResponseThresholds()
