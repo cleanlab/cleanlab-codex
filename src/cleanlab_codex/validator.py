@@ -13,7 +13,9 @@ from cleanlab_codex.internal.validator import (
     get_default_evaluations,
     get_default_trustworthyrag_config,
 )
-from cleanlab_codex.internal.validator import update_scores_based_on_thresholds as _update_scores_based_on_thresholds
+from cleanlab_codex.internal.validator import (
+    update_scores_based_on_thresholds as _update_scores_based_on_thresholds,
+)
 from cleanlab_codex.project import Project
 
 if TYPE_CHECKING:
@@ -96,6 +98,7 @@ class Validator:
         response: str,
         prompt: Optional[str] = None,
         form_prompt: Optional[Callable[[str, str], str]] = None,
+        metadata: Optional[dict[str, Any]] = None,
     ) -> dict[str, Any]:
         """Evaluate whether the AI-generated response is bad, and if so, request an alternate expert answer.
         If no expert answer is available, this query is still logged for SMEs to answer.
@@ -114,9 +117,11 @@ class Validator:
                 - Additional keys from a [`ThresholdedTrustworthyRAGScore`](/codex/api/python/types.validator/#class-thresholdedtrustworthyragscore) dictionary: each corresponds to a [TrustworthyRAG](/tlm/api/python/utils.rag/#class-trustworthyrag) evaluation metric, and points to the score for this evaluation as well as a boolean `is_bad` flagging whether the score falls below the corresponding threshold.
         """
         scores, is_bad_response = self.detect(query, context, response, prompt, form_prompt)
+        metadata = {} if metadata is None else metadata
+        metadata = {**metadata, **scores}
         expert_answer = None
         if is_bad_response:
-            expert_answer = self._remediate(query)
+            expert_answer = self._remediate(query, metadata=metadata)
 
         return {
             "expert_answer": expert_answer,
@@ -169,7 +174,7 @@ class Validator:
         is_bad_response = any(score_dict["is_bad"] for score_dict in thresholded_scores.values())
         return thresholded_scores, is_bad_response
 
-    def _remediate(self, query: str) -> str | None:
+    def _remediate(self, query: str, metadata: dict[str, Any] = None) -> str | None:
         """Request a SME-provided answer for this query, if one is available in Codex.
 
         Args:
@@ -178,7 +183,7 @@ class Validator:
         Returns:
             str | None: The SME-provided answer from Codex, or None if no answer could be found in the Codex Project.
         """
-        codex_answer, _ = self._project.query(question=query)
+        codex_answer, _ = self._project.query(question=query, metadata=metadata)
         return codex_answer
 
 
