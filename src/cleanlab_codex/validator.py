@@ -81,13 +81,14 @@ class Validator:
 
         self._bad_response_thresholds = BadResponseThresholds.model_validate(bad_response_thresholds or {})
 
-        _threshold_keys = self._bad_response_thresholds.model_dump().keys()
-
-        # Check if there are any thresholds without corresponding evals (this is an error)
-        _extra_thresholds = set(_threshold_keys) - set(_evals)
-        if _extra_thresholds:
-            error_msg = f"Found thresholds for non-existent evaluation metrics: {_extra_thresholds}"
-            raise ValueError(error_msg)
+        # Only check thresholds that were explicitly provided by the user
+        if bad_response_thresholds is not None:
+            _threshold_keys = bad_response_thresholds.keys()
+            # Check if there are any user-provided thresholds without corresponding evals
+            _extra_thresholds = set(_threshold_keys) - set(_evals)
+            if _extra_thresholds:
+                error_msg = f"Found thresholds for non-existent evaluation metrics: {_extra_thresholds}"
+                raise ValueError(error_msg)
 
     def validate(
         self,

@@ -64,6 +64,10 @@ def mock_trustworthy_rag() -> Generator[Mock, None, None]:
         yield mock_class
 
 
+def assert_threshold_equal(validator: Validator, eval_name: str, threshold: float) -> None:
+    assert validator._bad_response_thresholds.get_threshold(eval_name) == threshold  # noqa: SLF001
+
+
 class TestValidator:
     def test_init(self, mock_project: Mock, mock_trustworthy_rag: Mock) -> None:
         Validator(codex_access_key="test")
@@ -138,3 +142,36 @@ class TestValidator:
         # Verify project.query was called
         mock_project.from_access_key.return_value.query.assert_called_once_with(question="test query")
         assert result == "expert answer"
+
+    def test_user_provided_thresholds(self, mock_project: Mock, mock_trustworthy_rag: Mock) -> None:  # noqa: ARG002
+        # Test with user-provided thresholds that match evals
+        validator = Validator(codex_access_key="test", bad_response_thresholds={"trustworthiness": 0.6})
+        assert_threshold_equal(validator, "trustworthiness", 0.6)
+        assert_threshold_equal(validator, "response_helpfulness", 0.7)
+
+        # Test with extra thresholds that should raise ValueError
+        with pytest.raises(ValueError, match="Found thresholds for non-existent evaluation metrics"):
+            Validator(codex_access_key="test", bad_response_thresholds={"non_existent_metric": 0.5})
+
+    def test_default_thresholds(self, mock_project: Mock, mock_trustworthy_rag: Mock) -> None:  # noqa: ARG002
+        # Test with default thresholds (bad_response_thresholds is None)
+        validator = Validator(codex_access_key="test")
+        assert_threshold_equal(validator, "trustworthiness", 0.7)
+        assert_threshold_equal(validator, "response_helpfulness", 0.7)
+
+    def test_edge_cases(self, mock_project: Mock, mock_trustworthy_rag: Mock) -> None:  # noqa: ARG002
+        # Test with empty bad_response_thresholds
+        validator = Validator(codex_access_key="test", bad_response_thresholds={})
+        assert_threshold_equal(validator, "trustworthiness", 0.7)  # Default should apply
+
+        validator = Validator(codex_access_key="test", trustworthy_rag_config={"evals": ["non_existent_eval"]})
+        assert_threshold_equal(validator, "non_existent_eval", 0.5)  # Default should apply for undefined thresholds
+
+        # No extra Evals
+        validator = Validator(codex_access_key="test", trustworthy_rag_config={"evals": []})
+        assert_threshold_equal(validator, "trustworthiness", 0.7)  # Default should apply
+        assert_threshold_equal(validator, "response_helpfulness", 0.7)  # Default should apply
+
+        # Test with non-existent evals in trustworthy_rag_config
+        with pytest.raises(ValueError, match="Found thresholds for non-existent evaluation metrics"):
+            Validator(codex_access_key="test", bad_response_thresholds={"non_existent_eval": 0.5})
