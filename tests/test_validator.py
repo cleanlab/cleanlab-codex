@@ -188,7 +188,7 @@ def test_validator_with_empty_evals(mock_project: Mock) -> None:  # noqa: ARG001
         # Attempt to create a Validator with an invalid threshold
         with pytest.raises(
             ValueError,
-            match="Found thresholds for metrics that are not available: {'response_helpfulness'}. Available metrics are determined by configured evals plus 'trustworthiness' which is always included.",
+            match="Found thresholds for metrics that are not available: {'response_helpfulness'}. Available metrics are determined by the evals parameter provided to TrustworthyRAG plus 'trustworthiness' which is always included.",
         ):
             Validator(
                 codex_access_key="test",

@@ -92,7 +92,7 @@ class Validator:
             if _extra_thresholds:
                 error_msg = (
                     f"Found thresholds for metrics that are not available: {_extra_thresholds}. "
-                    "Available metrics are determined by configured evals plus 'trustworthiness' which is always included."
+                    "Available metrics are determined by the evals parameter provided to TrustworthyRAG plus 'trustworthiness' which is always included."
                 )
                 raise ValueError(error_msg)
 
