@@ -56,13 +56,14 @@ class Validator:
                 a response is bad or not. Each key corresponds to an Eval from [TrustworthyRAG](/tlm/api/python/utils.rag/#class-trustworthyrag),
                 and the value indicates a threshold (between 0 and 1) below which Eval scores are treated as detected issues. A response
                 is flagged as bad if any issues are detected. If not provided or only partially provided, default thresholds will be used
-                for any missing metrics - for example, if only 'trustworthiness' is specified, 'response_helpfulness' will use its default
-                threshold. See [`BadResponseThresholds`](/codex/api/python/validator/#class-badresponsethresholds) for more details on the
-                default values and more details.
+                for any missing metrics. Note that if a threshold is provided for a metric, that metric must correspond to an eval 
+                that is configured to run (with the exception of 'trustworthiness' which is always implicitly configured). You can 
+                configure arbitrary evals to run, and their thresholds will use default values unless explicitly set. See 
+                [`BadResponseThresholds`](/codex/api/python/validator/#class-badresponsethresholds) for more details on the default values.
 
         Raises:
             ValueError: If both tlm_api_key and api_key in trustworthy_rag_config are provided.
-            ValueError: If bad_response_thresholds contains thresholds for evaluation metrics that are not included in the TrustworthyRAG evals configuration.
+            ValueError: If any user-provided thresholds in bad_response_thresholds are for evaluation metrics that are not available in the current evaluation setup (except 'trustworthiness' which is always available).
             TypeError: If any threshold value is not a number.
             ValueError: If any threshold value is not between 0 and 1.
         """
