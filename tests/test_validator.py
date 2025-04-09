@@ -160,6 +160,9 @@ class TestValidator:
         assert_threshold_equal(validator, "response_helpfulness", 0.7)
 
     def test_edge_cases(self, mock_project: Mock, mock_trustworthy_rag: Mock) -> None:  # noqa: ARG002
+        # Note, the `"evals"` field should not be a list of strings in practice, but an Eval from cleanlab_tlm
+        # For testing purposes, we can just
+
         # Test with empty bad_response_thresholds
         validator = Validator(codex_access_key="test", bad_response_thresholds={})
         assert_threshold_equal(validator, "trustworthiness", 0.7)  # Default should apply
@@ -175,3 +178,19 @@ class TestValidator:
         # Test with non-existent evals in trustworthy_rag_config
         with pytest.raises(ValueError, match="Found thresholds for non-existent evaluation metrics"):
             Validator(codex_access_key="test", bad_response_thresholds={"non_existent_eval": 0.5})
+
+
+def test_validator_with_empty_evals(mock_project: Mock) -> None:  # noqa: ARG001
+    # Mock TrustworthyRAG to simulate empty evals
+    with patch("cleanlab_codex.validator.TrustworthyRAG") as mock_trustworthy_rag:
+        mock_trustworthy_rag.return_value.get_evals.return_value = []
+
+        # Attempt to create a Validator with an invalid threshold
+        with pytest.raises(
+            ValueError, match="Found thresholds for non-existent evaluation metrics: {'response_helpfulness'}"
+        ):
+            Validator(
+                codex_access_key="test",
+                trustworthy_rag_config={"evals": []},
+                bad_response_thresholds={"response_helpfulness": 0.5},
+            )
