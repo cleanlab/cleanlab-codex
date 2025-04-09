@@ -56,9 +56,9 @@ class Validator:
                 a response is bad or not. Each key corresponds to an Eval from [TrustworthyRAG](/tlm/api/python/utils.rag/#class-trustworthyrag),
                 and the value indicates a threshold (between 0 and 1) below which Eval scores are treated as detected issues. A response
                 is flagged as bad if any issues are detected. If not provided or only partially provided, default thresholds will be used
-                for any missing metrics. Note that if a threshold is provided for a metric, that metric must correspond to an eval 
-                that is configured to run (with the exception of 'trustworthiness' which is always implicitly configured). You can 
-                configure arbitrary evals to run, and their thresholds will use default values unless explicitly set. See 
+                for any missing metrics. Note that if a threshold is provided for a metric, that metric must correspond to an eval
+                that is configured to run (with the exception of 'trustworthiness' which is always implicitly configured). You can
+                configure arbitrary evals to run, and their thresholds will use default values unless explicitly set. See
                 [`BadResponseThresholds`](/codex/api/python/validator/#class-badresponsethresholds) for more details on the default values.
 
         Raises:
@@ -90,7 +90,10 @@ class Validator:
             # Check if there are any user-provided thresholds without corresponding evals
             _extra_thresholds = set(_threshold_keys) - set(_evals)
             if _extra_thresholds:
-                error_msg = f"Found thresholds for non-existent evaluation metrics: {_extra_thresholds}"
+                error_msg = (
+                    f"Found thresholds for metrics that are not available: {_extra_thresholds}. "
+                    "Available metrics are determined by configured evals plus 'trustworthiness' which is always included."
+                )
                 raise ValueError(error_msg)
 
     def validate(
