@@ -150,7 +150,7 @@ class TestValidator:
         assert_threshold_equal(validator, "response_helpfulness", 0.7)
 
         # Test with extra thresholds that should raise ValueError
-        with pytest.raises(ValueError, match="Found thresholds for non-existent evaluation metrics"):
+        with pytest.raises(ValueError, match="Found thresholds for metrics that are not available"):
             Validator(codex_access_key="test", bad_response_thresholds={"non_existent_metric": 0.5})
 
     def test_default_thresholds(self, mock_project: Mock, mock_trustworthy_rag: Mock) -> None:  # noqa: ARG002
@@ -176,7 +176,7 @@ class TestValidator:
         assert_threshold_equal(validator, "response_helpfulness", 0.7)  # Default should apply
 
         # Test with non-existent evals in trustworthy_rag_config
-        with pytest.raises(ValueError, match="Found thresholds for non-existent evaluation metrics"):
+        with pytest.raises(ValueError, match="Found thresholds for metrics that are not available"):
             Validator(codex_access_key="test", bad_response_thresholds={"non_existent_eval": 0.5})
 
 
@@ -187,7 +187,8 @@ def test_validator_with_empty_evals(mock_project: Mock) -> None:  # noqa: ARG001
 
         # Attempt to create a Validator with an invalid threshold
         with pytest.raises(
-            ValueError, match="Found thresholds for non-existent evaluation metrics: {'response_helpfulness'}"
+            ValueError,
+            match="Found thresholds for metrics that are not available: {'response_helpfulness'}. Available metrics are determined by configured evals plus 'trustworthiness' which is always included.",
         ):
             Validator(
                 codex_access_key="test",
