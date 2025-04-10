@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.9] - 2025-04-10
+
+- Refactor threshold validation in the `Validator` class to only check user-provided metrics.
+
 ## [1.0.8] - 2025-04-03
 
 - Update `Project.query()` method with optional `metadata` property to log and store arbitrary metadata.
@@ -47,7 +51,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial release of the `cleanlab-codex` client library.
 
-[Unreleased]: https://github.com/cleanlab/cleanlab-codex/compare/v1.0.8...HEAD
+[Unreleased]: https://github.com/cleanlab/cleanlab-codex/compare/v1.0.9...HEAD
+[1.0.9]: https://github.com/cleanlab/cleanlab-codex/compare/v1.0.8...v1.0.9
 [1.0.8]: https://github.com/cleanlab/cleanlab-codex/compare/v1.0.7...v1.0.8
 [1.0.7]: https://github.com/cleanlab/cleanlab-codex/compare/v1.0.6...v1.0.7
 [1.0.6]: https://github.com/cleanlab/cleanlab-codex/compare/v1.0.5...v1.0.6

@@ -55,12 +55,15 @@ class Validator:
             bad_response_thresholds (dict[str, float], optional): Detection score thresholds used to flag whether
                 a response is bad or not. Each key corresponds to an Eval from [TrustworthyRAG](/tlm/api/python/utils.rag/#class-trustworthyrag),
                 and the value indicates a threshold (between 0 and 1) below which Eval scores are treated as detected issues. A response
-                is flagged as bad if any issues are detected. If not provided, default thresholds will be used. See
-                [`BadResponseThresholds`](/codex/api/python/validator/#class-badresponsethresholds) for more details.
+                is flagged as bad if any issues are detected. If not provided or only partially provided, default thresholds will be used
+                for any missing metrics. Note that if a threshold is provided for a metric, that metric must correspond to an eval
+                that is configured to run (with the exception of 'trustworthiness' which is always implicitly configured). You can
+                configure arbitrary evals to run, and their thresholds will use default values unless explicitly set. See
+                [`BadResponseThresholds`](/codex/api/python/validator/#class-badresponsethresholds) for more details on the default values.
 
         Raises:
             ValueError: If both tlm_api_key and api_key in trustworthy_rag_config are provided.
-            ValueError: If bad_response_thresholds contains thresholds for non-existent evaluation metrics.
+            ValueError: If any user-provided thresholds in bad_response_thresholds are for evaluation metrics that are not available in the current evaluation setup (except 'trustworthiness' which is always available).
             TypeError: If any threshold value is not a number.
             ValueError: If any threshold value is not between 0 and 1.
         """
@@ -81,13 +84,17 @@ class Validator:
 
         self._bad_response_thresholds = BadResponseThresholds.model_validate(bad_response_thresholds or {})
 
-        _threshold_keys = self._bad_response_thresholds.model_dump().keys()
-
-        # Check if there are any thresholds without corresponding evals (this is an error)
-        _extra_thresholds = set(_threshold_keys) - set(_evals)
-        if _extra_thresholds:
-            error_msg = f"Found thresholds for non-existent evaluation metrics: {_extra_thresholds}"
-            raise ValueError(error_msg)
+        # Only check thresholds that were explicitly provided by the user
+        if bad_response_thresholds is not None:
+            _threshold_keys = bad_response_thresholds.keys()
+            # Check if there are any user-provided thresholds without corresponding evals
+            _extra_thresholds = set(_threshold_keys) - set(_evals)
+            if _extra_thresholds:
+                error_msg = (
+                    f"Found thresholds for metrics that are not available: {_extra_thresholds}. "
+                    "Available metrics are determined by the evals parameter provided to TrustworthyRAG plus 'trustworthiness' which is always included."
+                )
+                raise ValueError(error_msg)
 
     def validate(
         self,
