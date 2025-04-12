@@ -13,7 +13,9 @@ from cleanlab_codex.internal.validator import (
     get_default_evaluations,
     get_default_trustworthyrag_config,
 )
-from cleanlab_codex.internal.validator import update_scores_based_on_thresholds as _update_scores_based_on_thresholds
+from cleanlab_codex.internal.validator import (
+    update_scores_based_on_thresholds as _update_scores_based_on_thresholds,
+)
 from cleanlab_codex.project import Project
 
 if TYPE_CHECKING:
@@ -131,6 +133,41 @@ class Validator:
             **scores,
         }
 
+    async def validate_async(
+        self,
+        query: str,
+        context: str,
+        response: str,
+        prompt: Optional[str] = None,
+        form_prompt: Optional[Callable[[str, str], str]] = None,
+    ) -> dict[str, Any]:
+        """Evaluate whether the AI-generated response is bad, and if so, request an alternate expert answer.
+        If no expert answer is available, this query is still logged for SMEs to answer.
+
+        Args:
+            query (str): The user query that was used to generate the response.
+            context (str): The context that was retrieved from the RAG Knowledge Base and used to generate the response.
+            response (str): A reponse from your LLM/RAG system.
+            prompt (str, optional): Optional prompt representing the actual inputs (combining query, context, and system instructions into one string) to the LLM that generated the response.
+            form_prompt (Callable[[str, str], str], optional): Optional function to format the prompt based on query and context. Cannot be provided together with prompt, provide one or the other. This function should take query and context as parameters and return a formatted prompt string. If not provided, a default prompt formatter will be used. To include a system prompt or any other special instructions for your LLM, incorporate them directly in your custom form_prompt() function definition.
+
+        Returns:
+            dict[str, Any]: A dictionary containing:
+                - 'expert_answer': Alternate SME-provided answer from Codex if the response was flagged as bad and an answer was found in the Codex Project, or None otherwise.
+                - 'is_bad_response': True if the response is flagged as potentially bad, False otherwise. When True, a Codex lookup is performed, which logs this query into the Codex Project for SMEs to answer.
+                - Additional keys from a [`ThresholdedTrustworthyRAGScore`](/codex/api/python/types.validator/#class-thresholdedtrustworthyragscore) dictionary: each corresponds to a [TrustworthyRAG](/tlm/api/python/utils.rag/#class-trustworthyrag) evaluation metric, and points to the score for this evaluation as well as a boolean `is_bad` flagging whether the score falls below the corresponding threshold.
+        """
+        scores, is_bad_response = await self.detect_async(query, context, response, prompt, form_prompt)
+        expert_answer = None
+        if is_bad_response:
+            expert_answer = self._remediate(query)
+
+        return {
+            "expert_answer": expert_answer,
+            "is_bad_response": is_bad_response,
+            **scores,
+        }
+
     def detect(
         self,
         query: str,
@@ -161,6 +198,51 @@ class Validator:
                   and configured thresholds, False otherwise.
         """
         scores = self._tlm_rag.score(
+            response=response,
+            query=query,
+            context=context,
+            prompt=prompt,
+            form_prompt=form_prompt,
+        )
+
+        thresholded_scores = _update_scores_based_on_thresholds(
+            scores=scores,
+            thresholds=self._bad_response_thresholds,
+        )
+
+        is_bad_response = any(score_dict["is_bad"] for score_dict in thresholded_scores.values())
+        return thresholded_scores, is_bad_response
+
+    async def detect_async(
+        self,
+        query: str,
+        context: str,
+        response: str,
+        prompt: Optional[str] = None,
+        form_prompt: Optional[Callable[[str, str], str]] = None,
+    ) -> tuple[ThresholdedTrustworthyRAGScore, bool]:
+        """Score response quality using TrustworthyRAG and flag bad responses based on configured thresholds.
+
+        Note:
+            Use this method instead of `validate()` to test/tune detection configurations like score thresholds and TrustworthyRAG settings.
+            This `detect()` method will not affect your Codex Project, whereas `validate()` will log queries whose response was detected as bad into the Codex Project and is thus only suitable for production, not testing.
+            Both this method and `validate()` rely on this same detection logic, so you can use this method to first optimize detections and then switch to using `validate()`.
+
+        Args:
+            query (str): The user query that was used to generate the response.
+            context (str): The context that was retrieved from the RAG Knowledge Base and used to generate the response.
+            response (str): A reponse from your LLM/RAG system.
+            prompt (str, optional): Optional prompt representing the actual inputs (combining query, context, and system instructions into one string) to the LLM that generated the response.
+            form_prompt (Callable[[str, str], str], optional): Optional function to format the prompt based on query and context. Cannot be provided together with prompt, provide one or the other. This function should take query and context as parameters and return a formatted prompt string. If not provided, a default prompt formatter will be used. To include a system prompt or any other special instructions for your LLM, incorporate them directly in your custom form_prompt() function definition.
+
+        Returns:
+            tuple[ThresholdedTrustworthyRAGScore, bool]: A tuple containing:
+                - ThresholdedTrustworthyRAGScore: Quality scores for different evaluation metrics like trustworthiness
+                  and response helpfulness. Each metric has a score between 0-1. It also has a boolean flag, `is_bad` indicating whether the score is below a given threshold.
+                - bool: True if the response is determined to be bad based on the evaluation scores
+                  and configured thresholds, False otherwise.
+        """
+        scores = await self._tlm_rag.score_async(
             response=response,
             query=query,
             context=context,
