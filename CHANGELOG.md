@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.10] - 2025-04-15
+
+- Add async support to `Validator` API.
+
 ## [1.0.9] - 2025-04-10
 
 - Refactor threshold validation in the `Validator` class to only check user-provided metrics.
@@ -51,7 +55,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial release of the `cleanlab-codex` client library.
 
-[Unreleased]: https://github.com/cleanlab/cleanlab-codex/compare/v1.0.9...HEAD
+[Unreleased]: https://github.com/cleanlab/cleanlab-codex/compare/v1.0.10...HEAD
+[1.0.10]: https://github.com/cleanlab/cleanlab-codex/compare/v1.0.9...v1.0.10
 [1.0.9]: https://github.com/cleanlab/cleanlab-codex/compare/v1.0.8...v1.0.9
 [1.0.8]: https://github.com/cleanlab/cleanlab-codex/compare/v1.0.7...v1.0.8
 [1.0.7]: https://github.com/cleanlab/cleanlab-codex/compare/v1.0.6...v1.0.7
