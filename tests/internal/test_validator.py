@@ -50,7 +50,7 @@ def test_process_score_metadata() -> None:
     expected_metadata = {
         "trustworthiness": 0.8,
         "response_helpfulness": 0.6,
-        "query_ease_customized": 0.9,
+        "query_ease": 0.9,
         "is_not_trustworthy": False,
         "is_not_response_helpful": True,
         "is_not_query_easy": False,

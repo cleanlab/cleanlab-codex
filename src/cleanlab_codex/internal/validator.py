@@ -65,7 +65,6 @@ def process_score_metadata(scores: ThresholdedTrustworthyRAGScore, thresholds: B
     """
     metadata: dict[str, Any] = {}
 
-
     # Simple mappings for is_bad keys
     score_to_is_bad_key = {
         "trustworthiness": "is_not_trustworthy",
