@@ -23,7 +23,7 @@ class TestBadResponseThresholds:
 
     def test_unspecified_threshold(self) -> None:
         thresholds = BadResponseThresholds()
-        assert thresholds.get_threshold("unspecified_threshold") == 0.5
+        assert thresholds.get_threshold("unspecified_threshold") == 0.0
 
     def test_threshold_value(self) -> None:
         thresholds = BadResponseThresholds(valid_threshold=0.3)  # type: ignore
@@ -168,7 +168,7 @@ class TestValidator:
         assert_threshold_equal(validator, "trustworthiness", 0.7)  # Default should apply
 
         validator = Validator(codex_access_key="test", trustworthy_rag_config={"evals": ["non_existent_eval"]})
-        assert_threshold_equal(validator, "non_existent_eval", 0.5)  # Default should apply for undefined thresholds
+        assert_threshold_equal(validator, "non_existent_eval", 0.0)  # Default should apply for undefined thresholds
 
         # No extra Evals
         validator = Validator(codex_access_key="test", trustworthy_rag_config={"evals": []})
@@ -177,7 +177,7 @@ class TestValidator:
 
         # Test with non-existent evals in trustworthy_rag_config
         with pytest.raises(ValueError, match="Found thresholds for metrics that are not available"):
-            Validator(codex_access_key="test", bad_response_thresholds={"non_existent_eval": 0.5})
+            Validator(codex_access_key="test", bad_response_thresholds={"non_existent_eval": 0.0})
 
 
 def test_validator_with_empty_evals(mock_project: Mock) -> None:  # noqa: ARG001

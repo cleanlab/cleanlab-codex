@@ -278,7 +278,7 @@ class BadResponseThresholds(BaseModel):
     Default Thresholds:
         - trustworthiness: 0.7
         - response_helpfulness: 0.7
-        - Any custom eval: 0.5 (if not explicitly specified in bad_response_thresholds)
+        - Any custom eval: 0.0 (if not explicitly specified in bad_response_thresholds). A threshold of 0.0 means that the associated eval is not used to determine if a response is bad, unless explicitly specified in bad_response_thresholds, but still allow for reporting of those scores.
     """
 
     trustworthiness: float = Field(
@@ -296,8 +296,8 @@ class BadResponseThresholds(BaseModel):
 
     @property
     def default_threshold(self) -> float:
-        """The default threshold to use when an evaluation metric's threshold is not specified. This threshold is set to 0.5."""
-        return 0.5
+        """The default threshold to use when an evaluation metric's threshold is not specified. This threshold is set to 0.0."""
+        return 0.0
 
     def get_threshold(self, eval_name: str) -> float:
         """Get threshold for an eval, if it exists.
