@@ -51,3 +51,48 @@ def update_scores_based_on_thresholds(
             "is_bad": is_bad(score_dict["score"], thresholds.get_threshold(eval_name)),
         }
     return cast(ThresholdedTrustworthyRAGScore, thresholded_scores)
+
+
+def process_score_metadata(scores: ThresholdedTrustworthyRAGScore, thresholds: BadResponseThresholds) -> dict[str, Any]:
+    """Process scores into metadata format with standardized keys.
+
+    Args:
+        scores: The ThresholdedTrustworthyRAGScore containing evaluation results
+        thresholds: The BadResponseThresholds configuration
+
+    Returns:
+        dict: A dictionary containing evaluation scores and their corresponding metadata
+    """
+    metadata: dict[str, Any] = {}
+
+    # Simple mappings for score keys to metadata keys
+    score_to_metadata_key = {
+        "query_ease": "query_ease_customized",
+    }
+
+    # Simple mappings for is_bad keys
+    score_to_is_bad_key = {
+        "trustworthiness": "is_not_trustworthy",
+        "query_ease": "is_not_query_easy",
+        "response_helpfulness": "is_not_response_helpful",
+        "context_sufficiency": "is_context_insufficient",
+    }
+
+    # Process scores and add to metadata
+    for metric, score_data in scores.items():
+        # Get the appropriate metadata key, default to the original metric name
+        metadata_key = score_to_metadata_key.get(metric, metric)
+        metadata[metadata_key] = score_data["score"]
+
+        # Add is_bad flags with standardized naming
+        is_bad_key = score_to_is_bad_key.get(metric, f"is_not_{metric}")
+        metadata[is_bad_key] = score_data["is_bad"]
+
+        # Special case for trustworthiness explanation
+        if metric == "trustworthiness" and "log" in score_data and "explanation" in score_data["log"]:
+            metadata["explanation"] = score_data["log"]["explanation"]
+
+    # Add thresholds to metadata
+    metadata["thresholds"] = thresholds.model_dump()
+
+    return metadata
