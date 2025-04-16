@@ -60,12 +60,15 @@ class Validator:
             bad_response_thresholds (dict[str, float], optional): Detection score thresholds used to flag whether
                 a response is bad or not. Each key corresponds to an Eval from [TrustworthyRAG](/tlm/api/python/utils.rag/#class-trustworthyrag),
                 and the value indicates a threshold (between 0 and 1) below which Eval scores are treated as detected issues. A response
-                is flagged as bad if any issues are detected. If not provided, default thresholds will be used. See
-                [`BadResponseThresholds`](/codex/api/python/validator/#class-badresponsethresholds) for more details.
+                is flagged as bad if any issues are detected. If not provided or only partially provided, default thresholds will be used
+                for any missing metrics. Note that if a threshold is provided for a metric, that metric must correspond to an eval
+                that is configured to run (with the exception of 'trustworthiness' which is always implicitly configured). You can
+                configure arbitrary evals to run, and their thresholds will use default values unless explicitly set. See
+                [`BadResponseThresholds`](/codex/api/python/validator/#class-badresponsethresholds) for more details on the default values.
 
         Raises:
             ValueError: If both tlm_api_key and api_key in trustworthy_rag_config are provided.
-            ValueError: If bad_response_thresholds contains thresholds for non-existent evaluation metrics.
+            ValueError: If any user-provided thresholds in bad_response_thresholds are for evaluation metrics that are not available in the current evaluation setup (except 'trustworthiness' which is always available).
             TypeError: If any threshold value is not a number.
             ValueError: If any threshold value is not between 0 and 1.
         """
@@ -86,13 +89,17 @@ class Validator:
 
         self._bad_response_thresholds = BadResponseThresholds.model_validate(bad_response_thresholds or {})
 
-        _threshold_keys = self._bad_response_thresholds.model_dump().keys()
-
-        # Check if there are any thresholds without corresponding evals (this is an error)
-        _extra_thresholds = set(_threshold_keys) - set(_evals)
-        if _extra_thresholds:
-            error_msg = f"Found thresholds for non-existent evaluation metrics: {_extra_thresholds}"
-            raise ValueError(error_msg)
+        # Only check thresholds that were explicitly provided by the user
+        if bad_response_thresholds is not None:
+            _threshold_keys = bad_response_thresholds.keys()
+            # Check if there are any user-provided thresholds without corresponding evals
+            _extra_thresholds = set(_threshold_keys) - set(_evals)
+            if _extra_thresholds:
+                error_msg = (
+                    f"Found thresholds for metrics that are not available: {_extra_thresholds}. "
+                    "Available metrics are determined by the evals parameter provided to TrustworthyRAG plus 'trustworthiness' which is always included."
+                )
+                raise ValueError(error_msg)
 
     def validate(
         self,
@@ -132,6 +139,41 @@ class Validator:
         expert_answer = None
         if is_bad_response:
             expert_answer = self._remediate(query=query, metadata=final_metadata)
+
+        return {
+            "expert_answer": expert_answer,
+            "is_bad_response": is_bad_response,
+            **scores,
+        }
+
+    async def validate_async(
+        self,
+        query: str,
+        context: str,
+        response: str,
+        prompt: Optional[str] = None,
+        form_prompt: Optional[Callable[[str, str], str]] = None,
+    ) -> dict[str, Any]:
+        """Evaluate whether the AI-generated response is bad, and if so, request an alternate expert answer.
+        If no expert answer is available, this query is still logged for SMEs to answer.
+
+        Args:
+            query (str): The user query that was used to generate the response.
+            context (str): The context that was retrieved from the RAG Knowledge Base and used to generate the response.
+            response (str): A reponse from your LLM/RAG system.
+            prompt (str, optional): Optional prompt representing the actual inputs (combining query, context, and system instructions into one string) to the LLM that generated the response.
+            form_prompt (Callable[[str, str], str], optional): Optional function to format the prompt based on query and context. Cannot be provided together with prompt, provide one or the other. This function should take query and context as parameters and return a formatted prompt string. If not provided, a default prompt formatter will be used. To include a system prompt or any other special instructions for your LLM, incorporate them directly in your custom form_prompt() function definition.
+
+        Returns:
+            dict[str, Any]: A dictionary containing:
+                - 'expert_answer': Alternate SME-provided answer from Codex if the response was flagged as bad and an answer was found in the Codex Project, or None otherwise.
+                - 'is_bad_response': True if the response is flagged as potentially bad, False otherwise. When True, a Codex lookup is performed, which logs this query into the Codex Project for SMEs to answer.
+                - Additional keys from a [`ThresholdedTrustworthyRAGScore`](/codex/api/python/types.validator/#class-thresholdedtrustworthyragscore) dictionary: each corresponds to a [TrustworthyRAG](/tlm/api/python/utils.rag/#class-trustworthyrag) evaluation metric, and points to the score for this evaluation as well as a boolean `is_bad` flagging whether the score falls below the corresponding threshold.
+        """
+        scores, is_bad_response = await self.detect_async(query, context, response, prompt, form_prompt)
+        expert_answer = None
+        if is_bad_response:
+            expert_answer = self._remediate(query)
 
         return {
             "expert_answer": expert_answer,
@@ -185,6 +227,51 @@ class Validator:
         is_bad_response = any(score_dict["is_bad"] for score_dict in thresholded_scores.values())
         return thresholded_scores, is_bad_response
 
+    async def detect_async(
+        self,
+        query: str,
+        context: str,
+        response: str,
+        prompt: Optional[str] = None,
+        form_prompt: Optional[Callable[[str, str], str]] = None,
+    ) -> tuple[ThresholdedTrustworthyRAGScore, bool]:
+        """Score response quality using TrustworthyRAG and flag bad responses based on configured thresholds.
+
+        Note:
+            Use this method instead of `validate()` to test/tune detection configurations like score thresholds and TrustworthyRAG settings.
+            This `detect()` method will not affect your Codex Project, whereas `validate()` will log queries whose response was detected as bad into the Codex Project and is thus only suitable for production, not testing.
+            Both this method and `validate()` rely on this same detection logic, so you can use this method to first optimize detections and then switch to using `validate()`.
+
+        Args:
+            query (str): The user query that was used to generate the response.
+            context (str): The context that was retrieved from the RAG Knowledge Base and used to generate the response.
+            response (str): A reponse from your LLM/RAG system.
+            prompt (str, optional): Optional prompt representing the actual inputs (combining query, context, and system instructions into one string) to the LLM that generated the response.
+            form_prompt (Callable[[str, str], str], optional): Optional function to format the prompt based on query and context. Cannot be provided together with prompt, provide one or the other. This function should take query and context as parameters and return a formatted prompt string. If not provided, a default prompt formatter will be used. To include a system prompt or any other special instructions for your LLM, incorporate them directly in your custom form_prompt() function definition.
+
+        Returns:
+            tuple[ThresholdedTrustworthyRAGScore, bool]: A tuple containing:
+                - ThresholdedTrustworthyRAGScore: Quality scores for different evaluation metrics like trustworthiness
+                  and response helpfulness. Each metric has a score between 0-1. It also has a boolean flag, `is_bad` indicating whether the score is below a given threshold.
+                - bool: True if the response is determined to be bad based on the evaluation scores
+                  and configured thresholds, False otherwise.
+        """
+        scores = await self._tlm_rag.score_async(
+            response=response,
+            query=query,
+            context=context,
+            prompt=prompt,
+            form_prompt=form_prompt,
+        )
+
+        thresholded_scores = _update_scores_based_on_thresholds(
+            scores=scores,
+            thresholds=self._bad_response_thresholds,
+        )
+
+        is_bad_response = any(score_dict["is_bad"] for score_dict in thresholded_scores.values())
+        return thresholded_scores, is_bad_response
+
     def _remediate(self, *, query: str, metadata: dict[str, Any] | None = None) -> str | None:
         """Request a SME-provided answer for this query, if one is available in Codex.
 
@@ -205,7 +292,7 @@ class BadResponseThresholds(BaseModel):
     Default Thresholds:
         - trustworthiness: 0.7
         - response_helpfulness: 0.7
-        - Any custom eval: 0.5 (if not explicitly specified in bad_response_thresholds)
+        - Any custom eval: 0.0 (if not explicitly specified in bad_response_thresholds). A threshold of 0.0 means that the associated eval is not used to determine if a response is bad, unless explicitly specified in bad_response_thresholds, but still allow for reporting of those scores.
     """
 
     trustworthiness: float = Field(
@@ -223,8 +310,8 @@ class BadResponseThresholds(BaseModel):
 
     @property
     def default_threshold(self) -> float:
-        """The default threshold to use when an evaluation metric's threshold is not specified. This threshold is set to 0.5."""
-        return 0.5
+        """The default threshold to use when an evaluation metric's threshold is not specified. This threshold is set to 0.0."""
+        return 0.0
 
     def get_threshold(self, eval_name: str) -> float:
         """Get threshold for an eval, if it exists.
