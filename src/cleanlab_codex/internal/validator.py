@@ -65,10 +65,6 @@ def process_score_metadata(scores: ThresholdedTrustworthyRAGScore, thresholds: B
     """
     metadata: dict[str, Any] = {}
 
-    # Simple mappings for score keys to metadata keys
-    score_to_metadata_key = {
-        "query_ease": "query_ease_customized",
-    }
 
     # Simple mappings for is_bad keys
     score_to_is_bad_key = {
@@ -80,9 +76,7 @@ def process_score_metadata(scores: ThresholdedTrustworthyRAGScore, thresholds: B
 
     # Process scores and add to metadata
     for metric, score_data in scores.items():
-        # Get the appropriate metadata key, default to the original metric name
-        metadata_key = score_to_metadata_key.get(metric, metric)
-        metadata[metadata_key] = score_data["score"]
+        metadata[metric] = score_data["score"]
 
         # Add is_bad flags with standardized naming
         is_bad_key = score_to_is_bad_key.get(metric, f"is_not_{metric}")
