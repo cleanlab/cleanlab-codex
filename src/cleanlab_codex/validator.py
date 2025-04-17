@@ -4,6 +4,7 @@ Detect and remediate bad responses in RAG applications, by integrating Codex as-
 
 from __future__ import annotations
 
+from copy import deepcopy
 from typing import TYPE_CHECKING, Any, Callable, Optional, cast
 
 from cleanlab_tlm import TrustworthyRAG
@@ -131,13 +132,12 @@ class Validator:
         scores, is_bad_response = self.detect(
             query=query, context=context, response=response, prompt=prompt, form_prompt=form_prompt
         )
-        final_metadata = metadata.copy() if metadata else {}
-        if log_results:
-            processed_metadata = _process_score_metadata(scores, self._bad_response_thresholds)
-            final_metadata.update(processed_metadata)
-
         expert_answer = None
         if is_bad_response:
+            final_metadata = deepcopy(metadata) if metadata else {}
+            if log_results:
+                processed_metadata = _process_score_metadata(scores, self._bad_response_thresholds)
+                final_metadata.update(processed_metadata)
             expert_answer = self._remediate(query=query, metadata=final_metadata)
 
         return {

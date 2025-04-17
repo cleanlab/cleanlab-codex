@@ -86,6 +86,9 @@ def process_score_metadata(scores: ThresholdedTrustworthyRAGScore, thresholds: B
             metadata["explanation"] = score_data["log"]["explanation"]
 
     # Add thresholds to metadata
-    metadata["thresholds"] = thresholds.model_dump()
+    thresholds_dict = thresholds.model_dump()
+    for metric in {k for k in scores if k not in thresholds_dict}:
+        thresholds_dict[metric] = thresholds.get_threshold(metric)
+    metadata["thresholds"] = thresholds_dict
 
     return metadata

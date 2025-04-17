@@ -55,7 +55,7 @@ def test_process_score_metadata() -> None:
         "is_not_response_helpful": True,
         "is_not_query_easy": False,
         "explanation": "Test explanation",
-        "thresholds": {"trustworthiness": 0.7, "response_helpfulness": 0.7},
+        "thresholds": {"trustworthiness": 0.7, "response_helpfulness": 0.7, "query_ease": 0.0},
     }
 
     assert metadata == expected_metadata
