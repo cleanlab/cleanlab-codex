@@ -56,6 +56,7 @@ def test_process_score_metadata() -> None:
         "is_not_query_easy": False,
         "explanation": "Test explanation",
         "thresholds": {"trustworthiness": 0.7, "response_helpfulness": 0.7, "query_ease": 0.0},
+        "label": "unhelpful",
     }
 
     assert metadata == expected_metadata
@@ -66,20 +67,19 @@ def test_process_score_metadata_edge_cases() -> None:
     thresholds = BadResponseThresholds()
 
     # Test empty scores
-    metadata = process_score_metadata(cast(ThresholdedTrustworthyRAGScore, {}), thresholds)
-    assert len(metadata) == 1
-    assert "thresholds" in metadata
+    metadata_for_empty_scores = process_score_metadata(cast(ThresholdedTrustworthyRAGScore, {}), thresholds)
+    assert {"thresholds", "label"} == set(metadata_for_empty_scores.keys())
 
     # Test missing explanation
     scores = cast(ThresholdedTrustworthyRAGScore, {"trustworthiness": {"score": 0.6, "is_bad": True}})
-    metadata = process_score_metadata(scores, thresholds)
-    assert "explanation" not in metadata
+    metadata_missing_explanation = process_score_metadata(scores, thresholds)
+    assert "explanation" not in metadata_missing_explanation
 
     # Test custom metric
     scores = cast(ThresholdedTrustworthyRAGScore, {"my_metric": {"score": 0.3, "is_bad": True}})
-    metadata = process_score_metadata(scores, thresholds)
-    assert metadata["my_metric"] == 0.3
-    assert metadata["is_not_my_metric"] is True
+    metadata_custom_metric = process_score_metadata(scores, thresholds)
+    assert metadata_custom_metric["my_metric"] == 0.3
+    assert metadata_custom_metric["is_not_my_metric"] is True
 
 
 def test_update_scores_based_on_thresholds() -> None:
