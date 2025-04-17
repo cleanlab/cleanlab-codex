@@ -148,11 +148,14 @@ class Validator:
 
     async def validate_async(
         self,
+        *,
         query: str,
         context: str,
         response: str,
         prompt: Optional[str] = None,
         form_prompt: Optional[Callable[[str, str], str]] = None,
+        metadata: Optional[dict[str, Any]] = None,
+        log_results: bool = True,
     ) -> dict[str, Any]:
         """Evaluate whether the AI-generated response is bad, and if so, request an alternate expert answer.
         If no expert answer is available, this query is still logged for SMEs to answer.
@@ -171,9 +174,14 @@ class Validator:
                 - Additional keys from a [`ThresholdedTrustworthyRAGScore`](/codex/api/python/types.validator/#class-thresholdedtrustworthyragscore) dictionary: each corresponds to a [TrustworthyRAG](/tlm/api/python/utils.rag/#class-trustworthyrag) evaluation metric, and points to the score for this evaluation as well as a boolean `is_bad` flagging whether the score falls below the corresponding threshold.
         """
         scores, is_bad_response = await self.detect_async(query, context, response, prompt, form_prompt)
+        final_metadata = metadata.copy() if metadata else {}
+        if log_results:
+            processed_metadata = _process_score_metadata(scores, self._bad_response_thresholds)
+            final_metadata.update(processed_metadata)
+
         expert_answer = None
         if is_bad_response:
-            expert_answer = self._remediate(query)
+            expert_answer = self._remediate(query=query, metadata=final_metadata)
 
         return {
             "expert_answer": expert_answer,
