@@ -137,10 +137,10 @@ class TestValidator:
         mock_project.from_access_key.return_value.query.return_value = ("expert answer", None)
 
         validator = Validator(codex_access_key="test")
-        result = validator._remediate("test query")  # noqa: SLF001
+        result = validator._remediate(query="test query")  # noqa: SLF001
 
         # Verify project.query was called
-        mock_project.from_access_key.return_value.query.assert_called_once_with(question="test query")
+        mock_project.from_access_key.return_value.query.assert_called_once_with(question="test query", metadata=None)
         assert result == "expert answer"
 
     def test_user_provided_thresholds(self, mock_project: Mock, mock_trustworthy_rag: Mock) -> None:  # noqa: ARG002
