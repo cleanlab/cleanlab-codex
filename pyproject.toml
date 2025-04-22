@@ -25,7 +25,7 @@ classifiers = [
   "Programming Language :: Python :: Implementation :: PyPy",
 ]
 dependencies = [
-  "cleanlab-tlm>=1.0.18",
+  "cleanlab-tlm~=1.1",
   "codex-sdk==0.1.0-alpha.14",
   "pydantic>=2.0.0, <3",
 ]
