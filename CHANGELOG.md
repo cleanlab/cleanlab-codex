@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.13] - 2025-04-22
+
+- Update `cleanlab-tlm` dependancy to `~=1.1`.
+
 ## [1.0.12] - 2025-04-17
 
 - Support adding metadata in `validate()` method in Validator API.
@@ -63,7 +67,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial release of the `cleanlab-codex` client library.
 
-[Unreleased]: https://github.com/cleanlab/cleanlab-codex/compare/v1.0.12...HEAD
+[Unreleased]: https://github.com/cleanlab/cleanlab-codex/compare/v1.0.13...HEAD
+[1.0.13]: https://github.com/cleanlab/cleanlab-codex/compare/v1.0.12...v1.0.13
 [1.0.12]: https://github.com/cleanlab/cleanlab-codex/compare/v1.0.11...v1.0.12
 [1.0.11]: https://github.com/cleanlab/cleanlab-codex/compare/v1.0.10...v1.0.11
 [1.0.10]: https://github.com/cleanlab/cleanlab-codex/compare/v1.0.9...v1.0.10
