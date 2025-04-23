@@ -7,8 +7,12 @@ from codex.types.project_create_params import Config
 from codex.types.projects.access_key_retrieve_project_id_response import (
     AccessKeyRetrieveProjectIDResponse,
 )
-from codex.types.projects.entry_query_response import Entry as SDKEntry, EntryManagedMetadata, EntryManagedMetadataTrustworthiness
-from codex.types.projects.entry_query_response import EntryQueryResponse
+from codex.types.projects.entry_query_response import (
+    Entry as SDKEntry,
+    EntryManagedMetadata,
+    EntryManagedMetadataTrustworthiness,
+    EntryQueryResponse,
+)
 
 from cleanlab_codex.project import MissingProjectError, Project
 from cleanlab_codex.types.entry import EntryCreate
