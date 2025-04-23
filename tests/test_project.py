@@ -9,6 +9,8 @@ from codex.types.projects.access_key_retrieve_project_id_response import (
 )
 from codex.types.projects.entry_query_response import (
     Entry as SDKEntry,
+)
+from codex.types.projects.entry_query_response import (
     EntryManagedMetadata,
     EntryManagedMetadataTrustworthiness,
     EntryQueryResponse,
@@ -147,7 +149,12 @@ def test_init_nonexistent_project_id(mock_client_from_access_key: MagicMock) -> 
 def test_query_question_found_fallback_answer(
     mock_client_from_access_key: MagicMock,
 ) -> None:
-    unanswered_entry = SDKEntry(id=str(uuid.uuid4()), question="What is the capital of France?", answer=None, managed_metadata=EntryManagedMetadata(trustworthiness=EntryManagedMetadataTrustworthiness(scores=[0.95])))
+    unanswered_entry = SDKEntry(
+        id=str(uuid.uuid4()),
+        question="What is the capital of France?",
+        answer=None,
+        managed_metadata=EntryManagedMetadata(trustworthiness=EntryManagedMetadataTrustworthiness(scores=[0.95])),
+    )
 
     mock_client_from_access_key.projects.entries.query.return_value = EntryQueryResponse(
         entry=unanswered_entry, answer=None
@@ -162,7 +169,12 @@ def test_query_question_found_fallback_answer(
 def test_query_question_not_found_fallback_answer(
     mock_client_from_access_key: MagicMock,
 ) -> None:
-    mock_entry = SDKEntry(id="fake-id", question="What is the capital of France?", answer=None, managed_metadata=EntryManagedMetadata(trustworthiness=EntryManagedMetadataTrustworthiness(scores=[0.95])))
+    mock_entry = SDKEntry(
+        id="fake-id",
+        question="What is the capital of France?",
+        answer=None,
+        managed_metadata=EntryManagedMetadata(trustworthiness=EntryManagedMetadataTrustworthiness(scores=[0.95])),
+    )
     mock_client_from_access_key.projects.entries.query.return_value = EntryQueryResponse(entry=mock_entry, answer=None)
 
     project = Project(mock_client_from_access_key, FAKE_PROJECT_ID)
