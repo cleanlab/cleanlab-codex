@@ -221,3 +221,6 @@ class Project:
             return query_res.answer, entry
 
         return fallback_answer, entry
+
+    def increment_queries(self) -> None:
+        self._sdk_client.projects.increment_queries(self._id)

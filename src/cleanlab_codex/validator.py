@@ -140,8 +140,7 @@ class Validator:
                 final_metadata.update(processed_metadata)
             expert_answer = self._remediate(query=query, metadata=final_metadata)
 
-        # increment metric for project analytics
-        self._project.increment_query_count()
+        self._project.increment_queries()
 
         return {
             "expert_answer": expert_answer,
@@ -186,8 +185,7 @@ class Validator:
         if is_bad_response:
             expert_answer = self._remediate(query=query, metadata=final_metadata)
 
-        # increment metric for project analytics
-        self._project.increment_query_count()
+        self._project.increment_queries()
 
         return {
             "expert_answer": expert_answer,
