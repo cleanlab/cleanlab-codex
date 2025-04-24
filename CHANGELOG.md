@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.14] 2025-04-23
+- Update `codex-sdk` dependency to `0.1.0-alpha.17`.
+- Capture data for the number of times the validator API is called on a Codex project.
+
 ## [1.0.13] - 2025-04-22
 
 - Update `cleanlab-tlm` dependancy to `~=1.1`.
@@ -67,7 +71,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial release of the `cleanlab-codex` client library.
 
-[Unreleased]: https://github.com/cleanlab/cleanlab-codex/compare/v1.0.13...HEAD
+[Unreleased]: https://github.com/cleanlab/cleanlab-codex/compare/v1.0.14...HEAD
+[1.0.14]: https://github.com/cleanlab/cleanlab-codex/compare/v1.0.13...v1.0.14
 [1.0.13]: https://github.com/cleanlab/cleanlab-codex/compare/v1.0.12...v1.0.13
 [1.0.12]: https://github.com/cleanlab/cleanlab-codex/compare/v1.0.11...v1.0.12
 [1.0.11]: https://github.com/cleanlab/cleanlab-codex/compare/v1.0.10...v1.0.11
