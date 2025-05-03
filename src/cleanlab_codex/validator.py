@@ -315,7 +315,7 @@ class BadResponseThresholds(BaseModel):
     )
     response_helpfulness: float = Field(
         description="Threshold for response helpfulness.",
-        default=0.7,
+        default=0.23,
         ge=0.0,
         le=1.0,
     )

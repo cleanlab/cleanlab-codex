@@ -19,7 +19,7 @@ class TestBadResponseThresholds:
     def test_default_threshold(self) -> None:
         thresholds = BadResponseThresholds()
         assert thresholds.get_threshold("trustworthiness") == 0.7
-        assert thresholds.get_threshold("response_helpfulness") == 0.7
+        assert thresholds.get_threshold("response_helpfulness") == 0.23
 
     def test_unspecified_threshold(self) -> None:
         thresholds = BadResponseThresholds()
@@ -147,7 +147,7 @@ class TestValidator:
         # Test with user-provided thresholds that match evals
         validator = Validator(codex_access_key="test", bad_response_thresholds={"trustworthiness": 0.6})
         assert_threshold_equal(validator, "trustworthiness", 0.6)
-        assert_threshold_equal(validator, "response_helpfulness", 0.7)
+        assert_threshold_equal(validator, "response_helpfulness", 0.23)
 
         # Test with extra thresholds that should raise ValueError
         with pytest.raises(ValueError, match="Found thresholds for metrics that are not available"):
@@ -157,7 +157,7 @@ class TestValidator:
         # Test with default thresholds (bad_response_thresholds is None)
         validator = Validator(codex_access_key="test")
         assert_threshold_equal(validator, "trustworthiness", 0.7)
-        assert_threshold_equal(validator, "response_helpfulness", 0.7)
+        assert_threshold_equal(validator, "response_helpfulness", 0.23)
 
     def test_edge_cases(self, mock_project: Mock, mock_trustworthy_rag: Mock) -> None:  # noqa: ARG002
         # Note, the `"evals"` field should not be a list of strings in practice, but an Eval from cleanlab_tlm
@@ -173,7 +173,7 @@ class TestValidator:
         # No extra Evals
         validator = Validator(codex_access_key="test", trustworthy_rag_config={"evals": []})
         assert_threshold_equal(validator, "trustworthiness", 0.7)  # Default should apply
-        assert_threshold_equal(validator, "response_helpfulness", 0.7)  # Default should apply
+        assert_threshold_equal(validator, "response_helpfulness", 0.23)  # Default should apply
 
         # Test with non-existent evals in trustworthy_rag_config
         with pytest.raises(ValueError, match="Found thresholds for metrics that are not available"):
