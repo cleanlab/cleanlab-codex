@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.0.15] 2025-04-24
 
 - Update default thresholds for response helpfulness to 0.23 in `Validator` API.
+- Update `codex-sdk` dependency to `0.1.0a19`.
 
 ## [1.0.14] 2025-04-23
 - Update `codex-sdk` dependency to `0.1.0-alpha.17`.
