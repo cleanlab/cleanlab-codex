@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from typing import TYPE_CHECKING as _TYPE_CHECKING
-from typing import Any, Optional
+from typing import Any, Dict, List, Literal, Optional
 
 from codex import AuthenticationError
 
@@ -17,6 +17,9 @@ if _TYPE_CHECKING:
     from datetime import datetime
 
     from codex import Codex as _Codex
+    from codex.types.project_validate_params import BadResponseThresholds
+    from codex.types.project_validate_params import Options as ProjectValidateOptions
+    from codex.types.project_validate_response import ProjectValidateResponse
 
     from cleanlab_codex.types.entry import EntryCreate
 
@@ -222,5 +225,30 @@ class Project:
 
         return fallback_answer, entry
 
-    def increment_queries(self) -> None:
-        self._sdk_client.projects.increment_queries(self._id)
+    def validate(
+        self,
+        context: str,
+        prompt: str,
+        query: str,
+        response: str,
+        *,
+        bad_response_thresholds: Optional[BadResponseThresholds] = None,
+        constrain_outputs: Optional[List[str]] = None,
+        custom_metadata: Optional[object] = None,
+        eval_scores: Optional[Dict[str, float]] = None,
+        options: Optional[ProjectValidateOptions] = None,
+        quality_preset: Literal["best", "high", "medium", "low", "base"] = "medium",
+    ) -> ProjectValidateResponse:
+        return self._sdk_client.projects.validate(
+            self._id,
+            context=context,
+            prompt=prompt,
+            query=query,
+            response=response,
+            bad_response_thresholds=bad_response_thresholds,
+            constrain_outputs=constrain_outputs,
+            custom_metadata=custom_metadata,
+            eval_scores=eval_scores,
+            options=options,
+            quality_preset=quality_preset,
+        )
