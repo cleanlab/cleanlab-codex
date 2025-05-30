@@ -64,6 +64,18 @@ def mock_trustworthy_rag() -> Generator[Mock, None, None]:
         yield mock_class
 
 
+@pytest.fixture
+def mock_tlm() -> Generator[Mock, None, None]:
+    mock = Mock()
+    mock.prompt.return_value = {
+        "response": "rewritten test query",
+        "trustworthiness_score": 0.99,
+    }
+    with patch("cleanlab_codex.validator.TLM") as mock_class:
+        mock_class.return_value = mock
+        yield mock_class
+
+
 def assert_threshold_equal(validator: Validator, eval_name: str, threshold: float) -> None:
     assert validator._bad_response_thresholds.get_threshold(eval_name) == threshold  # noqa: SLF001
 
@@ -108,6 +120,55 @@ class TestValidator:
             assert metric in result
             assert "score" in result[metric]
             assert "is_bad" in result[metric]
+
+    def test_validate_with_message_history(self, mock_trustworthy_rag: Mock, mock_tlm: Mock) -> None:
+        validator = Validator(codex_access_key="test")
+
+        result = validator.validate(
+            query="test query",
+            context="test context",
+            response="test response",
+            messages=[
+                {"role": "user", "content": "previous message"},
+                {"role": "assistant", "content": "previous response"},
+            ],
+        )
+
+        # Verify TrustworthyRAG.score was called
+        mock_trustworthy_rag.return_value.score.assert_called_once_with(
+            response="test response",
+            query="rewritten test query",
+            context="test context",
+            prompt=None,
+            form_prompt=None,
+        )
+
+        # Verify TLM was called for rewriting query
+        mock_tlm.return_value.prompt.assert_called_once()
+
+        # Verify expected result structure
+        assert result["is_bad_response"] is False
+        assert result["expert_answer"] is None
+
+        eval_metrics = ["trustworthiness", "response_helpfulness"]
+        for metric in eval_metrics:
+            assert metric in result
+            assert "score" in result[metric]
+            assert "is_bad" in result[metric]
+
+    def test_maybe_rewrite_query(self, mock_project: Mock, mock_tlm: Mock) -> None:  # noqa: ARG002
+        validator = Validator(codex_access_key="test")
+
+        result = validator._maybe_rewrite_query(  # noqa: SLF001 -- intentional test of private method
+            query="confusing test query",
+            messages=[
+                {"role": "user", "content": "previous message"},
+                {"role": "assistant", "content": "previous response"},
+            ],
+        )
+
+        assert result == "rewritten test query"
+        mock_tlm.assert_called_once()
 
     def test_validate_expert_answer(self, mock_project: Mock, mock_trustworthy_rag: Mock) -> None:  # noqa: ARG002
         # Setup mock project query response

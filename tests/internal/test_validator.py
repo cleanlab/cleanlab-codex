@@ -1,11 +1,15 @@
 from typing import cast
+from unittest.mock import MagicMock
 
+import pytest
 from cleanlab_tlm.utils.rag import TrustworthyRAGScore
 
 from cleanlab_codex.internal.validator import (
     get_default_evaluations,
     process_score_metadata,
+    prompt_tlm_for_rewrite_query,
     update_scores_based_on_thresholds,
+    validate_messages,
 )
 from cleanlab_codex.types.validator import ThresholdedTrustworthyRAGScore
 from cleanlab_codex.validator import BadResponseThresholds
@@ -108,3 +112,46 @@ def test_update_scores_based_on_thresholds() -> None:
     for metric, expected in expected_is_bad.items():
         assert scores[metric]["is_bad"] is expected
     assert all(scores[k]["score"] == raw_scores[k]["score"] for k in raw_scores)
+
+
+def test_prompt_tlm_with_message_history() -> None:
+    messages = [
+        {"role": "user", "content": "What is the capital of France?"},
+        {"role": "assistant", "content": "The capital of France is Paris."},
+    ]
+
+    dummy_tlm = MagicMock()
+    dummy_tlm.prompt.return_value = {
+        "response": "What is the capital of France?",
+        "trustworthiness_score": 0.99,
+    }
+
+    mocked_response = prompt_tlm_for_rewrite_query(query="What is the capital?", messages=messages, tlm=dummy_tlm)
+    dummy_tlm.prompt.assert_called_once()
+
+    assert mocked_response["response"] == "What is the capital of France?"
+    assert mocked_response["trustworthiness_score"] == 0.99
+
+
+def test_validate_messages() -> None:
+    # Valid messages
+    valid_messages = [
+        {"role": "user", "content": "Hello"},
+        {"role": "assistant", "content": "Hi there!"},
+    ]
+    validate_messages(valid_messages)  # Should not raise
+    validate_messages(None)
+    validate_messages()
+
+    # Invalid messages
+    with pytest.raises(ValueError, match="Messages must be a list of dictionaries."):
+        validate_messages("messages")  # type: ignore
+
+    with pytest.raises(ValueError, match="Each message must be a dictionary containing 'role' and 'content' keys."):
+        validate_messages(["bad message"])  # type: ignore
+
+    with pytest.raises(ValueError, match="Each message must be a dictionary containing 'role' and 'content' keys."):
+        validate_messages([{"role": "assistant"}])  # Missing 'content'
+
+    with pytest.raises(ValueError, match="Message content must be a string."):
+        validate_messages([{"role": "user", "content": 123}])  # content not string

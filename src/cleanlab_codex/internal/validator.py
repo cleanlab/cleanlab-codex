@@ -2,11 +2,14 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Optional, Sequence, cast
 
+from cleanlab_tlm.tlm import TLMResponse
 from cleanlab_tlm.utils.rag import Eval, TrustworthyRAGScore, get_default_evals
 
 from cleanlab_codex.types.validator import ThresholdedTrustworthyRAGScore
 
 if TYPE_CHECKING:
+    from cleanlab_tlm import TLM
+
     from cleanlab_codex.validator import BadResponseThresholds
 
 
@@ -20,6 +23,17 @@ _SCORE_TO_IS_BAD_KEY = {
     "response_helpfulness": "is_not_response_helpful",
     "context_sufficiency": "is_not_context_sufficient",
 }
+
+REWRITE_QUERY = """Given a conversational Message History and a Query, rewrite the Query to be a self-contained question. If the query is already self contained, return it as-is.
+
+Query: {query}
+
+--
+Message History: \n{messages}
+
+--
+Remember, return the Query as-is except in cases where the Query is missing key words or has content that should be additionally clarified."""
+REWRITE_QUERY_TRUSTWORTHINESS_THRESHOLD = 0.5
 
 
 def get_default_evaluations() -> list[Eval]:
@@ -37,6 +51,16 @@ def get_default_trustworthyrag_config() -> dict[str, Any]:
         "options": {
             "log": ["explanation"],
         },
+    }
+
+
+def get_default_tlm_config() -> dict[str, Any]:
+    """Get the default configuration for the TLM."""
+
+    return {
+        "quality_preset": "medium",
+        "verbose": False,
+        "options": {"model": "gpt-4.1-nano"},
     }
 
 
@@ -108,3 +132,38 @@ def _get_label(metadata: dict[str, Any]) -> str:
     if is_bad("trustworthiness"):
         return "hallucination"
     return "other_issues"
+
+
+def validate_messages(messages: Optional[list[dict[str, Any]]] = None) -> None:
+    """Validate the format of messages based on OpenAI."""
+
+    if messages is None:
+        return
+    if not isinstance(messages, list):
+        raise TypeError("Messages must be a list of dictionaries.")  # noqa: TRY003
+    for message in messages:
+        if not isinstance(message, dict) or "role" not in message or "content" not in message:
+            raise TypeError("Each message must be a dictionary containing 'role' and 'content' keys.")  # noqa: TRY003
+        if not isinstance(message["content"], str):
+            raise TypeError("Message content must be a string.")  # noqa: TRY003
+
+
+def prompt_tlm_for_rewrite_query(query: str, messages: list[dict[str, Any]], tlm: TLM) -> TLMResponse:
+    """Given the query and message history, prompt the TLM for a response that could possibly be self contained.
+    If the tlm call fails, then the original query is returned.
+    """
+
+    messages_str = ""
+    for message in messages:
+        messages_str += f"{message['role']}: {message['content']}\n"
+
+    response = tlm.prompt(
+        REWRITE_QUERY.format(
+            query=query,
+            messages=messages_str,
+        )
+    )
+
+    if response is None:
+        return TLMResponse(response=query, trustworthiness_score=1.0)
+    return cast(TLMResponse, response)

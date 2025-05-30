@@ -7,19 +7,21 @@ from __future__ import annotations
 from copy import deepcopy
 from typing import TYPE_CHECKING, Any, Callable, Optional, cast
 
-from cleanlab_tlm import TrustworthyRAG
+from cleanlab_tlm import TLM, TrustworthyRAG
 from pydantic import BaseModel, Field, field_validator
 
 from cleanlab_codex.internal.validator import (
+    REWRITE_QUERY_TRUSTWORTHINESS_THRESHOLD,
     get_default_evaluations,
+    get_default_tlm_config,
     get_default_trustworthyrag_config,
 )
 from cleanlab_codex.internal.validator import (
     process_score_metadata as _process_score_metadata,
 )
-from cleanlab_codex.internal.validator import (
-    update_scores_based_on_thresholds as _update_scores_based_on_thresholds,
-)
+from cleanlab_codex.internal.validator import prompt_tlm_for_rewrite_query as _prompt_tlm_for_rewrite_query
+from cleanlab_codex.internal.validator import update_scores_based_on_thresholds as _update_scores_based_on_thresholds
+from cleanlab_codex.internal.validator import validate_messages as _validate_messages
 from cleanlab_codex.project import Project
 
 if TYPE_CHECKING:
@@ -32,6 +34,7 @@ class Validator:
         codex_access_key: str,
         tlm_api_key: Optional[str] = None,
         trustworthy_rag_config: Optional[dict[str, Any]] = None,
+        tlm_config: Optional[dict[str, Any]] = None,
         bad_response_thresholds: Optional[dict[str, float]] = None,
     ):
         """Real-time detection and remediation of bad responses in RAG applications, powered by Cleanlab's TrustworthyRAG and Codex.
@@ -74,6 +77,7 @@ class Validator:
             ValueError: If any threshold value is not between 0 and 1.
         """
         trustworthy_rag_config = trustworthy_rag_config or get_default_trustworthyrag_config()
+        tlm_config = tlm_config or get_default_tlm_config()
         if tlm_api_key is not None and "api_key" in trustworthy_rag_config:
             error_msg = "Cannot specify both tlm_api_key and api_key in trustworthy_rag_config"
             raise ValueError(error_msg)
@@ -84,6 +88,7 @@ class Validator:
 
         trustworthy_rag_config.setdefault("evals", get_default_evaluations())
         self._tlm_rag = TrustworthyRAG(**trustworthy_rag_config)
+        self._tlm = TLM(**tlm_config)
 
         # Validate that all the necessary thresholds are present in the TrustworthyRAG.
         _evals = [e.name for e in self._tlm_rag.get_evals()] + ["trustworthiness"]
@@ -108,6 +113,7 @@ class Validator:
         query: str,
         context: str,
         response: str,
+        messages: Optional[list[dict[str, Any]]] = None,
         prompt: Optional[str] = None,
         form_prompt: Optional[Callable[[str, str], str]] = None,
         metadata: Optional[dict[str, Any]] = None,
@@ -129,6 +135,10 @@ class Validator:
                 - 'is_bad_response': True if the response is flagged as potentially bad, False otherwise. When True, a Codex lookup is performed, which logs this query into the Codex Project for SMEs to answer.
                 - Additional keys from a [`ThresholdedTrustworthyRAGScore`](/codex/api/python/types.validator/#class-thresholdedtrustworthyragscore) dictionary: each corresponds to a [TrustworthyRAG](/tlm/api/python/utils.rag/#class-trustworthyrag) evaluation metric, and points to the score for this evaluation as well as a boolean `is_bad` flagging whether the score falls below the corresponding threshold.
         """
+        _validate_messages(messages)
+        if messages is not None:
+            query = self._maybe_rewrite_query(query=query, messages=messages)
+
         scores, is_bad_response = self.detect(
             query=query, context=context, response=response, prompt=prompt, form_prompt=form_prompt
         )
@@ -154,6 +164,7 @@ class Validator:
         query: str,
         context: str,
         response: str,
+        messages: Optional[list[dict[str, Any]]] = None,
         prompt: Optional[str] = None,
         form_prompt: Optional[Callable[[str, str], str]] = None,
         metadata: Optional[dict[str, Any]] = None,
@@ -175,6 +186,10 @@ class Validator:
                 - 'is_bad_response': True if the response is flagged as potentially bad, False otherwise. When True, a Codex lookup is performed, which logs this query into the Codex Project for SMEs to answer.
                 - Additional keys from a [`ThresholdedTrustworthyRAGScore`](/codex/api/python/types.validator/#class-thresholdedtrustworthyragscore) dictionary: each corresponds to a [TrustworthyRAG](/tlm/api/python/utils.rag/#class-trustworthyrag) evaluation metric, and points to the score for this evaluation as well as a boolean `is_bad` flagging whether the score falls below the corresponding threshold.
         """
+        _validate_messages(messages)
+        if messages is not None:
+            query = self._maybe_rewrite_query(query=query, messages=messages)
+
         scores, is_bad_response = await self.detect_async(query, context, response, prompt, form_prompt)
         final_metadata = metadata.copy() if metadata else {}
         if log_results:
@@ -295,6 +310,27 @@ class Validator:
         """
         codex_answer, _ = self._project.query(question=query, metadata=metadata)
         return codex_answer
+
+    def _maybe_rewrite_query(self, *, query: str, messages: list[dict[str, Any]]) -> str:
+        """Rewrite the query based on the message history if the query is not a self-contained question but could be improved to be one with context from the messages.
+
+        Args:
+            query (str): The original query.
+            messages (list[dict[str, Any]]): The message history to use for rewriting the query.
+
+        Returns:
+            final_query (str): Either the original query and a rewritten self-contained version of the original query.
+        """
+        response = _prompt_tlm_for_rewrite_query(query=query, messages=messages, tlm=self._tlm)
+        if (
+            response["trustworthiness_score"] is not None
+            and response["trustworthiness_score"] >= REWRITE_QUERY_TRUSTWORTHINESS_THRESHOLD
+        ):
+            final_query = response["response"]
+        else:
+            final_query = query  # If the trustworthiness score is below the threshold, omit the rewrite
+
+        return str(final_query)
 
 
 class BadResponseThresholds(BaseModel):
