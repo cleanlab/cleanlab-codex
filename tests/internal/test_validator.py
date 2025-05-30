@@ -132,6 +132,9 @@ def test_prompt_tlm_with_message_history() -> None:
     assert mocked_response["response"] == "What is the capital of France?"
     assert mocked_response["trustworthiness_score"] == 0.99
 
+    response = prompt_tlm_for_rewrite_query(query="What is the capital?", messages=messages, tlm=None)
+    assert response["response"] == "What is the capital?"
+
 
 def test_validate_messages() -> None:
     # Valid messages
