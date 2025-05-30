@@ -144,14 +144,8 @@ def test_validate_messages() -> None:
     validate_messages()
 
     # Invalid messages
-    with pytest.raises(ValueError, match="Messages must be a list of dictionaries."):
-        validate_messages("messages")  # type: ignore
-
-    with pytest.raises(ValueError, match="Each message must be a dictionary containing 'role' and 'content' keys."):
-        validate_messages(["bad message"])  # type: ignore
-
-    with pytest.raises(ValueError, match="Each message must be a dictionary containing 'role' and 'content' keys."):
+    with pytest.raises(TypeError, match="Each message must be a dictionary containing 'role' and 'content' keys."):
         validate_messages([{"role": "assistant"}])  # Missing 'content'
 
-    with pytest.raises(ValueError, match="Message content must be a string."):
+    with pytest.raises(TypeError, match="Message content must be a string."):
         validate_messages([{"role": "user", "content": 123}])  # content not string

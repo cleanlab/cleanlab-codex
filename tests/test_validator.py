@@ -121,6 +121,7 @@ class TestValidator:
             assert "score" in result[metric]
             assert "is_bad" in result[metric]
 
+    @pytest.mark.usefixtures("mock_project")
     def test_validate_with_message_history(self, mock_trustworthy_rag: Mock, mock_tlm: Mock) -> None:
         validator = Validator(codex_access_key="test")
 
@@ -156,7 +157,7 @@ class TestValidator:
             assert "score" in result[metric]
             assert "is_bad" in result[metric]
 
-    def test_maybe_rewrite_query(self, mock_project: Mock, mock_tlm: Mock) -> None:  # noqa: ARG002
+    def test_maybe_rewrite_query(self, mock_project: Mock, mock_trustworthy_rag: Mock, mock_tlm: Mock) -> None:  # noqa: ARG002
         validator = Validator(codex_access_key="test")
 
         result = validator._maybe_rewrite_query(  # noqa: SLF001 -- intentional test of private method
