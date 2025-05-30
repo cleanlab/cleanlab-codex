@@ -78,17 +78,24 @@ class Validator:
         """
         trustworthy_rag_config = trustworthy_rag_config or get_default_trustworthyrag_config()
         tlm_config = tlm_config or get_default_tlm_config()
+        self._tlm: Optional[TLM] = None
+
         if tlm_api_key is not None and "api_key" in trustworthy_rag_config:
             error_msg = "Cannot specify both tlm_api_key and api_key in trustworthy_rag_config"
             raise ValueError(error_msg)
         if tlm_api_key is not None:
             trustworthy_rag_config["api_key"] = tlm_api_key
+            if "api_key" not in tlm_config:
+                tlm_config["api_key"] = tlm_api_key
+            else:
+                error_msg = "Cannot specify both tlm_api_key and api_key in tlm_config"
+                raise ValueError(error_msg)
+            self._tlm = TLM(**tlm_config)
 
         self._project: Project = Project.from_access_key(access_key=codex_access_key)
 
         trustworthy_rag_config.setdefault("evals", get_default_evaluations())
         self._tlm_rag = TrustworthyRAG(**trustworthy_rag_config)
-        self._tlm = TLM(**tlm_config)
 
         # Validate that all the necessary thresholds are present in the TrustworthyRAG.
         _evals = [e.name for e in self._tlm_rag.get_evals()] + ["trustworthiness"]
@@ -321,16 +328,14 @@ class Validator:
         Returns:
             final_query (str): Either the original query and a rewritten self-contained version of the original query.
         """
-        response = _prompt_tlm_for_rewrite_query(query=query, messages=messages, tlm=self._tlm)
-        if (
-            response["trustworthiness_score"] is not None
-            and response["trustworthiness_score"] >= REWRITE_QUERY_TRUSTWORTHINESS_THRESHOLD
-        ):
-            final_query = response["response"]
-        else:
-            final_query = query  # If the trustworthiness score is below the threshold, omit the rewrite
-
-        return str(final_query)
+        if self._tlm is not None:
+            response = _prompt_tlm_for_rewrite_query(query=query, messages=messages, tlm=self._tlm)
+            if (
+                response["trustworthiness_score"] is not None
+                and response["trustworthiness_score"] >= REWRITE_QUERY_TRUSTWORTHINESS_THRESHOLD
+            ):
+                return str(response["response"])
+        return query  # If the trustworthiness score is below the threshold or we don't have access to the TLM, omit the rewrite
 
 
 class BadResponseThresholds(BaseModel):
