@@ -75,14 +75,19 @@ class Validator:
                 - 'is_bad_response': True if the response is flagged as potentially bad, False otherwise. When True, a Codex lookup is performed, which logs this query into the Codex Project for SMEs to answer.
                 - Additional keys from a [`ThresholdedTrustworthyRAGScore`](/codex/api/python/types.validator/#class-thresholdedtrustworthyragscore) dictionary: each corresponds to a [TrustworthyRAG](/tlm/api/python/utils.rag/#class-trustworthyrag) evaluation metric, and points to the score for this evaluation as well as a boolean `is_bad` flagging whether the score falls below the corresponding threshold.
         """
-        if not prompt and not form_prompt:
-            form_prompt = TrustworthyRAG._default_prompt_formatter  # noqa: SLF001
+        formatted_prompt = prompt
+        if not formatted_prompt:
+            if form_prompt:
+                formatted_prompt = form_prompt(query, context)
+            else:
+                formatted_prompt = TrustworthyRAG._default_prompt_formatter(query, context)  # noqa: SLF001
 
-        prompt = prompt or form_prompt(query, context)
+        if not formatted_prompt:
+            raise ValueError("Exactly one of prompt or form_prompt is required")  # noqa: TRY003
 
         result = self._project.validate(
             context=context,
-            prompt=prompt,
+            prompt=formatted_prompt,
             query=query,
             response=response,
             bad_response_thresholds=self._bad_response_thresholds,

@@ -232,7 +232,7 @@ class Project:
         query: str,
         response: str,
         *,
-        bad_response_thresholds: Optional[BadResponseThresholds] = None,
+        bad_response_thresholds: BadResponseThresholds = {},
         constrain_outputs: Optional[List[str]] = None,
         custom_metadata: Optional[object] = None,
         eval_scores: Optional[Dict[str, float]] = None,
