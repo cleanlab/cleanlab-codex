@@ -138,7 +138,7 @@ class TestValidator:
         # Verify TrustworthyRAG.score was called
         mock_trustworthy_rag.return_value.score.assert_called_once_with(
             response="test response",
-            query="rewritten test query",
+            query="test query",
             context="test context",
             prompt=None,
             form_prompt=None,
@@ -168,8 +168,8 @@ class TestValidator:
             ],
         )
 
-        assert result == "rewritten test query"
         mock_tlm.assert_called_once()
+        assert result == "rewritten test query"
 
     def test_validate_expert_answer(self, mock_project: Mock, mock_trustworthy_rag: Mock) -> None:  # noqa: ARG002
         # Setup mock project query response
