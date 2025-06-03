@@ -4,12 +4,16 @@ Detect and remediate bad responses in RAG applications, by integrating Codex as-
 
 from __future__ import annotations
 
-from typing import Any, Callable, Optional
+from typing import TYPE_CHECKING as _TYPE_CHECKING
+from typing import Any, Callable, Literal, Optional
 
 from cleanlab_tlm import TrustworthyRAG
 
 from cleanlab_codex.internal.validator import validate_thresholds
 from cleanlab_codex.project import Project
+
+if _TYPE_CHECKING:
+    from codex.types.project_validate_params import Options as ProjectValidateOptions
 
 
 class Validator:
@@ -54,6 +58,8 @@ class Validator:
         prompt: Optional[str] = None,
         form_prompt: Optional[Callable[[str, str], str]] = None,
         metadata: Optional[dict[str, Any]] = None,
+        options: Optional[ProjectValidateOptions] = None,
+        quality_preset: Literal["best", "high", "medium", "low", "base"] = "medium",
     ) -> dict[str, Any]:
         """Evaluate whether the AI-generated response is bad, and if so, request an alternate expert answer.
         If no expert answer is available, this query is still logged for SMEs to answer.
@@ -65,6 +71,8 @@ class Validator:
             prompt (str, optional): Optional prompt representing the actual inputs (combining query, context, and system instructions into one string) to the LLM that generated the response.
             form_prompt (Callable[[str, str], str], optional): Optional function to format the prompt based on query and context. Cannot be provided together with prompt, provide one or the other. This function should take query and context as parameters and return a formatted prompt string. If not provided, a default prompt formatter will be used. To include a system prompt or any other special instructions for your LLM, incorporate them directly in your custom form_prompt() function definition.
             metadata (dict, optional): Additional custom metadata to associate with the query logged in the Codex Project.
+            options (ProjectValidateOptions, optional): Typed dict of advanced configuration options for the Trustworthy Language Model.
+            quality_preset (Literal["best", "high", "medium", "low", "base"], optional): The quality preset to use for the TLM or Trustworthy RAG API.
 
         Returns:
             dict[str, Any]: A dictionary containing:
@@ -91,6 +99,8 @@ class Validator:
             response=response,
             custom_eval_thresholds=self._custom_eval_thresholds,
             custom_metadata=metadata,
+            options=options,
+            quality_preset=quality_preset,
         )
 
         formatted_eval_scores = {
