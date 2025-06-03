@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.17] 2025-06-3
+
+- Refactor `validate()` to use `/validate` endpoint from Codex backend and leverage this default logic
+- deprecate `project.query()` and `project.add_entries()`
+
 ## [1.0.16] 2025-05-15
 
 - Update `codex-sdk` dependency to `0.1.0a20`.
@@ -81,7 +86,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial release of the `cleanlab-codex` client library.
 
-[Unreleased]: https://github.com/cleanlab/cleanlab-codex/compare/v1.0.16...HEAD
+[Unreleased]: https://github.com/cleanlab/cleanlab-codex/compare/v1.0.17...HEAD
+[1.0.17]: https://github.com/cleanlab/cleanlab-codex/compare/v1.0.16...v1.0.17
 [1.0.16]: https://github.com/cleanlab/cleanlab-codex/compare/v1.0.15...v1.0.16
 [1.0.15]: https://github.com/cleanlab/cleanlab-codex/compare/v1.0.14...v1.0.15
 [1.0.14]: https://github.com/cleanlab/cleanlab-codex/compare/v1.0.13...v1.0.14
