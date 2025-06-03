@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import warnings
 from datetime import datetime
 from typing import TYPE_CHECKING as _TYPE_CHECKING
 from typing import Any, Dict, List, Literal, Optional
@@ -154,7 +155,7 @@ class Project:
             raise AuthenticationError(_ERROR_CREATE_ACCESS_KEY, response=e.response, body=e.body) from e
 
     def add_entries(self, entries: list[EntryCreate]) -> None:
-        """Add a list of entries to this Codex project. Must be authenticated with a user-level API key to use this method.
+        """[DEPRECATED] Add a list of entries to this Codex project. Must be authenticated with a user-level API key to use this method.
         See [`Client.create_project()`](/codex/api/python/client#method-create_project) or [`Client.get_project()`](/codex/api/python/client#method-get_project).
 
         Args:
@@ -163,6 +164,11 @@ class Project:
         Raises:
             AuthenticationError: If the Project was created from a project-level access key instead of a [Client instance](/codex/api/python/client#class-client).
         """
+        warnings.warn(
+            "Project.add_entries() is deprecated and will be removed in a future release. ",
+            FutureWarning,
+            stacklevel=2,
+        )
         try:
             # TODO: implement batch creation of entries in backend and update this function
             for entry in entries:
@@ -183,7 +189,7 @@ class Project:
         metadata: Optional[dict[str, Any]] = None,
         _analytics_metadata: Optional[_AnalyticsMetadata] = None,
     ) -> tuple[Optional[str], Entry]:
-        """Query Codex to check if this project contains an answer to the question. If the question is not yet in the project, it will be added for SME review.
+        """[DEPRECATED] Query Codex to check if this project contains an answer to the question. If the question is not yet in the project, it will be added for SME review.
 
         Args:
             question (str): The question to ask the Codex API.
@@ -195,6 +201,11 @@ class Project:
                 If Codex is able to answer the question, the first element will be the answer returned by Codex and the second element will be the existing [`Entry`](/codex/api/python/types.entry#class-entry) in the Codex project.
                 If Codex is unable to answer the question, the first element will be `fallback_answer` if provided, otherwise None. The second element will be a new [`Entry`](/codex/api/python/types.entry#class-entry) in the Codex project.
         """
+        warnings.warn(
+            "Project.query() is deprecated and will be removed in a future release. Use the Project.validate() function instead.",
+            FutureWarning,
+            stacklevel=2,
+        )
         if not _analytics_metadata:
             _analytics_metadata = _AnalyticsMetadata(integration_type=IntegrationType.BACKUP)
 
