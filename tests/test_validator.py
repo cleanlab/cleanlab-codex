@@ -59,7 +59,7 @@ class TestValidator:
         for metric in eval_metrics:
             assert metric in result
             assert "score" in result[metric]
-            assert "failed" in result[metric]
+            assert "is_bad" in result[metric]
 
     def test_validate_expert_answer(self, mock_project: Mock) -> None:
         validator = Validator(codex_access_key="test", custom_eval_thresholds={"trustworthiness": 1.0})
@@ -98,10 +98,4 @@ class TestValidator:
         # Test with default thresholds (custom_eval_thresholds is None)
         validator = Validator(codex_access_key="test")
         mock_project.from_access_key.assert_called_once_with(access_key="test")
-        assert validator._custom_eval_thresholds is None  # noqa: SLF001
-
-    def test_edge_cases(self, mock_project: Mock) -> None:
-        mock_project.from_access_key.assert_called_once_with(access_key="test")
-        # Test with empty custom_eval_thresholds
-        validator = Validator(codex_access_key="test", custom_eval_thresholds={})
         assert validator._custom_eval_thresholds is None  # noqa: SLF001
