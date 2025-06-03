@@ -17,7 +17,6 @@ if _TYPE_CHECKING:
     from datetime import datetime
 
     from codex import Codex as _Codex
-    from codex.types.project_validate_params import BadResponseThresholds
     from codex.types.project_validate_params import Options as ProjectValidateOptions
     from codex.types.project_validate_response import ProjectValidateResponse
 
@@ -216,7 +215,10 @@ class Project:
     ) -> tuple[Optional[str], Entry]:
         extra_headers = analytics_metadata.to_headers() if analytics_metadata else None
         query_res = self._sdk_client.projects.entries.query(
-            self._id, question=question, client_metadata=client_metadata, extra_headers=extra_headers
+            self._id,
+            question=question,
+            client_metadata=client_metadata,
+            extra_headers=extra_headers,
         )
 
         entry = Entry.model_validate(query_res.entry.model_dump())
@@ -232,10 +234,10 @@ class Project:
         query: str,
         response: str,
         *,
-        bad_response_thresholds: BadResponseThresholds = {},
         constrain_outputs: Optional[List[str]] = None,
         custom_metadata: Optional[object] = None,
         eval_scores: Optional[Dict[str, float]] = None,
+        custom_eval_thresholds: Optional[Dict[str, float]] = None,
         options: Optional[ProjectValidateOptions] = None,
         quality_preset: Literal["best", "high", "medium", "low", "base"] = "medium",
     ) -> ProjectValidateResponse:
@@ -245,8 +247,8 @@ class Project:
             prompt=prompt,
             query=query,
             response=response,
-            bad_response_thresholds=bad_response_thresholds,
             constrain_outputs=constrain_outputs,
+            custom_eval_thresholds=custom_eval_thresholds,
             custom_metadata=custom_metadata,
             eval_scores=eval_scores,
             options=options,

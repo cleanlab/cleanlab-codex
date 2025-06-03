@@ -4,11 +4,11 @@ Detect and remediate bad responses in RAG applications, by integrating Codex as-
 
 from __future__ import annotations
 
-from typing import Any, Callable, Optional, cast
+from typing import Any, Callable, Optional
 
 from cleanlab_tlm import TrustworthyRAG
-from pydantic import BaseModel, Field, field_validator
 
+from cleanlab_codex.internal.validator import validate_thresholds
 from cleanlab_codex.project import Project
 
 
@@ -16,7 +16,7 @@ class Validator:
     def __init__(
         self,
         codex_access_key: str,
-        bad_response_thresholds: Optional[dict[str, float]] = None,
+        custom_eval_thresholds: Optional[dict[str, float]] = None,
     ):
         """Real-time detection and remediation of bad responses in RAG applications, powered by Cleanlab's TrustworthyRAG and Codex.
 
@@ -31,23 +31,19 @@ class Validator:
             codex_access_key (str): The [access key](/codex/web_tutorials/create_project/#access-keys) for a Codex project. Used to retrieve expert-provided answers
                 when bad responses are detected, or otherwise log the corresponding queries for SMEs to answer.
 
-            bad_response_thresholds (dict[str, float], optional): Detection score thresholds used to flag whether
-                a response is bad or not. Each key corresponds to an Eval from [TrustworthyRAG](/tlm/api/python/utils.rag/#class-trustworthyrag),
-                and the value indicates a threshold (between 0 and 1) below which Eval scores are treated as detected issues. A response
-                is flagged as bad if any issues are detected. If not provided or only partially provided, default thresholds will be used
-                for any missing metrics. Note that if a threshold is provided for a metric, that metric must correspond to an eval
-                that is configured to run (with the exception of 'trustworthiness' which is always implicitly configured). You can
-                configure arbitrary evals to run, and their thresholds will use default values unless explicitly set. See
-                [`BadResponseThresholds`](/codex/api/python/validator/#class-badresponsethresholds) for more details on the default values.
+            custom_eval_thresholds (dict[str, float], optional): Custom thresholds (between 0 and 1) for specific evals.
+                Keys should either correspond to an Eval from [TrustworthyRAG](/tlm/api/python/utils.rag/#class-trustworthyrag)
+                or a custom eval for your project. If not provided, project settings will be used.
+
 
         Raises:
             TypeError: If any threshold value is not a number.
             ValueError: If any threshold value is not between 0 and 1.
         """
         self._project: Project = Project.from_access_key(access_key=codex_access_key)
-        self._bad_response_thresholds = (
-            BadResponseThresholds.model_validate(bad_response_thresholds) if bad_response_thresholds else None
-        )
+        if custom_eval_thresholds is not None:
+            validate_thresholds(custom_eval_thresholds)
+        self._custom_eval_thresholds = custom_eval_thresholds
 
     def validate(
         self,
@@ -80,7 +76,9 @@ class Validator:
             if form_prompt:
                 formatted_prompt = form_prompt(query, context)
             else:
-                formatted_prompt = TrustworthyRAG._default_prompt_formatter(query, context)  # noqa: SLF001
+                formatted_prompt = TrustworthyRAG._default_prompt_formatter(  # noqa: SLF001
+                    query, context
+                )
 
         if not formatted_prompt:
             raise ValueError("Exactly one of prompt or form_prompt is required")  # noqa: TRY003
@@ -90,14 +88,14 @@ class Validator:
             prompt=formatted_prompt,
             query=query,
             response=response,
-            bad_response_thresholds=self._bad_response_thresholds,
+            custom_eval_thresholds=self._custom_eval_thresholds,
             custom_metadata=metadata,
         )
 
         formatted_eval_scores = {
             eval_name: {
                 "score": eval_scores.score,
-                "is_bad": eval_scores.is_bad,
+                "is_bad": eval_scores.failed,
             }
             for eval_name, eval_scores in result.eval_scores.items()
         }
@@ -107,62 +105,3 @@ class Validator:
             "is_bad_response": result.is_bad_response,
             **formatted_eval_scores,
         }
-
-
-class BadResponseThresholds(BaseModel):
-    """Config for determining if a response is bad.
-    Each key is an evaluation metric and the value is a threshold such that a response is considered bad whenever the corresponding evaluation score falls below the threshold.
-
-    Default Thresholds:
-        - trustworthiness: 0.7
-        - response_helpfulness: 0.7
-        - Any custom eval: 0.0 (if not explicitly specified in bad_response_thresholds). A threshold of 0.0 means that the associated eval is not used to determine if a response is bad, unless explicitly specified in bad_response_thresholds, but still allow for reporting of those scores.
-    """
-
-    trustworthiness: float = Field(
-        description="Threshold for trustworthiness.",
-        default=0.7,
-        ge=0.0,
-        le=1.0,
-    )
-    response_helpfulness: float = Field(
-        description="Threshold for response helpfulness.",
-        default=0.23,
-        ge=0.0,
-        le=1.0,
-    )
-
-    @property
-    def default_threshold(self) -> float:
-        """The default threshold to use when an evaluation metric's threshold is not specified. This threshold is set to 0.0."""
-        return 0.0
-
-    def get_threshold(self, eval_name: str) -> float:
-        """Get threshold for an eval, if it exists.
-
-        For fields defined in the model, returns their value (which may be the field's default).
-        For custom evals not defined in the model, returns the default threshold value (see `default_threshold`).
-        """
-
-        # For fields defined in the model, use their value (which may be the field's default)
-        if eval_name in self.model_fields:
-            return cast(float, getattr(self, eval_name))
-
-        # For custom evals, use the default threshold
-        return getattr(self, eval_name, self.default_threshold)
-
-    @field_validator("*")
-    @classmethod
-    def validate_threshold(cls, v: Any) -> float:
-        """Validate that all fields (including dynamic ones) are floats between 0 and 1."""
-        if not isinstance(v, (int, float)):
-            error_msg = f"Threshold must be a number, got {type(v)}"
-            raise TypeError(error_msg)
-        if not 0 <= float(v) <= 1:
-            error_msg = f"Threshold must be between 0 and 1, got {v}"
-            raise ValueError(error_msg)
-        return float(v)
-
-    model_config = {
-        "extra": "allow"  # Allow additional fields for custom eval thresholds
-    }

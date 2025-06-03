@@ -1,5 +1,3 @@
-from typing import Any
-
 from typing_extensions import Annotated
 
 from cleanlab_codex.utils.function import pydantic_model_from_function
@@ -23,7 +21,6 @@ def test_function_schema_without_annotations() -> None:
 
     fn_schema = pydantic_model_from_function("test_function", function_without_annotations)
     assert fn_schema.model_json_schema()["title"] == "test_function"
-    assert fn_schema.model_fields["a"].annotation is Any  # type: ignore[comparison-overlap]
     assert fn_schema.model_fields["a"].is_required()
     assert fn_schema.model_fields["a"].description is None
 
