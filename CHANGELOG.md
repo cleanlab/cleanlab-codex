@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.18] 2025-06-3
+
+- Expose `options` and `quality_preset` properties for `Validator.validate()`
+
 ## [1.0.17] 2025-06-3
 
 - Refactor `validate()` to use `/validate` endpoint from Codex backend and leverage this default logic
@@ -86,7 +90,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial release of the `cleanlab-codex` client library.
 
-[Unreleased]: https://github.com/cleanlab/cleanlab-codex/compare/v1.0.17...HEAD
+[Unreleased]: https://github.com/cleanlab/cleanlab-codex/compare/v1.0.18...HEAD
+[1.0.18]: https://github.com/cleanlab/cleanlab-codex/compare/v1.0.17...v1.0.18
 [1.0.17]: https://github.com/cleanlab/cleanlab-codex/compare/v1.0.16...v1.0.17
 [1.0.16]: https://github.com/cleanlab/cleanlab-codex/compare/v1.0.15...v1.0.16
 [1.0.15]: https://github.com/cleanlab/cleanlab-codex/compare/v1.0.14...v1.0.15
