@@ -248,7 +248,7 @@ class Project:
         constrain_outputs: Optional[List[str]] = None,
         custom_metadata: Optional[object] = None,
         eval_scores: Optional[Dict[str, float]] = None,
-        custom_eval_thresholds: Optional[Dict[str, float]] = None,
+        eval_thresholds: Optional[Dict[str, float]] = None,
         options: Optional[ProjectValidateOptions] = None,
         quality_preset: Literal["best", "high", "medium", "low", "base"] = "medium",
     ) -> ProjectValidateResponse:
@@ -259,7 +259,7 @@ class Project:
             query=query,
             response=response,
             constrain_outputs=constrain_outputs,
-            custom_eval_thresholds=custom_eval_thresholds,
+            custom_eval_thresholds=eval_thresholds,
             custom_metadata=custom_metadata,
             eval_scores=eval_scores,
             options=options,

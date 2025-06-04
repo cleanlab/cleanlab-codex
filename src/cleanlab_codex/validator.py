@@ -14,13 +14,14 @@ from cleanlab_codex.project import Project
 
 if _TYPE_CHECKING:
     from codex.types.project_validate_params import Options as ProjectValidateOptions
+    from codex.types.project_validate_response import ProjectValidateResponse
 
 
 class Validator:
     def __init__(
         self,
         codex_access_key: str,
-        custom_eval_thresholds: Optional[dict[str, float]] = None,
+        eval_thresholds: Optional[dict[str, float]] = None,
     ):
         """Real-time detection and remediation of bad responses in RAG applications, powered by Cleanlab's TrustworthyRAG and Codex.
 
@@ -35,7 +36,7 @@ class Validator:
             codex_access_key (str): The [access key](/codex/web_tutorials/create_project/#access-keys) for a Codex project. Used to retrieve expert-provided answers
                 when bad responses are detected, or otherwise log the corresponding queries for SMEs to answer.
 
-            custom_eval_thresholds (dict[str, float], optional): Custom thresholds (between 0 and 1) for specific evals.
+            eval_thresholds (dict[str, float], optional): Custom thresholds (between 0 and 1) for specific evals.
                 Keys should either correspond to an Eval from [TrustworthyRAG](/tlm/api/python/utils.rag/#class-trustworthyrag)
                 or a custom eval for your project. If not provided, project settings will be used.
 
@@ -45,9 +46,9 @@ class Validator:
             ValueError: If any threshold value is not between 0 and 1.
         """
         self._project: Project = Project.from_access_key(access_key=codex_access_key)
-        if custom_eval_thresholds is not None:
-            validate_thresholds(custom_eval_thresholds)
-        self._custom_eval_thresholds = custom_eval_thresholds
+        if eval_thresholds is not None:
+            validate_thresholds(eval_thresholds)
+        self._eval_thresholds = eval_thresholds
 
     def validate(
         self,
@@ -58,9 +59,10 @@ class Validator:
         prompt: Optional[str] = None,
         form_prompt: Optional[Callable[[str, str], str]] = None,
         metadata: Optional[dict[str, Any]] = None,
+        eval_scores: Optional[dict[str, float]] = None,
         options: Optional[ProjectValidateOptions] = None,
         quality_preset: Literal["best", "high", "medium", "low", "base"] = "medium",
-    ) -> dict[str, Any]:
+    ) -> ProjectValidateResponse:
         """Evaluate whether the AI-generated response is bad, and if so, request an alternate expert answer.
         If no expert answer is available, this query is still logged for SMEs to answer.
 
@@ -71,14 +73,17 @@ class Validator:
             prompt (str, optional): Optional prompt representing the actual inputs (combining query, context, and system instructions into one string) to the LLM that generated the response.
             form_prompt (Callable[[str, str], str], optional): Optional function to format the prompt based on query and context. Cannot be provided together with prompt, provide one or the other. This function should take query and context as parameters and return a formatted prompt string. If not provided, a default prompt formatter will be used. To include a system prompt or any other special instructions for your LLM, incorporate them directly in your custom form_prompt() function definition.
             metadata (dict, optional): Additional custom metadata to associate with the query logged in the Codex Project.
+            eval_scores (dict[str, float], optional): Scores assessing different aspects of the RAG system. If provided, TLM Trustworthy RAG will not be used to generate scores.
             options (ProjectValidateOptions, optional): Typed dict of advanced configuration options for the Trustworthy Language Model.
             quality_preset (Literal["best", "high", "medium", "low", "base"], optional): The quality preset to use for the TLM or Trustworthy RAG API.
 
         Returns:
-            dict[str, Any]: A dictionary containing:
-                - 'expert_answer': Alternate SME-provided answer from Codex if the response was flagged as bad and an answer was found in the Codex Project, or None otherwise.
-                - 'is_bad_response': True if the response is flagged as potentially bad, False otherwise. When True, a Codex lookup is performed, which logs this query into the Codex Project for SMEs to answer.
-                - Additional keys from a [`ThresholdedTrustworthyRAGScore`](/codex/api/python/types.validator/#class-thresholdedtrustworthyragscore) dictionary: each corresponds to a [TrustworthyRAG](/tlm/api/python/utils.rag/#class-trustworthyrag) evaluation metric, and points to the score for this evaluation as well as a boolean `is_bad` flagging whether the score falls below the corresponding threshold.
+            ProjectValidateResponse: A response object containing:
+                - eval_scores (Dict[str, EvalScores]): Evaluation scores for the original response along with a boolean flag, `failed`,
+                  indicating whether the score is below the threshold.
+                - expert_answer (Optional[str]): Alternate SME-provided answer from Codex if the response was flagged as bad and
+                  an answer was found in the Codex Project, or None otherwise.
+                - is_bad_response (bool): True if the response is flagged as potentially bad and triggered escalation to SMEs.
         """
         formatted_prompt = prompt
         if not formatted_prompt:
@@ -92,27 +97,14 @@ class Validator:
         if not formatted_prompt:
             raise ValueError("Exactly one of prompt or form_prompt is required")  # noqa: TRY003
 
-        result = self._project.validate(
+        return self._project.validate(
             context=context,
             prompt=formatted_prompt,
             query=query,
             response=response,
-            custom_eval_thresholds=self._custom_eval_thresholds,
             custom_metadata=metadata,
+            eval_scores=eval_scores,
+            eval_thresholds=self._eval_thresholds,
             options=options,
             quality_preset=quality_preset,
         )
-
-        formatted_eval_scores = {
-            eval_name: {
-                "score": eval_scores.score,
-                "is_bad": eval_scores.failed,
-            }
-            for eval_name, eval_scores in result.eval_scores.items()
-        }
-
-        return {
-            "expert_answer": result.expert_answer,
-            "is_bad_response": result.is_bad_response,
-            **formatted_eval_scores,
-        }
