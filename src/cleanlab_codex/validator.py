@@ -74,7 +74,7 @@ class Validator:
             form_prompt (Callable[[str, str], str], optional): Optional function to format the prompt based on query and context. Cannot be provided together with prompt, provide one or the other. This function should take query and context as parameters and return a formatted prompt string. If not provided, a default prompt formatter will be used. To include a system prompt or any other special instructions for your LLM, incorporate them directly in your custom form_prompt() function definition.
             metadata (dict, optional): Additional custom metadata to associate with the query logged in the Codex Project.
             eval_scores (dict[str, float], optional): Scores assessing different aspects of the RAG system. If provided, TLM Trustworthy RAG will not be used to generate scores.
-            options (ProjectValidateOptions, optional): Typed dict of advanced configuration options for the Trustworthy Language Model.
+            options (ProjectValidateOptions, optional): Typed dict of advanced TLM configuration options. See [TLMOptions](/tlm/api/python/tlm/#class-tlmoptions)
             quality_preset (Literal["best", "high", "medium", "low", "base"], optional): The quality preset to use for the TLM or Trustworthy RAG API.
 
         Returns:
