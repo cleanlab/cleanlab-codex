@@ -52,20 +52,14 @@ class TestValidator:
         result = validator.validate(query="test query", context="test context", response="test response")
 
         # Verify expected result structure
-        assert result["is_bad_response"] is True
-        assert result["expert_answer"] is None
-
-        eval_metrics = ["trustworthiness", "response_helpfulness"]
-        for metric in eval_metrics:
-            assert metric in result
-            assert "score" in result[metric]
-            assert "is_bad" in result[metric]
+        assert result.is_bad_response is True
+        assert result.expert_answer is None
 
     def test_validate_expert_answer(self, mock_project: Mock) -> None:
-        validator = Validator(codex_access_key="test", custom_eval_thresholds={"trustworthiness": 1.0})
+        validator = Validator(codex_access_key="test", eval_thresholds={"trustworthiness": 1.0})
         mock_project.from_access_key.return_value.query.return_value = (None, None)
         result = validator.validate(query="test query", context="test context", response="test response")
-        assert result["expert_answer"] is None
+        assert result.expert_answer is None
 
         # Setup mock project query response
         mock_project.from_access_key.return_value.validate.return_value = ProjectValidateResponse(
@@ -78,7 +72,7 @@ class TestValidator:
         )
         # Basically any response will be flagged as untrustworthy
         result = validator.validate(query="test query", context="test context", response="test response")
-        assert result["expert_answer"] == "expert answer"
+        assert result.expert_answer == "expert answer"
 
     def test_user_provided_thresholds(self, mock_project_with_custom_thresholds: Mock) -> None:
         """
@@ -87,15 +81,15 @@ class TestValidator:
         """
         validator = Validator(
             codex_access_key="test",
-            custom_eval_thresholds={"trustworthiness": 0.4, "non_existent_metric": 0.5},
+            eval_thresholds={"trustworthiness": 0.4, "non_existent_metric": 0.5},
         )
         mock_project_with_custom_thresholds.from_access_key.assert_called_once_with(access_key="test")
         result = validator.validate(query="test query", context="test context", response="test response")
-        assert result["is_bad_response"] is False
-        assert result["expert_answer"] is None
+        assert result.is_bad_response is False
+        assert result.expert_answer is None
 
     def test_default_thresholds(self, mock_project: Mock) -> None:
-        # Test with default thresholds (custom_eval_thresholds is None)
+        # Test with default thresholds (eval_thresholds is None)
         validator = Validator(codex_access_key="test")
         mock_project.from_access_key.assert_called_once_with(access_key="test")
-        assert validator._custom_eval_thresholds is None  # noqa: SLF001
+        assert validator._eval_thresholds is None  # noqa: SLF001
