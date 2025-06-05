@@ -6,7 +6,6 @@ from typing import Any, Optional
 
 from typing_extensions import Annotated
 
-from cleanlab_codex.internal.analytics import IntegrationType, _AnalyticsMetadata
 from cleanlab_codex.project import Project
 from cleanlab_codex.utils.errors import MissingDependencyError
 from cleanlab_codex.utils.function import (
@@ -111,11 +110,16 @@ class CodexTool:
         Returns:
             The answer to the question if available. If no answer is available, this returns a fallback answer or None.
         """
-        return self._project.query(
-            question=question,
-            fallback_answer=self._fallback_answer,
-            _analytics_metadata=_AnalyticsMetadata(integration_type=IntegrationType.TOOL),
-        )[0]
+        # We will cut codex-as-a-tool and all client docs in a follow-up PR. This is a temporary setting to avoid throwing errors.
+        return (
+            self._project.validate(
+                query=question,
+                response=self._fallback_answer or "",
+                context="",
+                prompt="",
+            ).expert_answer
+            or self._fallback_answer
+        )
 
     def to_openai_tool(self) -> dict[str, Any]:
         """Converts the tool to the expected format for an [OpenAI function tool](https://platform.openai.com/docs/guides/function-calling).

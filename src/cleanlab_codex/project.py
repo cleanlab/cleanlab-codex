@@ -2,16 +2,14 @@
 
 from __future__ import annotations
 
-import warnings
 from datetime import datetime
 from typing import TYPE_CHECKING as _TYPE_CHECKING
-from typing import Any, Dict, List, Literal, Optional
+from typing import Dict, List, Literal, Optional
 
 from codex import AuthenticationError
 
-from cleanlab_codex.internal.analytics import IntegrationType, _AnalyticsMetadata
+from cleanlab_codex.internal.analytics import _AnalyticsMetadata
 from cleanlab_codex.internal.sdk_client import client_from_access_key
-from cleanlab_codex.types.entry import Entry
 from cleanlab_codex.types.project import ProjectConfig
 
 if _TYPE_CHECKING:
@@ -21,16 +19,9 @@ if _TYPE_CHECKING:
     from codex.types.project_validate_params import Options as ProjectValidateOptions
     from codex.types.project_validate_response import ProjectValidateResponse
 
-    from cleanlab_codex.types.entry import EntryCreate
 
 _ERROR_CREATE_ACCESS_KEY = (
     "Failed to create access key. Please ensure you have the necessary permissions "
-    "and are using a user-level API key, not a project access key. "
-    "See cleanlab_codex.Client.get_project."
-)
-
-_ERROR_ADD_ENTRIES = (
-    "Failed to add entries. Please ensure you have the necessary permissions "
     "and are using a user-level API key, not a project access key. "
     "See cleanlab_codex.Client.get_project."
 )
@@ -47,7 +38,6 @@ class Project:
     """Represents a Codex project.
 
     To integrate a Codex project into your RAG/Agentic system, we recommend using one of our abstractions such as [`CodexTool`](/codex/api/python/codex_tool).
-    The [`query`](#method-query) method can also be used directly if none of our existing abstractions are sufficient for your use case.
     """
 
     def __init__(self, sdk_client: _Codex, project_id: str, *, verify_existence: bool = True):
@@ -153,90 +143,6 @@ class Project:
             ).token
         except AuthenticationError as e:
             raise AuthenticationError(_ERROR_CREATE_ACCESS_KEY, response=e.response, body=e.body) from e
-
-    def add_entries(self, entries: list[EntryCreate]) -> None:
-        """[DEPRECATED] Add a list of entries to this Codex project. Must be authenticated with a user-level API key to use this method.
-        See [`Client.create_project()`](/codex/api/python/client#method-create_project) or [`Client.get_project()`](/codex/api/python/client#method-get_project).
-
-        Args:
-            entries (list[EntryCreate]): The entries to add to this project. See [`EntryCreate`](/codex/api/python/types.entry#class-entrycreate).
-
-        Raises:
-            AuthenticationError: If the Project was created from a project-level access key instead of a [Client instance](/codex/api/python/client#class-client).
-        """
-        warnings.warn(
-            "Project.add_entries() is deprecated and will be removed in a future release. ",
-            FutureWarning,
-            stacklevel=2,
-        )
-        try:
-            # TODO: implement batch creation of entries in backend and update this function
-            for entry in entries:
-                self._sdk_client.projects.entries.create(
-                    self.id,
-                    question=entry["question"],
-                    answer=entry.get("answer"),
-                    extra_headers=_AnalyticsMetadata().to_headers(),
-                )
-        except AuthenticationError as e:
-            raise AuthenticationError(_ERROR_ADD_ENTRIES, response=e.response, body=e.body) from e
-
-    def query(
-        self,
-        question: str,
-        *,
-        fallback_answer: Optional[str] = None,
-        metadata: Optional[dict[str, Any]] = None,
-        _analytics_metadata: Optional[_AnalyticsMetadata] = None,
-    ) -> tuple[Optional[str], Entry]:
-        """[DEPRECATED] Query Codex to check if this project contains an answer to the question. If the question is not yet in the project, it will be added for SME review.
-
-        Args:
-            question (str): The question to ask the Codex API.
-            fallback_answer (str, optional): Optional fallback answer to return if Codex is unable to answer the question.
-            metadata (dict, optional): Additional custom metadata to associate with the query.
-
-        Returns:
-            tuple[Optional[str], Entry]: A tuple representing the answer for the query and the existing or new entry in the Codex project.
-                If Codex is able to answer the question, the first element will be the answer returned by Codex and the second element will be the existing [`Entry`](/codex/api/python/types.entry#class-entry) in the Codex project.
-                If Codex is unable to answer the question, the first element will be `fallback_answer` if provided, otherwise None. The second element will be a new [`Entry`](/codex/api/python/types.entry#class-entry) in the Codex project.
-        """
-        warnings.warn(
-            "Project.query() is deprecated and will be removed in a future release. Use the Project.validate() function instead.",
-            FutureWarning,
-            stacklevel=2,
-        )
-        if not _analytics_metadata:
-            _analytics_metadata = _AnalyticsMetadata(integration_type=IntegrationType.BACKUP)
-
-        return self._query_project(
-            question=question,
-            fallback_answer=fallback_answer,
-            client_metadata=metadata,
-            analytics_metadata=_analytics_metadata,
-        )
-
-    def _query_project(
-        self,
-        question: str,
-        *,
-        fallback_answer: Optional[str] = None,
-        client_metadata: Optional[dict[str, Any]] = None,
-        analytics_metadata: Optional[_AnalyticsMetadata] = None,
-    ) -> tuple[Optional[str], Entry]:
-        extra_headers = analytics_metadata.to_headers() if analytics_metadata else None
-        query_res = self._sdk_client.projects.entries.query(
-            self._id,
-            question=question,
-            client_metadata=client_metadata,
-            extra_headers=extra_headers,
-        )
-
-        entry = Entry.model_validate(query_res.entry.model_dump())
-        if query_res.answer is not None:
-            return query_res.answer, entry
-
-        return fallback_answer, entry
 
     def validate(
         self,
