@@ -110,7 +110,7 @@ class CodexTool:
         Returns:
             The answer to the question if available. If no answer is available, this returns a fallback answer or None.
         """
-        # We will cut codex-as-a-tool and all client docs in a follow-up PR. This is a temporary setting to avoid throwing errors.
+        # We will cut codex-as-a-tool and all client docs in a follow-up PR. This is a temporary setting to avoid throwing errors
         return (
             self._project.validate(
                 query=question,
