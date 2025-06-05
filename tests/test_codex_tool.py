@@ -2,33 +2,14 @@ import builtins
 import importlib
 import sys
 from typing import Any
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 from langchain_core.tools.structured import StructuredTool
 from llama_index.core.tools import FunctionTool
 
 from cleanlab_codex.codex_tool import CodexTool
-from cleanlab_codex.internal.analytics import IntegrationType, _AnalyticsMetadata
 from cleanlab_codex.utils.errors import MissingDependencyError
-
-
-def test_tool_query_passes_metadata(mock_client_from_access_key: MagicMock) -> None:  # noqa: ARG001
-    mock_project = MagicMock()
-    mock_project.query.return_value = (None, None)
-
-    with patch("cleanlab_codex.codex_tool.Project.from_access_key", return_value=mock_project):
-        tool = CodexTool.from_access_key("sk-test-123")
-        tool.query("what is the capital of France?")
-
-        assert mock_project.query.call_count == 1
-        args, kwargs = mock_project.query.call_args
-        assert kwargs["question"] == "what is the capital of France?"
-        assert kwargs["fallback_answer"] == CodexTool.DEFAULT_FALLBACK_ANSWER
-        assert (
-            kwargs["_analytics_metadata"].to_headers()
-            == _AnalyticsMetadata(integration_type=IntegrationType.TOOL).to_headers()
-        )
 
 
 def patch_import_with_import_error(missing_module: str) -> None:

@@ -16,7 +16,7 @@ ProjectConfig.__doc__ = f"""
 
     #### <kbd>property</kbd> max_distance
 
-    Distance threshold used to determine if two questions are similar when querying existing Entries in a project.
+    Distance threshold used to determine if two questions in a project are similar.
     The metric used is cosine distance. Valid threshold values range from 0 (identical vectors) to 1 (orthogonal vectors).
     While cosine distance can extend to 2 (opposite vectors), we limit this value to 1 since finding matches that are less similar than "unrelated" (orthogonal)
     content would not improve results of the system querying the Codex project.
