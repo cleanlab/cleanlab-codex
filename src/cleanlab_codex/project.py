@@ -245,6 +245,7 @@ class Project:
         query: str,
         response: str,
         *,
+        messages: Optional[List[Dict[str, Any]]] = None,
         constrain_outputs: Optional[List[str]] = None,
         custom_metadata: Optional[object] = None,
         eval_scores: Optional[Dict[str, float]] = None,
@@ -264,4 +265,5 @@ class Project:
             eval_scores=eval_scores,
             options=options,
             quality_preset=quality_preset,
+            messages=messages,
         )
