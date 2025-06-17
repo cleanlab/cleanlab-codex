@@ -9,7 +9,6 @@ class IntegrationType(str, Enum):
     """Supported methods for integrating Codex into a RAG system using this library."""
 
     BACKUP = "backup"
-    TOOL = "tool"
 
 
 class _AnalyticsMetadata:
