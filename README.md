@@ -41,7 +41,6 @@ final_response = (
 <!-- Video should show Codex added to a RAG system, question asked that requires knowledge from an outside expert, Codex used to ask an outside expert, and expert response returned to the user -->
 
 ## Why Codex?
-
 - **Detect Knowledge Gaps and Hallucinations**: Codex identifies knowledge gaps and incorrect/untrustworthy responses in your AI application, to help you know which questions require expert input.
 - **Save SME time**: Codex ensures that SMEs see the most critical knowledge gaps first.
 - **Easy Integration**: Integrate Codex into any RAG/Agentic application with just a few lines of code.
