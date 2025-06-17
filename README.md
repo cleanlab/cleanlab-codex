@@ -4,7 +4,7 @@
 
 Codex enables you to seamlessly leverage knowledge from Subject Matter Experts (SMEs) to improve your RAG/Agentic applications.
 
-The `cleanlab-codex` library provides a simple interface to integrate Codex's capabilities into your RAG application. 
+The `cleanlab-codex` library provides a simple interface to integrate Codex's capabilities into your RAG application.
 See immediate impact with just a few lines of code!
 
 ## Demo
@@ -15,33 +15,33 @@ Install the package:
 pip install cleanlab-codex
 ```
 
-Integrating Codex into your RAG application as a tool is as simple as:
+Integrating Codex into your RAG application is as simple as:
 
 ```python
-from cleanlab_codex import CodexTool
+from cleanlab_codex import Validator
+validator = Validator(codex_access_key=...) # optional configurations can improve accuracy/latency
 
-def rag(question, system_prompt, tools) -> str:
-    """Your RAG/Agentic code here"""
-    ...
+# Your existing RAG code:
+context = rag_retrieve_context(user_query)
+prompt = rag_form_prompt(user_query, retrieved_context)
+response = rag_generate_response(prompt)
 
-# Initialize the Codex tool
-codex_tool = CodexTool.from_access_key("your-access-key")
+# Detect bad responses and remediate with Cleanlab
+results = validator.validate(query=query, context=context, response=response,
+    form_prompt=rag_form_prompt)
 
-# Update your system prompt to include information on how to use the Codex tool
-system_prompt = f"""Answer the user's Question based on the following Context. If the Context doesn't adequately address the Question, use the {codex_tool.tool_name} tool to ask an outside expert."""
-
-# Convert the Codex tool to a framework-specific tool
-framework_specific_codex_tool = codex_tool.to_<framework_name>_tool() # i.e. codex_tool.to_llamaindex_tool(), codex_tool.to_openai_tool(), etc.
-
-# Pass the Codex tool to your RAG/Agentic framework
-response = rag(question, system_prompt, [framework_specific_codex_tool])
+final_response = (
+    results["expert_answer"] # Codex's answer
+    if results["is_bad_response"] and results["expert_answer"]
+    else response # Your RAG system's initial response
+)
 ```
 
-(Note: Exact code will depend on the RAG/Agentic framework you are using. [Other integrations](https://help.cleanlab.ai/codex/concepts/integrations/) are available if you prefer to avoid Tool Calls.)
 <!-- TODO: add demo video -->
-<!-- Video should show Codex tool added to a RAG system, question asked that requires knowledge from an outside expert, Codex tool used to ask an outside expert, and expert response returned to the user -->
+<!-- Video should show Codex added to a RAG system, question asked that requires knowledge from an outside expert, Codex used to ask an outside expert, and expert response returned to the user -->
 
 ## Why Codex?
+
 - **Detect Knowledge Gaps and Hallucinations**: Codex identifies knowledge gaps and incorrect/untrustworthy responses in your AI application, to help you know which questions require expert input.
 - **Save SME time**: Codex ensures that SMEs see the most critical knowledge gaps first.
 - **Easy Integration**: Integrate Codex into any RAG/Agentic application with just a few lines of code.
