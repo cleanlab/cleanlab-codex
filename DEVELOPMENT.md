@@ -16,7 +16,7 @@ You can run the tests on your local machine with:
 hatch test
 ```
 
-The [`test` command][hatch-test] supports options such as `-c` for measuring test coverage, `-a` for testing with a matrix of Python versions, and appending an argument like `tests/test_codex_tool.py::test_to_llamaindex_tool` for running a single test.
+The [`test` command][hatch-test] supports options such as `-c` for measuring test coverage, `-a` for testing with a matrix of Python versions, and appending an argument like `tests/test_validator.py::test_validate_expert_answer` for running a single test.
 
 [hatch-test]: https://hatch.pypa.io/latest/tutorials/testing/overview/
 
@@ -79,8 +79,8 @@ Automated releases are handled by the [release workflow][release-workflow] which
 
 1. Bump the version in `src/cleanlab_codex/__about__.py`. You can use the [`hatch version`][hatch-version] command to do this.
 2. Ensure that the release notes are updated in [`CHANGELOG.md`][changelog]:
-    - You should update the `[Unreleased]` header to the new version and add a new `[Unreleased]` section at the top of the file.
-    - You should update the link for the `[Unreleased]` code and add a new link to the code diff for the new version.
+   - You should update the `[Unreleased]` header to the new version and add a new `[Unreleased]` section at the top of the file.
+   - You should update the link for the `[Unreleased]` code and add a new link to the code diff for the new version.
 3. Create a PR and merge these changes into the `main` branch.
 4. After the PR is merged into `main`, create a new release tag by running `git tag v<output of hatch version>` (i.e. `git tag v0.0.1`).
 5. Push the tag to the repository by running `git push origin <tag>`.
@@ -89,7 +89,6 @@ Automated releases are handled by the [release workflow][release-workflow] which
 [release-workflow]: .github/workflows/release.yml
 [hatch-version]: https://hatch.pypa.io/latest/version/#updating
 [changelog]: CHANGELOG.md
-
 
 ### How to build and install the package locally
 
@@ -110,14 +109,3 @@ Testing, type checking, and formatting/linting is [checked in CI][ci].
 To target a different Codex backend environment (i.e. staging or local), set the `CODEX_BASE_URL` environment variable. Example: `export CODEX_BASE_URL=http://localhost:8080`.
 
 ## Style guide
-
-### Adding integrations with external libraries
-
-When adding integrations with external libraries, always use a lazy import. The external dependency should not be required to use the `cleanlab-codex` library. Wrap the lazy import in a `try`/`except` block to catch the `ImportError` and raise a `MissingDependencyError` with a helpful message. See [codex_tool.py](src/cleanlab_codex/codex_tool.py) file for examples one of which is shown below:
-
-```python
-try:
-    from cleanlab_codex.utils.smolagents import CodexTool as SmolagentsCodexTool
-except ImportError as e:
-    raise MissingDependencyError("smolagents", "https://github.com/huggingface/smolagents") from e
-```
