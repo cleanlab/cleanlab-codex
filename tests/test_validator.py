@@ -99,8 +99,12 @@ class TestValidator:
         mock_project.from_access_key.assert_called_once_with(access_key="test")
         # Should not raise, uses default prompt formatter
         result = validator.validate(
-            query="q", context="c", response="r", prompt=None, form_prompt=lambda x, y: "test prompt"
-        )  # noqa: ARG005
+            query="q",
+            context="c",
+            response="r",
+            prompt=None,
+            form_prompt=lambda x, y: "test prompt",  # noqa: ARG005
+        )
         assert result is not None
 
     def test_validate_uses_default_prompt_formatter_when_no_prompt_or_form_prompt(self, mock_project: Mock) -> None:
@@ -114,7 +118,10 @@ class TestValidator:
         validator = Validator(codex_access_key="test")
         mock_project.from_access_key.assert_called_once_with(access_key="test")
         with (
-            patch("cleanlab_codex.validator.TrustworthyRAG._default_prompt_formatter", return_value=None),
+            patch(
+                "cleanlab_codex.validator.TrustworthyRAG._default_prompt_formatter",
+                return_value=None,
+            ),
             pytest.raises(ValueError, match="Exactly one of prompt or form_prompt is required"),
         ):
             validator.validate(query="q", context="c", response="r", prompt=None, form_prompt=None)
