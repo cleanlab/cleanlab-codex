@@ -6,8 +6,8 @@ from cleanlab_tlm import TLM
 
 
 class TrustworthinessEvaluator:
-    def __init__(self, client, model="gpt-4.1", tlm_model="gpt-4o-mini", tlm_preset="base"):
-        self.client = client
+    def __init__(self, openai_client, model="gpt-4.1", tlm_model="gpt-4o-mini", tlm_preset="base"):
+        self.client = openai_client
         self.model = model
         self.tlm = TLM(options={
             "model": tlm_model,
