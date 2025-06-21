@@ -57,6 +57,7 @@ class Validator:
         context: str,
         response: str,
         prompt: Optional[str] = None,
+        messages: Optional[list[dict[str, Any]]] = None,
         form_prompt: Optional[Callable[[str, str], str]] = None,
         metadata: Optional[dict[str, Any]] = None,
         eval_scores: Optional[dict[str, float]] = None,
@@ -71,6 +72,7 @@ class Validator:
             context (str): The context that was retrieved from the RAG Knowledge Base and used to generate the response.
             response (str): A reponse from your LLM/RAG system.
             prompt (str, optional): Optional prompt representing the actual inputs (combining query, context, and system instructions into one string) to the LLM that generated the response.
+            messages (list[dict[str, Any]], optional): Optional list of messages representing the conversation history, if applicable in OpenAI format. Messages should **not** include the curent prompt.
             form_prompt (Callable[[str, str], str], optional): Optional function to format the prompt based on query and context. Cannot be provided together with prompt, provide one or the other. This function should take query and context as parameters and return a formatted prompt string. If not provided, a default prompt formatter will be used. To include a system prompt or any other special instructions for your LLM, incorporate them directly in your custom form_prompt() function definition.
             metadata (dict, optional): Additional custom metadata to associate with the query logged in the Codex Project.
             eval_scores (dict[str, float], optional): Scores assessing different aspects of the RAG system. If provided, TLM Trustworthy RAG will not be used to generate scores.
@@ -107,4 +109,5 @@ class Validator:
             eval_thresholds=self._eval_thresholds,
             options=options,
             quality_preset=quality_preset,
+            messages=messages,
         )
