@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.21] 2025-06-22
+
+- Support adding remediations to a project
+- Docstring updates
+
 ## [1.0.20] 2025-06-17
 
 - Remove Codex-as-a-tool
@@ -99,8 +104,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial release of the `cleanlab-codex` client library.
 
-[Unreleased]: https://github.com/cleanlab/cleanlab-codex/compare/v1.0.20...HEAD
-[1.0.19]: https://github.com/cleanlab/cleanlab-codex/compare/v1.0.19...v1.0.20
+[Unreleased]: https://github.com/cleanlab/cleanlab-codex/compare/v1.0.21...HEAD
+[1.0.21]: https://github.com/cleanlab/cleanlab-codex/compare/v1.0.20...v1.0.21
+[1.0.20]: https://github.com/cleanlab/cleanlab-codex/compare/v1.0.19...v1.0.20
 [1.0.19]: https://github.com/cleanlab/cleanlab-codex/compare/v1.0.18...v1.0.19
 [1.0.18]: https://github.com/cleanlab/cleanlab-codex/compare/v1.0.17...v1.0.18
 [1.0.17]: https://github.com/cleanlab/cleanlab-codex/compare/v1.0.16...v1.0.17
