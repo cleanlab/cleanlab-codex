@@ -13,7 +13,6 @@ from cleanlab_codex.internal.validator import validate_thresholds
 from cleanlab_codex.project import Project
 
 if _TYPE_CHECKING:
-    from codex.types.project_validate_params import Options as ProjectValidateOptions
     from codex.types.project_validate_response import ProjectValidateResponse
 
 
@@ -60,7 +59,6 @@ class Validator:
         form_prompt: Optional[Callable[[str, str], str]] = None,
         metadata: Optional[dict[str, Any]] = None,
         eval_scores: Optional[dict[str, float]] = None,
-        options: Optional[ProjectValidateOptions] = None,
         quality_preset: Literal["best", "high", "medium", "low", "base"] = "medium",
     ) -> ProjectValidateResponse:
         """Evaluate whether the AI-generated response is bad, and if so, request an alternate expert answer.
@@ -105,6 +103,5 @@ class Validator:
             custom_metadata=metadata,
             eval_scores=eval_scores,
             eval_thresholds=self._eval_thresholds,
-            options=options,
             quality_preset=quality_preset,
         )
