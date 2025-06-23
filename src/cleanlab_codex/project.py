@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from typing import TYPE_CHECKING as _TYPE_CHECKING
-from typing import Dict, Literal, Optional
+from typing import Dict, Optional
 
 from codex import AuthenticationError
 
@@ -153,7 +153,6 @@ class Project:
         custom_metadata: Optional[object] = None,
         eval_scores: Optional[Dict[str, float]] = None,
         eval_thresholds: Optional[Dict[str, float]] = None,
-        quality_preset: Literal["best", "high", "medium", "low", "base"] = "medium",
     ) -> ProjectValidateResponse:
         """Run validation on a query to an AI system.
 
@@ -165,7 +164,6 @@ class Project:
             custom_metadata (object, optional): Custom metadata to log in Codex for the query.
             eval_scores (Dict[str, float], optional): Optional scores to use for the query. When provided, Codex will skip running TrustworthyRAG evaluations on the query and use the provided scores instead.
             eval_thresholds (Dict[str, float], optional): Optional thresholds to use for evaluating the query. We recommend configuring thresholds on the Project instead and using the same thresholds for all queries.
-            quality_preset (Literal["best", "high", "medium", "low", "base"], optional): The quality preset to use for the query.
 
         Returns:
             ProjectValidateResponse: The response from the validation.
@@ -179,7 +177,6 @@ class Project:
             custom_eval_thresholds=eval_thresholds,
             custom_metadata=custom_metadata,
             eval_scores=eval_scores,
-            quality_preset=quality_preset,
         )
 
     def add_remediation(self, question: str, answer: str | None = None) -> None:
