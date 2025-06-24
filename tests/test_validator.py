@@ -15,9 +15,21 @@ def mock_project() -> Generator[Mock, None, None]:
             is_bad_response=True,
             expert_answer=None,
             eval_scores={
-                "response_helpfulness": EvalScores(score=0.95, failed=False),
-                "trustworthiness": EvalScores(score=0.5, failed=True),
+                "response_helpfulness": EvalScores(
+                    score=0.95,
+                    triggered=False,
+                    triggered_escalation=False,
+                    triggered_guardrail=False,
+                ),
+                "trustworthiness": EvalScores(
+                    score=0.5,
+                    triggered=True,
+                    triggered_escalation=True,
+                    triggered_guardrail=True,
+                ),
             },
+            escalated_to_sme=True,
+            should_guardrail=True,
         )
         mock.from_access_key.return_value = mock_obj
         yield mock
@@ -31,9 +43,21 @@ def mock_project_with_custom_thresholds() -> Generator[Mock, None, None]:
             is_bad_response=False,
             expert_answer=None,
             eval_scores={
-                "response_helpfulness": EvalScores(score=0.95, failed=False),
-                "trustworthiness": EvalScores(score=0.5, failed=False),
+                "response_helpfulness": EvalScores(
+                    score=0.95,
+                    triggered=False,
+                    triggered_escalation=False,
+                    triggered_guardrail=False,
+                ),
+                "trustworthiness": EvalScores(
+                    score=0.5,
+                    triggered=False,
+                    triggered_escalation=False,
+                    triggered_guardrail=False,
+                ),
             },
+            escalated_to_sme=False,
+            should_guardrail=False,
         )
         mock.from_access_key.return_value = mock_obj
         yield mock
@@ -66,9 +90,21 @@ class TestValidator:
             is_bad_response=True,
             expert_answer="expert answer",
             eval_scores={
-                "response_helpfulness": EvalScores(score=0.95, failed=False),
-                "trustworthiness": EvalScores(score=0.5, failed=True),
+                "response_helpfulness": EvalScores(
+                    score=0.95,
+                    triggered=False,
+                    triggered_escalation=False,
+                    triggered_guardrail=False,
+                ),
+                "trustworthiness": EvalScores(
+                    score=0.5,
+                    triggered=True,
+                    triggered_escalation=True,
+                    triggered_guardrail=True,
+                ),
             },
+            escalated_to_sme=True,
+            should_guardrail=True,
         )
         # Basically any response will be flagged as untrustworthy
         result = validator.validate(query="test query", context="test context", response="test response")
