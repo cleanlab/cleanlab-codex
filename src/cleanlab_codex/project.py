@@ -11,7 +11,6 @@ from codex import AuthenticationError
 from cleanlab_codex.internal.analytics import _AnalyticsMetadata
 from cleanlab_codex.internal.sdk_client import client_from_access_key
 from cleanlab_codex.internal.utils import (
-    get_latest_prompt_from_messages,
     verify_messages_format,
     verify_response_format,
 )
@@ -163,6 +162,7 @@ class Project:
         """Run validation on a query to an AI system.
 
         Args:
+            messages: Messages history from the AI conversation, including the latest user query.
             context (str): The context used by the AI system to generate a response for the query.
             prompt (str): The full prompt (including system instructions, context, and the original query) used by the AI system to generate a response for the query.
             query (str): The original user input to the AI system.
@@ -176,16 +176,13 @@ class Project:
         verify_messages_format(messages)
         verify_response_format(response)
 
-        prompt = get_latest_prompt_from_messages(messages)
-
         return self._sdk_client.projects.validate(
             self._id,
-            prompt=prompt,
             messages=messages,
+            response=response,
             context=context,
             query=query,
             rewritten_query=rewritten_query,
-            response=response,
             custom_metadata=custom_metadata,
             eval_scores=eval_scores,
         )

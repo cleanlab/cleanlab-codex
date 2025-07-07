@@ -1,7 +1,7 @@
-from typing import TYPE_CHECKING as _TYPE_CHECKING
+from typing import TYPE_CHECKING as _TYPE_CHECKING, Any
 
 if _TYPE_CHECKING:
-    from openai.types.chat import ChatCompletionMessageParam
+    from openai.types.chat import ChatCompletionMessageParam, ChatCompletion
 
 from cleanlab_tlm.utils.chat import (
     ASSISTANT_ROLE,
@@ -19,7 +19,7 @@ VALID_MESSAGE_ROLES: list[str] = [
 
 
 def verify_messages_format(
-    messages: list["ChatCompletionMessageParam"],
+    messages: Any,
 ) -> None:
     """Check if the messages are in the correct format for OpenAI chat completions.
 
@@ -32,12 +32,15 @@ def verify_messages_format(
     """
     user_message_found = False
 
+    if not isinstance(messages, list):
+        msg = f"Messages must be a list of dictionaries, got {type(messages)}"
+        raise TypeError(msg)
     if len(messages) == 0:
-        msg = "Messages list cannot be empty."
+        msg = "Messages list cannot be empty. At least one message is required."
         raise ValueError(msg)
 
     for message in messages:
-        if not isinstance(message, dict):
+        if not isinstance(message, "ChatCompletionMessageParam"):
             msg = f"Each message must be a dictionary, got {type(message)}"
             raise TypeError(msg)
         if "role" not in message or "content" not in message:
@@ -59,14 +62,29 @@ def verify_messages_format(
     if not user_message_found:
         msg = f"At least one user message is required in the messages list under role {USER_ROLE}."
         raise ValueError(msg)
+    
+def verify_response_format(response: Any) -> None:
+    """Check if the response is in the correct format for OpenAI chat completions or string.
 
+    Args:
+        response: The response to validate.
 
-def get_latest_prompt_from_messages(
-    messages: list["ChatCompletionMessageParam"],
-) -> str:
-    """Extract the latest user message from a list of chat messages."""
-    for message in reversed(messages):
-        if message["role"] == USER_ROLE:
-            return message["content"]
-    msg = "No user message found in the messages list."
-    raise ValueError(msg)
+    Raises:
+        TypeError: If the response is not a dictionary or string.
+        ValueError: If the response does not have 'choices' or 'id' keys.
+    """
+    if isinstance(response, str):
+        return
+    
+    if not isinstance(response, "ChatCompletion"):
+        msg = f"Response must be a string or dictionary, got {type(response)}"
+        raise TypeError(msg)
+    
+    try:
+        content = response.choices[0].message.content
+        if not content:
+            msg = "Response message content is empty."
+            raise ValueError(msg)
+    except (AttributeError, IndexError) as e:
+        msg = "Invalid response structure, should be a string or ChatCompletions object."
+        raise ValueError(msg) from e
