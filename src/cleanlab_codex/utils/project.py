@@ -1,7 +1,4 @@
-from typing import TYPE_CHECKING as _TYPE_CHECKING, Any
-
-if _TYPE_CHECKING:
-    from openai.types.chat import ChatCompletionMessageParam, ChatCompletion
+from typing import Any
 
 from cleanlab_tlm.utils.chat import (
     ASSISTANT_ROLE,
@@ -40,7 +37,7 @@ def verify_messages_format(
         raise ValueError(msg)
 
     for message in messages:
-        if not isinstance(message, "ChatCompletionMessageParam"):
+        if not isinstance(message, dict):
             msg = f"Each message must be a dictionary, got {type(message)}"
             raise TypeError(msg)
         if "role" not in message or "content" not in message:
@@ -62,7 +59,8 @@ def verify_messages_format(
     if not user_message_found:
         msg = f"At least one user message is required in the messages list under role {USER_ROLE}."
         raise ValueError(msg)
-    
+
+
 def verify_response_format(response: Any) -> None:
     """Check if the response is in the correct format for OpenAI chat completions or string.
 
@@ -75,16 +73,16 @@ def verify_response_format(response: Any) -> None:
     """
     if isinstance(response, str):
         return
-    
-    if not isinstance(response, "ChatCompletion"):
-        msg = f"Response must be a string or dictionary, got {type(response)}"
+
+    if not isinstance(response, dict):
+        msg = f"Response must be a string or ChatCompletions dictionary, got {type(response)}"
         raise TypeError(msg)
-    
+
     try:
         content = response.choices[0].message.content
         if not content:
             msg = "Response message content is empty."
             raise ValueError(msg)
     except (AttributeError, IndexError) as e:
-        msg = "Invalid response structure, should be a string or ChatCompletions object."
+        msg = "Invalid response structure, should be a string or ChatCompletions dictionary."
         raise ValueError(msg) from e
