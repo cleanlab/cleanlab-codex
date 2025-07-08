@@ -10,11 +10,11 @@ from codex import AuthenticationError
 
 from cleanlab_codex.internal.analytics import _AnalyticsMetadata
 from cleanlab_codex.internal.sdk_client import client_from_access_key
-from cleanlab_codex.internal.utils import (
+from cleanlab_codex.types.project import ProjectConfig
+from cleanlab_codex.utils.project import (
     verify_messages_format,
     verify_response_format,
 )
-from cleanlab_codex.types.project import ProjectConfig
 
 if _TYPE_CHECKING:
     from datetime import datetime
@@ -155,7 +155,7 @@ class Project:
         response: ChatCompletion,
         context: str,
         query: str,
-        rewritten_query: Optional[str] = None,
+        rewritten_question: Optional[str] = None,
         custom_metadata: Optional[object] = None,
         eval_scores: Optional[Dict[str, float]] = None,
     ) -> ProjectValidateResponse:
@@ -182,7 +182,7 @@ class Project:
             response=response,
             context=context,
             query=query,
-            rewritten_query=rewritten_query,
+            rewritten_question=rewritten_question,
             custom_metadata=custom_metadata,
             eval_scores=eval_scores,
         )

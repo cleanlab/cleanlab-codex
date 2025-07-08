@@ -1,17 +1,17 @@
 from typing import Any
 
 from cleanlab_tlm.utils.chat import (
-    ASSISTANT_ROLE,
-    SYSTEM_ROLES,
-    TOOL_ROLE,
-    USER_ROLE,
+    _ASSISTANT_ROLE,
+    _SYSTEM_ROLES,
+    _TOOL_ROLE,
+    _USER_ROLE,
 )
 
 VALID_MESSAGE_ROLES: list[str] = [
-    *SYSTEM_ROLES,
-    USER_ROLE,
-    TOOL_ROLE,
-    ASSISTANT_ROLE,
+    *_SYSTEM_ROLES,
+    _USER_ROLE,
+    _TOOL_ROLE,
+    _ASSISTANT_ROLE,
 ]  # TODO: possibly move this to TLM?
 
 
@@ -53,11 +53,11 @@ def verify_messages_format(
             valid_roles_str = ", ".join(VALID_MESSAGE_ROLES)
             msg = f"Invalid message role '{message['role']}'. Valid roles are: {valid_roles_str}"
             raise ValueError(msg)
-        if message["role"] == USER_ROLE:
+        if message["role"] == _USER_ROLE:
             user_message_found = True
 
     if not user_message_found:
-        msg = f"At least one user message is required in the messages list under role {USER_ROLE}."
+        msg = f"At least one user message is required in the messages list under role {_USER_ROLE}."
         raise ValueError(msg)
 
 
@@ -68,21 +68,17 @@ def verify_response_format(response: Any) -> None:
         response: The response to validate.
 
     Raises:
-        TypeError: If the response is not a dictionary or string.
-        ValueError: If the response does not have 'choices' or 'id' keys.
+        TypeError: If the response is not a ChatCompletion-like object or string.
+        ValueError: If the response does not have valid choices or content.
     """
     if isinstance(response, str):
         return
 
-    if not isinstance(response, dict):
-        msg = f"Response must be a string or ChatCompletions dictionary, got {type(response)}"
-        raise TypeError(msg)
-
     try:
         content = response.choices[0].message.content
-        if not content:
-            msg = "Response message content is empty."
+        if not isinstance(content, str) or not content.strip():
+            msg = "Response message content must be a non-empty string."
             raise ValueError(msg)
-    except (AttributeError, IndexError) as e:
-        msg = "Invalid response structure, should be a string or ChatCompletions dictionary."
-        raise ValueError(msg) from e
+    except (AttributeError, IndexError, TypeError) as e:
+        msg = f"Response must be a string or ChatCompletion-like object. Got {type(response)}"
+        raise TypeError(msg) from e

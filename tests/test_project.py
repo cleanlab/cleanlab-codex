@@ -1,14 +1,18 @@
 import uuid
-from unittest.mock import MagicMock, Mock
+from unittest.mock import MagicMock, Mock, call
 
 import pytest
 from codex import AuthenticationError
 from codex.types.project_create_params import Config
+from codex.types.project_validate_response import EvalScores, ProjectValidateResponse
 from codex.types.projects.access_key_retrieve_project_id_response import (
     AccessKeyRetrieveProjectIDResponse,
 )
 
 from cleanlab_codex.project import MissingProjectError, Project
+from tests.fixtures.validate import MockChatCompletion, mock_openai_chat_completion
+
+assert mock_openai_chat_completion is not None  # needed as dummy so hatch does not delete
 
 FAKE_PROJECT_ID = str(uuid.uuid4())
 FAKE_USER_ID = "Test User"
@@ -17,6 +21,99 @@ FAKE_PROJECT_NAME = "Test Project"
 FAKE_PROJECT_DESCRIPTION = "Test Description"
 DEFAULT_PROJECT_CONFIG = Config()
 DUMMY_ACCESS_KEY = "sk-1-EMOh6UrRo7exTEbEi8_azzACAEdtNiib2LLa1IGo6kA"
+SINGLE_TURN_MESSAGES = [{"role": "user", "content": "What is the capitol of France?"}]
+CONVERSATIONAL_MESSAGES = [
+    {"role": "system", "content": "You are a helpful assistant."},
+    {"role": "user", "content": "I love France!"},
+    {"role": "user", "content": "What is it's capitol?"},
+]
+
+
+def test_project_validate_with_dict_response(
+    mock_client_from_api_key: MagicMock,
+    mock_openai_chat_completion: MockChatCompletion,
+) -> None:
+    expected_result = ProjectValidateResponse(
+        is_bad_response=True,
+        expert_answer=None,
+        eval_scores={
+            "response_helpfulness": EvalScores(
+                score=0.8,
+                triggered=True,
+                triggered_escalation=False,
+                triggered_guardrail=False,
+            )
+        },
+        escalated_to_sme=True,
+        should_guardrail=False,
+    )
+    mock_client_from_api_key.projects.validate.return_value = expected_result
+    mock_client_from_api_key.projects.create.return_value.id = FAKE_PROJECT_ID
+    mock_client_from_api_key.organization_id = FAKE_ORGANIZATION_ID
+    project = Project.create(
+        mock_client_from_api_key,
+        FAKE_ORGANIZATION_ID,
+        FAKE_PROJECT_NAME,
+        FAKE_PROJECT_DESCRIPTION,
+    )
+
+    context = "Cities in France: Paris, Lyon, Marseille"
+    query = "What is the capitol of France?"
+
+    # single turn
+    result = project.validate(
+        messages=SINGLE_TURN_MESSAGES,
+        response=mock_openai_chat_completion,
+        context=context,
+        query=query,
+    )
+
+    assert result == expected_result
+    mock_client_from_api_key.projects.validate.assert_called_once_with(
+        FAKE_PROJECT_ID,
+        messages=SINGLE_TURN_MESSAGES,
+        response=mock_openai_chat_completion,
+        context=context,
+        query=query,
+        rewritten_question=None,
+        custom_metadata=None,
+        eval_scores=None,
+    )
+
+    # conversational
+    result = project.validate(
+        messages=CONVERSATIONAL_MESSAGES,
+        response=mock_openai_chat_completion,
+        context=context,
+        query=query,
+    )
+
+    assert result == expected_result
+    mock_client_from_api_key.projects.validate.assert_has_calls(
+        [
+            call(
+                FAKE_PROJECT_ID,
+                messages=SINGLE_TURN_MESSAGES,
+                response=mock_openai_chat_completion,
+                context=context,
+                query=query,
+                rewritten_question=None,
+                custom_metadata=None,
+                eval_scores=None,
+            ),
+            call(
+                FAKE_PROJECT_ID,
+                messages=CONVERSATIONAL_MESSAGES,
+                response=mock_openai_chat_completion,
+                context=context,
+                query=query,
+                rewritten_question=None,
+                custom_metadata=None,
+                eval_scores=None,
+            ),
+        ]
+    )
+    assert mock_client_from_api_key.projects.validate.call_count == 2
 
 
 def test_from_access_key(mock_client_from_access_key: MagicMock) -> None:
