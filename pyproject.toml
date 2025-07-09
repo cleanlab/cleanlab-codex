@@ -46,6 +46,7 @@ extra-dependencies = [
   "smolagents; python_version >= '3.10'",
   "thefuzz",
   "langchain-core",
+  "openai"
 ]
 
 [[tool.hatch.envs.types.matrix]]
