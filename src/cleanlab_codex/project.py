@@ -189,8 +189,6 @@ class Project:
                 - escalated_to_sme (bool): True if the query should be escalated to Codex for SME review. When True, the query is logged and may be answered by an expert.
                 - eval_scores (dict[str, ThresholdedEvalScore]): Evaluation scores for different response attributes (e.g., helpfulness, groundedness). Each includes a numeric score and a `failed` flag indicating whether the score falls below threshold.
                 - expert_answer (str | None): If the response was flagged and Codex has a matching prior SME answer, this field contains that expert answer. Otherwise, it is None.
-                - deterministic_guardrails_results (DeterministicGuardrailResultsSchema | None): Structured output of any hardcoded rules or logic checks (e.g., profanity, empty response) applied to the response.
-                - is_bad_response (bool): Deprecated. Indicates whether the response is considered problematic. If True, triggers logging and potential escalation to Codex.
 
         """
 
