@@ -4,9 +4,10 @@ from __future__ import annotations
 
 from datetime import datetime
 from typing import TYPE_CHECKING as _TYPE_CHECKING
-from typing import Dict, Optional, Union
+from typing import Dict, Optional, Union, cast
 
 from codex import AuthenticationError
+from codex.types.project_validate_params import Response
 
 from cleanlab_codex.internal.analytics import _AnalyticsMetadata
 from cleanlab_codex.internal.sdk_client import client_from_access_key
@@ -156,7 +157,7 @@ class Project:
         query: str,
         context: str,
         rewritten_question: Optional[str] = None,
-        custom_metadata: Optional[object] = None,
+        metadata: Optional[object] = None,
         eval_scores: Optional[Dict[str, float]] = None,
     ) -> ProjectValidateResponse:
         """Evaluate the quality of an AI-generated response using the structured message history, query, and retrieved context.
@@ -179,7 +180,7 @@ class Project:
             query (str): The user query that the `response` is answering. This query should be the latest user message in `messages`.
             context (str): The retrieved context (e.g., from your RAG system) that was supplied to the AI when generating the `response` to the final user query in `messages`.
             rewritten_question (str, optional): An optional reformulation of the `query` to make it more self-contained to improve retrieval quality.
-            custom_metadata (object, optional): Arbitrary metadata to associate with this validation for logging or analysis inside the Codex project.
+            metadata (object, optional): Arbitrary metadata to associate with this validation for logging or analysis inside the Codex project.
             eval_scores (dict[str, float], optional): Precomputed evaluation scores to bypass automatic scoring.
 
         Returns:
@@ -187,9 +188,8 @@ class Project:
 
                 - should_guardrail (bool): True if the AI system should suppress or modify the response before returning it to the user. When True, the response is considered problematic and may require further review or modification.
                 - escalated_to_sme (bool): True if the query should be escalated to Codex for SME review. When True, the query is logged and may be answered by an expert.
-                - eval_scores (dict[str, ThresholdedEvalScore]): Evaluation scores for different response attributes (e.g., trustworthiness, helpfulness, ...). Each includes a numeric score and a `failed` flag indicating whether the score falls below threshold.
-                - expert_answer (str | None): If it was auto-determined that this query should be escalated to SME, and a prior SME answer for a similar query was found, then this will return that expert answer.  Otherwise, it is None.  
-                When available, consider swapping your AI response with the expert answer before serving the response to your user.
+                - eval_scores (dict[str, ThresholdedEvalScore]): Evaluation scores for different response attributes (e.g., helpfulness, groundedness). Each includes a numeric score and a `failed` flag indicating whether the score falls below threshold.
+                - expert_answer (str | None): If the response was flagged and Codex has a matching prior SME answer, this field contains that expert answer. Otherwise, it is None.
 
         """
 
@@ -199,11 +199,11 @@ class Project:
         return self._sdk_client.projects.validate(
             self._id,
             messages=messages,
-            response=response,
+            response=cast(Response, response),
             context=context,
             query=query,
             rewritten_question=rewritten_question,
-            custom_metadata=custom_metadata,
+            custom_metadata=metadata,
             eval_scores=eval_scores,
         )
 
