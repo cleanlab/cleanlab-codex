@@ -12,10 +12,6 @@ from codex.types.project_validate_params import Response
 from cleanlab_codex.internal.analytics import _AnalyticsMetadata
 from cleanlab_codex.internal.sdk_client import client_from_access_key
 from cleanlab_codex.types.project import ProjectConfig
-from cleanlab_codex.utils.project import (
-    verify_messages_format,
-    verify_response_format,
-)
 
 if _TYPE_CHECKING:
     from datetime import datetime
@@ -192,9 +188,6 @@ class Project:
                 - expert_answer (str | None): If the response was flagged and Codex has a matching prior SME answer, this field contains that expert answer. Otherwise, it is None.
 
         """
-
-        verify_messages_format(messages)
-        verify_response_format(response)
 
         return self._sdk_client.projects.validate(
             self._id,
