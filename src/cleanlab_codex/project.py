@@ -153,8 +153,8 @@ class Project:
         *,
         messages: list[ChatCompletionMessageParam],
         response: Union[ChatCompletion, str],
-        context: str,
         query: str,
+        context: str,
         rewritten_question: Optional[str] = None,
         custom_metadata: Optional[object] = None,
         eval_scores: Optional[Dict[str, float]] = None,
@@ -176,8 +176,8 @@ class Project:
                 This must include the final user message that triggered the AI response. All other arguments—`query`, `context`, and `response`—
                 must correspond specifically to this final user message.
             response (ChatCompletion | str): Your AI-response that was generated based on the given `messages`. This is the response being evaluated, and should not appear in the `messages`.
-            context (str): The retrieved context (e.g., from your RAG system) that was supplied to the AI when generating the `response` to the final user query in `messages`.
             query (str): The user query that the `response` is answering. This query should be the latest user message in `messages`.
+            context (str): The retrieved context (e.g., from your RAG system) that was supplied to the AI when generating the `response` to the final user query in `messages`.
             rewritten_question (str, optional): An optional reformulation of the `query` to make it more self-contained to improve retrieval quality.
             custom_metadata (object, optional): Arbitrary metadata to associate with this validation for logging or analysis inside the Codex project.
             eval_scores (dict[str, float], optional): Precomputed evaluation scores to bypass automatic scoring.
