@@ -1,4 +1,7 @@
-from typing import Any
+from typing import TYPE_CHECKING, Union
+
+if TYPE_CHECKING:
+    from openai.types.chat import ChatCompletion, ChatCompletionMessageParam
 
 from cleanlab_tlm.utils.chat import (
     _ASSISTANT_ROLE,
@@ -16,7 +19,7 @@ VALID_MESSAGE_ROLES: list[str] = [
 
 
 def verify_messages_format(
-    messages: Any,
+    messages: list["ChatCompletionMessageParam"],
 ) -> None:
     """Check if the messages are in the correct format for OpenAI chat completions.
 
@@ -61,7 +64,7 @@ def verify_messages_format(
         raise ValueError(msg)
 
 
-def verify_response_format(response: Any) -> None:
+def verify_response_format(response: Union["ChatCompletion", str]) -> None:
     """Check if the response is in the correct format for OpenAI chat completions or string.
 
     Args:

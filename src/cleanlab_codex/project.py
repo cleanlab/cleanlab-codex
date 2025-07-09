@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from typing import TYPE_CHECKING as _TYPE_CHECKING
-from typing import Dict, Optional
+from typing import Dict, Optional, Union
 
 from codex import AuthenticationError
 
@@ -152,7 +152,7 @@ class Project:
         self,
         *,
         messages: list[ChatCompletionMessageParam],
-        response: ChatCompletion | str,
+        response: Union[ChatCompletion, str],
         context: str,
         query: str,
         rewritten_question: Optional[str] = None,

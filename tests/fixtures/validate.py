@@ -1,44 +1,46 @@
-from typing import List, Literal, Optional
-
 import pytest
-from pydantic import BaseModel
-
-
-class ChatCompletionMessage(BaseModel):
-    role: Literal["user", "assistant", "system", "tool"]
-    content: Optional[str]
-
-
-class Choice(BaseModel):
-    index: int
-    message: ChatCompletionMessage
-    finish_reason: Optional[str]
-
-
-class CompletionUsage(BaseModel):
-    prompt_tokens: int
-    completion_tokens: int
-    total_tokens: int
-
-
-class MockChatCompletion(BaseModel):
-    id: str
-    object: Literal["chat.completion"]
-    created: int
-    model: str
-    choices: List[Choice]
-    usage: Optional[CompletionUsage] = None
+from cleanlab_tlm.utils.chat import _ASSISTANT_ROLE, _SYSTEM_ROLES, _USER_ROLE
+from openai.types.chat import ChatCompletion, ChatCompletionMessageParam
 
 
 @pytest.fixture
-def mock_openai_chat_completion() -> MockChatCompletion:
-    return MockChatCompletion(
-        id="chatcmpl-abc123",
+def openai_chat_completion() -> "ChatCompletion":
+    """Fixture that returns a static fake OpenAI ChatCompletion object."""
+    return ChatCompletion(
+        id="chatcmpl-test123",
         object="chat.completion",
-        created=1234567890,
+        created=1719876543,
         model="gpt-4",
         choices=[
-            Choice(index=0, message=ChatCompletionMessage(role="assistant", content="Paris"), finish_reason="stop")
+            {
+                "index": 0,
+                "message": {
+                    "role": f"{_ASSISTANT_ROLE}",
+                    "content": "Paris",
+                },
+                "finish_reason": "stop",
+            }
         ],
-        usage=CompletionUsage(prompt_tokens=5, completion_tokens=1, total_tokens=6),
+        usage={
+            "prompt_tokens": 5,
+            "completion_tokens": 1,
+            "total_tokens": 6,
+        },
     )
+
+
+@pytest.fixture
+def openai_messages_single_turn() -> list["ChatCompletionMessageParam"]:
+    """Fixture that returns a single-turn message format."""
+    return [{"role": f"{_USER_ROLE}", "content": "What is the capital of France?"}]
+
+
+@pytest.fixture
+def openai_messages_conversational() -> list["ChatCompletionMessageParam"]:
+    """Fixture that returns a conversational message format."""
+    return [
+        {"role": f"{_SYSTEM_ROLES[0]}", "content": "You are a helpful assistant."},
+        {"role": f"{_USER_ROLE}", "content": "I love France!"},
+        {"role": f"{_ASSISTANT_ROLE}", "content": "That's great!"},
+        {"role": f"{_USER_ROLE}", "content": "What is its capital?"},
+    ]

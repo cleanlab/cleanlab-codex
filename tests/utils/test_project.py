@@ -3,44 +3,28 @@ from typing import TYPE_CHECKING
 import pytest
 from cleanlab_tlm.utils.chat import _ASSISTANT_ROLE, _SYSTEM_ROLES, _USER_ROLE
 
-from cleanlab_codex.utils.project import verify_messages_format, verify_response_format
-from tests.fixtures.validate import MockChatCompletion, mock_openai_chat_completion
-
-assert mock_openai_chat_completion is not None  # needed as dummy so hatch does not delete
-
 if TYPE_CHECKING:
+    from openai.types.chat import ChatCompletion, ChatCompletionMessageParam
 
-    @pytest.mark.skipif(pytest.importorskip("openai") is None, reason="openai package not installed")
-    def test_mock_matches_openai_signature() -> None:
-        import inspect
+from cleanlab_codex.utils.project import verify_messages_format, verify_response_format
+from tests.fixtures.validate import openai_chat_completion, openai_messages_conversational, openai_messages_single_turn
 
-        import openai.types.chat.chat_completion as openai_chat
-
-        openai_sig = inspect.signature(openai_chat.ChatCompletion)
-        mock_sig = inspect.signature(MockChatCompletion)
-
-        assert set(openai_sig.parameters.keys()) <= set(
-            mock_sig.parameters.keys()
-        ), "Your ChatCompletionMock is missing fields compared to OpenAI ChatCompletions."
+assert openai_chat_completion is not None  # needed as dummy so hatch does not delete
+assert openai_messages_single_turn is not None  # needed as dummy so hatch does not delete
+assert openai_messages_conversational is not None  # needed as dummy so hatch does not delete
 
 
-def test_valid_single_user_message() -> None:
-    messages = [{"role": _USER_ROLE, "content": "What is 2+2?"}]
-    verify_messages_format(messages)  # Should not raise
+def test_valid_single_user_message(openai_messages_single_turn: list["ChatCompletionMessageParam"]) -> None:
+    verify_messages_format(openai_messages_single_turn)  # Should not raise
 
 
-def test_valid_multiple_roles() -> None:
-    messages = [
-        {"role": _SYSTEM_ROLES[0], "content": "System msg"},
-        {"role": _USER_ROLE, "content": "Hi"},
-        {"role": _ASSISTANT_ROLE, "content": "Hello!"},
-    ]
-    verify_messages_format(messages)  # Should not raise
+def test_valid_multiple_roles(openai_messages_conversational: list["ChatCompletionMessageParam"]) -> None:
+    verify_messages_format(openai_messages_conversational)  # Should not raise
 
 
 def test_raises_on_non_list() -> None:
     with pytest.raises(TypeError, match="Messages must be a list"):
-        verify_messages_format("not a list")
+        verify_messages_format("not a list")  # type: ignore[arg-type]
 
 
 def test_raises_on_empty_list() -> None:
@@ -86,8 +70,8 @@ def test_valid_response_string() -> None:
     verify_response_format("this is a plain string")  # Should not raise
 
 
-def test_valid_response_dict(mock_openai_chat_completion: MockChatCompletion) -> None:
-    verify_response_format(mock_openai_chat_completion)  # Should not raise
+def test_valid_response_dict(openai_chat_completion: "ChatCompletion") -> None:
+    verify_response_format(openai_chat_completion)  # Should not raise
 
 
 def test_raises_on_non_dict_or_string() -> None:
@@ -95,7 +79,7 @@ def test_raises_on_non_dict_or_string() -> None:
         verify_response_format(123)
 
 
-def test_raises_on_empty_content(mock_openai_chat_completion: MockChatCompletion) -> None:
-    mock_openai_chat_completion.choices[0].message.content = ""  # Set content to empty string
+def test_raises_on_empty_content(openai_chat_completion: "ChatCompletion") -> None:
+    openai_chat_completion.choices[0].message.content = ""  # Set content to empty string
     with pytest.raises(ValueError, match="Response message content must be a non-empty string."):
-        verify_response_format(mock_openai_chat_completion)
+        verify_response_format(openai_chat_completion)

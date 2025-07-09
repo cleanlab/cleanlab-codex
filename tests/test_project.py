@@ -1,4 +1,5 @@
 import uuid
+from typing import TYPE_CHECKING
 from unittest.mock import MagicMock, Mock, call
 
 import pytest
@@ -9,10 +10,18 @@ from codex.types.projects.access_key_retrieve_project_id_response import (
     AccessKeyRetrieveProjectIDResponse,
 )
 
-from cleanlab_codex.project import MissingProjectError, Project
-from tests.fixtures.validate import MockChatCompletion, mock_openai_chat_completion
+if TYPE_CHECKING:
+    from openai.types.chat import ChatCompletion, ChatCompletionMessageParam
 
-assert mock_openai_chat_completion is not None  # needed as dummy so hatch does not delete
+from cleanlab_codex.project import MissingProjectError, Project
+from tests.fixtures.validate import openai_chat_completion, openai_messages_conversational, openai_messages_single_turn
+
+assert openai_chat_completion is not None  # needed as dummy so hatch does not delete
+assert openai_messages_single_turn is not None  # needed as dummy so hatch does not delete
+assert openai_messages_conversational is not None  # needed as dummy so hatch does not delete
+
+
+assert openai_chat_completion is not None  # needed as dummy so hatch does not delete
 
 FAKE_PROJECT_ID = str(uuid.uuid4())
 FAKE_USER_ID = "Test User"
@@ -21,17 +30,13 @@ FAKE_PROJECT_NAME = "Test Project"
 FAKE_PROJECT_DESCRIPTION = "Test Description"
 DEFAULT_PROJECT_CONFIG = Config()
 DUMMY_ACCESS_KEY = "sk-1-EMOh6UrRo7exTEbEi8_azzACAEdtNiib2LLa1IGo6kA"
-SINGLE_TURN_MESSAGES = [{"role": "user", "content": "What is the capitol of France?"}]
-CONVERSATIONAL_MESSAGES = [
-    {"role": "system", "content": "You are a helpful assistant."},
-    {"role": "user", "content": "I love France!"},
-    {"role": "user", "content": "What is it's capitol?"},
-]
 
 
 def test_project_validate_with_dict_response(
     mock_client_from_api_key: MagicMock,
-    mock_openai_chat_completion: MockChatCompletion,
+    openai_chat_completion: "ChatCompletion",
+    openai_messages_single_turn: list["ChatCompletionMessageParam"],
+    openai_messages_conversational: list["ChatCompletionMessageParam"],
 ) -> None:
     expected_result = ProjectValidateResponse(
         is_bad_response=True,
@@ -62,8 +67,8 @@ def test_project_validate_with_dict_response(
 
     # single turn
     result = project.validate(
-        messages=SINGLE_TURN_MESSAGES,
-        response=mock_openai_chat_completion,
+        messages=openai_messages_single_turn,
+        response=openai_chat_completion,
         context=context,
         query=query,
     )
@@ -71,8 +76,8 @@ def test_project_validate_with_dict_response(
     assert result == expected_result
     mock_client_from_api_key.projects.validate.assert_called_once_with(
         FAKE_PROJECT_ID,
-        messages=SINGLE_TURN_MESSAGES,
-        response=mock_openai_chat_completion,
+        messages=openai_messages_single_turn,
+        response=openai_chat_completion,
         context=context,
         query=query,
         rewritten_question=None,
@@ -82,8 +87,8 @@ def test_project_validate_with_dict_response(
 
     # conversational
     result = project.validate(
-        messages=CONVERSATIONAL_MESSAGES,
-        response=mock_openai_chat_completion,
+        messages=openai_messages_conversational,
+        response=openai_chat_completion,
         context=context,
         query=query,
     )
@@ -93,8 +98,8 @@ def test_project_validate_with_dict_response(
         [
             call(
                 FAKE_PROJECT_ID,
-                messages=SINGLE_TURN_MESSAGES,
-                response=mock_openai_chat_completion,
+                messages=openai_messages_single_turn,
+                response=openai_chat_completion,
                 context=context,
                 query=query,
                 rewritten_question=None,
@@ -103,8 +108,8 @@ def test_project_validate_with_dict_response(
             ),
             call(
                 FAKE_PROJECT_ID,
-                messages=CONVERSATIONAL_MESSAGES,
-                response=mock_openai_chat_completion,
+                messages=openai_messages_conversational,
+                response=openai_chat_completion,
                 context=context,
                 query=query,
                 rewritten_question=None,
