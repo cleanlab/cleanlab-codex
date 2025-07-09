@@ -152,7 +152,7 @@ class Project:
         response: Union[ChatCompletion, str],
         query: str,
         context: str,
-        rewritten_question: Optional[str] = None,
+        rewritten_query: Optional[str] = None,
         metadata: Optional[object] = None,
         eval_scores: Optional[Dict[str, float]] = None,
     ) -> ProjectValidateResponse:
@@ -165,8 +165,11 @@ class Project:
         leading up to the final response.
 
         The function assesses the trustworthiness and quality of the AI `response` in light of the provided `context` and
-        `query`, which should align with the most recent user message in `messages`. If the response is flagged as problematic,
-        Codex is used to retrieve an alternate expert answer or log the query for future SME review.
+        `query`, which should align with the most recent user message in `messages`.
+
+        If your AI response is flagged as problematic, then this method will:
+            - return an expert answer if one was previously provided for a similar query
+            - otherwise log this query for future SME review (to consider providing an expert answer) in the Web interface.
 
         Args:
             messages (list[ChatCompletionMessageParam]): The full message history from the AI conversation, formatted for OpenAI-style chat completion.
@@ -175,9 +178,9 @@ class Project:
             response (ChatCompletion | str): Your AI-response that was generated based on the given `messages`. This is the response being evaluated, and should not appear in the `messages`.
             query (str): The user query that the `response` is answering. This query should be the latest user message in `messages`.
             context (str): The retrieved context (e.g., from your RAG system) that was supplied to the AI when generating the `response` to the final user query in `messages`.
-            rewritten_question (str, optional): An optional reformulation of the `query` to make it more self-contained to improve retrieval quality.
+            rewritten_query (str, optional): An optional reformulation of `query` (e.g. made self-contained w.r.t multi-turn conversations) to improve retrieval quality.
             metadata (object, optional): Arbitrary metadata to associate with this validation for logging or analysis inside the Codex project.
-            eval_scores (dict[str, float], optional): Precomputed evaluation scores to bypass automatic scoring.
+            eval_scores (dict[str, float], optional): Precomputed evaluation scores to bypass automatic scoring. Providing `eval_scores` for specific evaluations bypasses automated scoring and uses the supplied scores instead. Consider providing these scores if you already have them precomputed to reduce runtime.
 
         Returns:
             ProjectValidateResponse: A structured object with the following fields:
@@ -196,7 +199,7 @@ class Project:
             response=cast(Response, response),
             context=context,
             query=query,
-            rewritten_question=rewritten_question,
+            rewritten_question=rewritten_query,
             custom_metadata=metadata,
             eval_scores=eval_scores,
         )

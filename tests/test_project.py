@@ -14,14 +14,6 @@ if TYPE_CHECKING:
     from openai.types.chat import ChatCompletion, ChatCompletionMessageParam
 
 from cleanlab_codex.project import MissingProjectError, Project
-from tests.fixtures.validate import openai_chat_completion, openai_messages_conversational, openai_messages_single_turn
-
-assert openai_chat_completion is not None  # needed as dummy so hatch does not delete
-assert openai_messages_single_turn is not None  # needed as dummy so hatch does not delete
-assert openai_messages_conversational is not None  # needed as dummy so hatch does not delete
-
-
-assert openai_chat_completion is not None  # needed as dummy so hatch does not delete
 
 FAKE_PROJECT_ID = str(uuid.uuid4())
 FAKE_USER_ID = "Test User"
