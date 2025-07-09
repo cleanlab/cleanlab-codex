@@ -164,7 +164,7 @@ class Project:
         This method runs validation on an AI response using the full `messages` history (formatted as OpenAI-style chat messages),
         which should include the latest user query and any preceding system or assistant messages.
 
-        **Note:** For single-turn queries, this can be a minimal list with one user message. For multi-turn conversations, provide the full dialog
+        **For single-turn Q&A apps, `messages` can be a minimal list with one user message. For multi-turn conversations, provide the full dialog
         leading up to the final response.
 
         The function assesses the trustworthiness and quality of the AI `response` in light of the provided `context` and
@@ -175,9 +175,9 @@ class Project:
             messages (list[ChatCompletionMessageParam]): The full message history from the AI conversation, formatted for OpenAI-style chat completion.
                 This must include the final user message that triggered the AI response. All other arguments—`query`, `context`, and `response`—
                 must correspond specifically to this final user message.
-            response (ChatCompletion | str): The AI-generated response that immediately follows the last user message in `messages`. This is the response being evaluated.
+            response (ChatCompletion | str): Your AI-response that was generated based on the given `messages`. This is the response being evaluated, and should not appear in the `messages`.
             context (str): The retrieved context (e.g., from your RAG system) that was supplied to the AI when generating the `response` to the final user query in `messages`.
-            query (str): The original user query that prompted the `response`. This must be the query included in the final user message in `messages`.
+            query (str): The user query that the `response` is answering. This query should be the latest user message in `messages`.
             rewritten_question (str, optional): An optional reformulation of the `query` to make it more self-contained to improve retrieval quality. If this is provided, the query re-writting step is skipped, and the provided `rewritten_question` is used instead.
             custom_metadata (object, optional): Arbitrary metadata to associate with this validation for logging or analysis inside the Codex project.
             eval_scores (dict[str, float], optional): Precomputed evaluation scores to bypass automatic scoring.
