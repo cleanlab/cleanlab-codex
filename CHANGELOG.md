@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.0.24] 2025-07-10
 
-- Remove `Validator` class, move `validate()` functionality to `Project` class.
+- Remove `Validator` class, move `validate()` functionality to `Project` class. Adds conversational support for validation.
 
 ## [1.0.23] 2025-06-24
 
@@ -116,7 +116,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial release of the `cleanlab-codex` client library.
 
-[Unreleased]: https://github.com/cleanlab/cleanlab-codex/compare/v1.0.23...HEAD
+[Unreleased]: https://github.com/cleanlab/cleanlab-codex/compare/v1.0.24...HEAD
 [1.0.24]: https://github.com/cleanlab/cleanlab-codex/compare/v1.0.23...v1.0.24
 [1.0.23]: https://github.com/cleanlab/cleanlab-codex/compare/v1.0.22...v1.0.23
 [1.0.22]: https://github.com/cleanlab/cleanlab-codex/compare/v1.0.21...v1.0.22
