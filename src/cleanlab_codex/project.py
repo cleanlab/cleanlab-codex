@@ -186,7 +186,7 @@ class Project:
             ProjectValidateResponse: A structured object with the following fields:
 
                 - should_guardrail (bool): True if the AI system should suppress or modify the response before returning it to the user. When True, the response is considered problematic and may require further review or modification.
-                - escalated_to_sme (bool): True if the query should be escalated to Codex for SME review. When True, the query is logged and may be answered by an expert.
+                - escalated_to_sme (bool): True if the query should be escalated to SME for review. When True, the query is logged and may be answered by an expert.
                 - eval_scores (dict[str, ThresholdedEvalScore]): Evaluation scores for different response attributes (e.g., trustworthiness, helpfulness, ...). Each includes a numeric score and a `failed` flag indicating whether the score falls below threshold.
                 - expert_answer (str | None): If it was auto-determined that this query should be escalated to SME, and a prior SME answer for a similar query was found, then this will return that expert answer.  Otherwise, it is None.
 
