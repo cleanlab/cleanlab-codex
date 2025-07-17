@@ -38,7 +38,7 @@ class MissingProjectError(Exception):
 class Project:
     """Represents a Codex project.
 
-    To integrate a Codex project into your RAG/Agentic system, we recommend using one of our abstractions such as [`Validator`](/codex/api/python/validator).
+    To integrate a Codex project into your RAG/Agentic system, we recommend using the [`Project.validate()` method](/codex/api/python/project#method-validate).
     """
 
     def __init__(self, sdk_client: _Codex, project_id: str, *, verify_existence: bool = True):
