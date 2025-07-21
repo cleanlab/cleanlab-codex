@@ -176,7 +176,7 @@ class Project:
                 This must include the final user message that triggered the AI response. All other arguments—`query`, `context`, and `response`—
                 must correspond specifically to this final user message.
             response (ChatCompletion | str): Your AI-response that was generated based on the given `messages`. This is the response being evaluated, and should not appear in the `messages`.
-            query (str): The user query that the `response` is answering. This query should be the latest user message in `messages`.
+            query (str): The user query that the `response` is answering. This query should be in the latest user message in `messages`.
             context (str): The retrieved context (e.g., from your RAG system) that was supplied to the AI when generating the `response` to the final user query in `messages`.
             rewritten_query (str, optional): An optional reformulation of `query` (e.g. made self-contained w.r.t multi-turn conversations) to improve retrieval quality.
             metadata (object, optional): Arbitrary metadata to associate with this validation for logging or analysis inside the Codex project.
