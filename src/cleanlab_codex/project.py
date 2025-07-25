@@ -18,7 +18,7 @@ if _TYPE_CHECKING:
 
     from codex import Codex as _Codex
     from codex.types.project_validate_response import ProjectValidateResponse
-    from openai.types.chat import ChatCompletion, ChatCompletionMessageParam
+    from openai.types.chat import ChatCompletion, ChatCompletionMessageParam, ChatCompletionToolParam
 
 
 _ERROR_CREATE_ACCESS_KEY = (
@@ -154,6 +154,7 @@ class Project:
         context: str,
         rewritten_query: Optional[str] = None,
         metadata: Optional[object] = None,
+        tools: Optional[list[ChatCompletionToolParam]] = None,
         eval_scores: Optional[Dict[str, float]] = None,
     ) -> ProjectValidateResponse:
         """Evaluate the quality of an AI-generated response using the structured message history, query, and retrieved context.
@@ -180,6 +181,7 @@ class Project:
             context (str): The retrieved context (e.g., from your RAG system) that was supplied to the AI when generating the `response` to the final user query in `messages`.
             rewritten_query (str, optional): An optional reformulation of `query` (e.g. made self-contained w.r.t multi-turn conversations) to improve retrieval quality.
             metadata (object, optional): Arbitrary metadata to associate with this validation for logging or analysis inside the Codex project.
+            tools (list[ChatCompletionToolParam], optional): Optional tools that were used to generate the response. This is useful for validating correct tool usage in the response.
             eval_scores (dict[str, float], optional): Precomputed evaluation scores to bypass automatic scoring. Providing `eval_scores` for specific evaluations bypasses automated scoring and uses the supplied scores instead. Consider providing these scores if you already have them precomputed to reduce runtime.
 
         Returns:
@@ -201,6 +203,7 @@ class Project:
             query=query,
             rewritten_question=rewritten_query,
             custom_metadata=metadata,
+            tools=tools,
             eval_scores=eval_scores,
         )
 

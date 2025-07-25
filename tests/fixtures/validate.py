@@ -6,6 +6,7 @@ from openai.types.chat import (
     ChatCompletionAssistantMessageParam,
     ChatCompletionMessageParam,
     ChatCompletionSystemMessageParam,
+    ChatCompletionToolParam,
     ChatCompletionUserMessageParam,
 )
 
@@ -36,6 +37,25 @@ def openai_chat_completion() -> ChatCompletion:
     }
 
     return ChatCompletion.model_validate(raw_response)
+
+
+@pytest.fixture
+def openai_tools() -> list[ChatCompletionToolParam]:
+    """Fixture that returns a list containing one static fake OpenAI Tool object."""
+    raw_tool = {
+        "type": "function",
+        "function": {
+            "name": "get_weather",
+            "description": "Get the current weather in a given location.",
+            "parameters": {
+                "type": "object",
+                "properties": {"location": {"type": "string", "description": "The location to get the weather for."}},
+                "required": ["location"],
+            },
+        },
+    }
+    openai_tool = cast(ChatCompletionToolParam, raw_tool)
+    return [openai_tool]
 
 
 @pytest.fixture
