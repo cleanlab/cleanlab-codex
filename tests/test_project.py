@@ -75,6 +75,7 @@ def test_project_validate_with_dict_response(
         rewritten_question=None,
         custom_metadata=None,
         eval_scores=None,
+        tools=None,
     )
 
     # conversational
@@ -97,6 +98,7 @@ def test_project_validate_with_dict_response(
                 rewritten_question=None,
                 custom_metadata=None,
                 eval_scores=None,
+                tools=None,
             ),
             call(
                 FAKE_PROJECT_ID,
@@ -107,6 +109,7 @@ def test_project_validate_with_dict_response(
                 rewritten_question=None,
                 custom_metadata=None,
                 eval_scores=None,
+                tools=None,
             ),
         ]
     )
