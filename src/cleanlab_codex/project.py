@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING as _TYPE_CHECKING
 from typing import Dict, Optional, Union, cast
 
 from codex import AuthenticationError
-from codex.types.project_validate_params import Response
+from codex.types.project_validate_params import Response, Tool
 
 from cleanlab_codex.internal.analytics import _AnalyticsMetadata
 from cleanlab_codex.internal.sdk_client import client_from_access_key
@@ -194,7 +194,6 @@ class Project:
 
                 When available, consider swapping your AI response with the expert answer before serving the response to your user.
         """
-
         return self._sdk_client.projects.validate(
             self._id,
             messages=messages,
@@ -203,7 +202,7 @@ class Project:
             query=query,
             rewritten_question=rewritten_query,
             custom_metadata=metadata,
-            tools=tools,
+            tools=[cast(Tool, tool) for tool in tools] if tools else None,
             eval_scores=eval_scores,
         )
 
