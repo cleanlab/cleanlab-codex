@@ -4,6 +4,7 @@ from tests.fixtures.validate import (
     openai_messages_bad_no_user,
     openai_messages_conversational,
     openai_messages_single_turn,
+    openai_tools,
 )
 
 __all__ = [
@@ -14,4 +15,5 @@ __all__ = [
     "openai_messages_conversational",
     "openai_messages_single_turn",
     "openai_messages_bad_no_user",
+    "openai_tools",
 ]

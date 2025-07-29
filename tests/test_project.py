@@ -11,7 +11,7 @@ from codex.types.projects.access_key_retrieve_project_id_response import (
 )
 
 if TYPE_CHECKING:
-    from openai.types.chat import ChatCompletion, ChatCompletionMessageParam
+    from openai.types.chat import ChatCompletion, ChatCompletionMessageParam, ChatCompletionToolParam
 
 from cleanlab_codex.project import MissingProjectError, Project
 
@@ -75,6 +75,7 @@ def test_project_validate_with_dict_response(
         rewritten_question=None,
         custom_metadata=None,
         eval_scores=None,
+        tools=None,
     )
 
     # conversational
@@ -97,6 +98,7 @@ def test_project_validate_with_dict_response(
                 rewritten_question=None,
                 custom_metadata=None,
                 eval_scores=None,
+                tools=None,
             ),
             call(
                 FAKE_PROJECT_ID,
@@ -107,10 +109,67 @@ def test_project_validate_with_dict_response(
                 rewritten_question=None,
                 custom_metadata=None,
                 eval_scores=None,
+                tools=None,
             ),
         ]
     )
     assert mock_client_from_api_key.projects.validate.call_count == 2
+
+
+def test_project_validate_with_tools(
+    mock_client_from_api_key: MagicMock,
+    openai_chat_completion: "ChatCompletion",
+    openai_messages_single_turn: list["ChatCompletionMessageParam"],
+    openai_tools: list["ChatCompletionToolParam"],
+) -> None:
+    expected_result = ProjectValidateResponse(
+        is_bad_response=True,
+        expert_answer=None,
+        eval_scores={
+            "response_helpfulness": EvalScores(
+                score=0.8,
+                triggered=True,
+                triggered_escalation=False,
+                triggered_guardrail=False,
+            )
+        },
+        escalated_to_sme=True,
+        should_guardrail=False,
+    )
+    mock_client_from_api_key.projects.validate.return_value = expected_result
+    mock_client_from_api_key.projects.create.return_value.id = FAKE_PROJECT_ID
+    mock_client_from_api_key.organization_id = FAKE_ORGANIZATION_ID
+    project = Project.create(
+        mock_client_from_api_key,
+        FAKE_ORGANIZATION_ID,
+        FAKE_PROJECT_NAME,
+        FAKE_PROJECT_DESCRIPTION,
+    )
+
+    context = "Cities in France: Paris, Lyon, Marseille"
+    query = "What is the capitol of France?"
+
+    # single turn
+    result = project.validate(
+        messages=openai_messages_single_turn,
+        response=openai_chat_completion,
+        tools=openai_tools,
+        context=context,
+        query=query,
+    )
+
+    assert result == expected_result
+    mock_client_from_api_key.projects.validate.assert_called_once_with(
+        FAKE_PROJECT_ID,
+        messages=openai_messages_single_turn,
+        response=openai_chat_completion,
+        context=context,
+        query=query,
+        tools=openai_tools,
+        rewritten_question=None,
+        custom_metadata=None,
+        eval_scores=None,
+    )
 
 
 def test_from_access_key(mock_client_from_access_key: MagicMock) -> None:

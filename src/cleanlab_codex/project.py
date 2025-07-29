@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING as _TYPE_CHECKING
 from typing import Dict, Optional, Union, cast
 
 from codex import AuthenticationError
-from codex.types.project_validate_params import Response
+from codex.types.project_validate_params import Response, Tool
 
 from cleanlab_codex.internal.analytics import _AnalyticsMetadata
 from cleanlab_codex.internal.sdk_client import client_from_access_key
@@ -18,7 +18,7 @@ if _TYPE_CHECKING:
 
     from codex import Codex as _Codex
     from codex.types.project_validate_response import ProjectValidateResponse
-    from openai.types.chat import ChatCompletion, ChatCompletionMessageParam
+    from openai.types.chat import ChatCompletion, ChatCompletionMessageParam, ChatCompletionToolParam
 
 
 _ERROR_CREATE_ACCESS_KEY = (
@@ -154,6 +154,7 @@ class Project:
         context: str,
         rewritten_query: Optional[str] = None,
         metadata: Optional[object] = None,
+        tools: Optional[list[ChatCompletionToolParam]] = None,
         eval_scores: Optional[Dict[str, float]] = None,
     ) -> ProjectValidateResponse:
         """Evaluate the quality of an AI-generated `response` based on the same exact inputs that your LLM used to generate the response.
@@ -176,6 +177,7 @@ class Project:
             context (str): All retrieved context (e.g., from your RAG/retrieval/search system) that was supplied as part of `messages` for generating the LLM `response`. Specifying the `context` (as a part of the full `messages` object) enables Cleanlab to run certain Evals and display the retrieved context in the Web Inferface.
             rewritten_query (str, optional): An optional reformulation of `query` (e.g. to form a self-contained question out of a multi-turn conversation history) to improve retrieval quality. If you are using a query-rewriter in your RAG system, you can provide its output here. If not provided, Cleanlab may internally do its own query rewrite when necessary.
             metadata (object, optional): Arbitrary metadata to associate with this LLM `response` for logging/analytics inside the Project.
+            tools (list[ChatCompletionToolParam], optional): Optional definitions of tools that were provided to the LLM in the response-generation call. Should match the `tools` argument in OpenAI's Chat Completions API. When provided to the LLM, its response might be to call one of these tools rather than natural language.
             eval_scores (dict[str, float], optional): Pre-computed evaluation scores to bypass automatic scoring. Providing `eval_scores` for specific evaluations bypasses automated scoring and uses the supplied scores instead. If you already have them pre-computed, this can reduce runtime.
 
         Returns:
@@ -188,7 +190,6 @@ class Project:
 
                 When available, consider swapping your AI response with the expert answer before serving the response to your user.
         """
-
         return self._sdk_client.projects.validate(
             self._id,
             messages=messages,
@@ -197,6 +198,7 @@ class Project:
             query=query,
             rewritten_question=rewritten_query,
             custom_metadata=metadata,
+            tools=[cast(Tool, tool) for tool in tools] if tools else None,
             eval_scores=eval_scores,
         )
 
