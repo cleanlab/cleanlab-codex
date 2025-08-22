@@ -22,6 +22,7 @@ FAKE_PROJECT_NAME = "Test Project"
 FAKE_PROJECT_DESCRIPTION = "Test Description"
 DEFAULT_PROJECT_CONFIG = Config()
 DUMMY_ACCESS_KEY = "sk-1-EMOh6UrRo7exTEbEi8_azzACAEdtNiib2LLa1IGo6kA"
+FAKE_LOG_ID = str(uuid.uuid4())
 
 
 def test_project_validate_with_dict_response(
@@ -43,6 +44,7 @@ def test_project_validate_with_dict_response(
         },
         escalated_to_sme=True,
         should_guardrail=False,
+        log_id=FAKE_LOG_ID,
     )
     mock_client_from_api_key.projects.validate.return_value = expected_result
     mock_client_from_api_key.projects.create.return_value.id = FAKE_PROJECT_ID
@@ -135,6 +137,7 @@ def test_project_validate_with_tools(
         },
         escalated_to_sme=True,
         should_guardrail=False,
+        log_id=FAKE_LOG_ID,
     )
     mock_client_from_api_key.projects.validate.return_value = expected_result
     mock_client_from_api_key.projects.create.return_value.id = FAKE_PROJECT_ID

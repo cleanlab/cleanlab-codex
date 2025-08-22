@@ -216,3 +216,17 @@ class Project:
             answer=answer,
             extra_headers=_AnalyticsMetadata().to_headers(),
         )
+
+    def add_user_feedback(self, log_id: str, key: str) -> None:
+        """Add user feedback to a query logged in the project.
+
+        Args:
+            log_id (str): The ID of the query log to add feedback to.
+            key (str): A key describing the criteria of the feedback, eg 'rating'.
+        """
+        self._sdk_client.projects.query_logs.add_user_feedback(
+            project_id=self.id,
+            query_log_id=log_id,
+            key=key,
+            extra_headers=_AnalyticsMetadata().to_headers(),
+        )
