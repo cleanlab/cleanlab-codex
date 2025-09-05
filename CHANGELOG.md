@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.28] 2025-09-05
+
+- Update metadata support for query logs, `project.update_metadata()`
+
 ## [1.0.27] 2025-08-22
 
 - Add user feedback support for query logs, `project.add_user_feedback()`
@@ -128,7 +132,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial release of the `cleanlab-codex` client library.
 
-[Unreleased]: https://github.com/cleanlab/cleanlab-codex/compare/v1.0.27...HEAD
+[Unreleased]: https://github.com/cleanlab/cleanlab-codex/compare/v1.0.28...HEAD
+[1.0.28]: https://github.com/cleanlab/cleanlab-codex/compare/v1.0.27...v1.0.28
 [1.0.27]: https://github.com/cleanlab/cleanlab-codex/compare/v1.0.26...v1.0.27
 [1.0.26]: https://github.com/cleanlab/cleanlab-codex/compare/v1.0.25...v1.0.26
 [1.0.25]: https://github.com/cleanlab/cleanlab-codex/compare/v1.0.24...v1.0.25
