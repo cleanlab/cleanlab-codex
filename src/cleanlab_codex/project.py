@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from typing import TYPE_CHECKING as _TYPE_CHECKING
-from typing import Dict, Optional, Union, cast
+from typing import Any, Dict, Optional, Union, cast
 
 from codex import AuthenticationError
 from codex.types.project_validate_params import Response, Tool
@@ -228,5 +228,19 @@ class Project:
             project_id=self.id,
             query_log_id=log_id,
             key=key,
+            extra_headers=_AnalyticsMetadata().to_headers(),
+        )
+
+    def update_metadata(self, log_id: str, metadata: dict[str, Any]) -> None:
+        """Update the metadata of a query logged in the project, preserving existing metadata.
+
+        Args:
+            log_id (str): The ID of the query log to add feedback to.
+            metadata (dict[str, Any]): The metadata to update.
+        """
+        self._sdk_client.projects.query_logs.update_metadata(
+            project_id=self.id,
+            query_log_id=log_id,
+            body=metadata,
             extra_headers=_AnalyticsMetadata().to_headers(),
         )
