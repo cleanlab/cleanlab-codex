@@ -1,4 +1,4 @@
-"""Types for Codex projects."""
+"""Types for Cleanlab projects. Codex is the API interface to the Cleanlab AI Platform."""
 
 from codex.types.project_create_params import Config
 
@@ -9,7 +9,7 @@ class ProjectConfig(Config): ...
 
 
 ProjectConfig.__doc__ = f"""
-    Type representing options that can be configured for a Codex project.
+    Type representing options that can be configured for a Cleanlab project.
 
     {generate_class_docstring(Config, name=ProjectConfig.__name__)}
     ---
@@ -19,7 +19,7 @@ ProjectConfig.__doc__ = f"""
     Distance threshold used to determine if two questions in a project are similar.
     The metric used is cosine distance. Valid threshold values range from 0 (identical vectors) to 1 (orthogonal vectors).
     While cosine distance can extend to 2 (opposite vectors), we limit this value to 1 since finding matches that are less similar than "unrelated" (orthogonal)
-    content would not improve results of the system querying the Codex project.
+    content would not improve results of the system querying the Cleanlab project.
     """
 
 

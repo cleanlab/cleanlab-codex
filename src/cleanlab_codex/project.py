@@ -1,4 +1,4 @@
-"""Module for interacting with a Codex project."""
+"""Module for interacting with a Cleanlab project. Codex is the API interface to the Cleanlab AI Platform."""
 
 from __future__ import annotations
 
@@ -36,9 +36,9 @@ class MissingProjectError(Exception):
 
 
 class Project:
-    """Represents a Codex project.
+    """Represents a project in the Cleanlab AI Platform.
 
-    To integrate a Codex project into your RAG/Agentic system, we recommend using the [`Project.validate()` method](/codex/api/python/project#method-validate).
+    To integrate a Cleanlab project into your RAG/Agentic system, we recommend using the [`Project.validate()` method](/codex/api/python/project#method-validate).
     """
 
     def __init__(self, sdk_client: _Codex, project_id: str, *, verify_existence: bool = True):
@@ -90,7 +90,7 @@ class Project:
         name: str,
         description: str | None = None,
     ) -> Project:
-        """Create a new Codex project. This method is not meant to be used directly. Instead, use the [`create_project`](/codex/api/python/client#method-create_project) method on the `Client` class.
+        """Create a new project. This method is not meant to be used directly. Instead, use the [`create_project`](/codex/api/python/client#method-create_project) method on the `Client` class.
 
         Args:
             sdk_client (Codex): The Codex SDK client to use to create the project. This client must be authenticated with a user-level API key.
