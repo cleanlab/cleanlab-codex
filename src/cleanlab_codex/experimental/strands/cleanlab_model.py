@@ -2,21 +2,22 @@ from __future__ import annotations
 
 import json
 import warnings
-from typing import TYPE_CHECKING, Any, AsyncGenerator, AsyncIterable, Optional, Type, TypeVar, Union
+from typing import TYPE_CHECKING, Any, AsyncGenerator, AsyncIterable, Optional, Type, TypeVar, Union, cast
 
 from cleanlab_tlm.utils.chat import form_response_string_chat_completions_api
+from openai.types.chat import ChatCompletionMessageParam, ChatCompletionToolParam
 
-from strands.models.model import Model
-from strands.models.openai import OpenAIModel
-from strands.types.tools import ToolSpec, ToolUse
+from strands.models.model import Model  # type: ignore[import-not-found]
+from strands.models.openai import OpenAIModel  # type: ignore[import-not-found]
+from strands.types.tools import ToolSpec, ToolUse  # type: ignore[import-not-found]
 
 if TYPE_CHECKING:
     from codex.types.project_validate_response import ProjectValidateResponse
 
     from cleanlab_codex import Project
-    from strands.agent.agent import Agent
-    from strands.types.content import ContentBlock, Messages
-    from strands.types.streaming import StreamEvent
+    from strands.agent.agent import Agent  # type: ignore[import-not-found]
+    from strands.types.content import ContentBlock, Messages  # type: ignore[import-not-found]
+    from strands.types.streaming import StreamEvent  # type: ignore[import-not-found]
 
 T = TypeVar("T")
 OPENAI_TEXT_PART_TYPES = {"text", "output_text", "input_text"}
@@ -44,7 +45,7 @@ def get_tool_result_as_text(messages: Messages, tool_name: str) -> str:
     last_user_idx = get_latest_user_or_tool_message_index(messages)
     last_user_msg = messages[last_user_idx] if last_user_idx is not None else None
 
-    if not last_user_msg:
+    if not last_user_msg or last_user_idx is None:
         return ""
 
     # 2. Find the immediately preceding assistant message (tool calls)
@@ -173,9 +174,9 @@ def _convert_strands_content_to_openai_format(collected_content: list[ContentBlo
 
     assistant_message = {"role": "assistant"}
     if content_blocks:
-        assistant_message["content"] = content_blocks
+        assistant_message["content"] = content_blocks  # type: ignore[assignment]
     if tool_calls:
-        assistant_message["tool_calls"] = tool_calls
+        assistant_message["tool_calls"] = tool_calls  # type: ignore[assignment]
 
     return assistant_message
 
@@ -241,7 +242,7 @@ def _extract_text(message: dict[str, Any]) -> str:
 
 
 # ============ Cleanlab Model Wrapper ============
-class CleanlabModel(Model):
+class CleanlabModel(Model):  # type: ignore[misc]
     """Model wrapper that validates responses using Cleanlab."""
 
     def __init__(
@@ -276,7 +277,7 @@ class CleanlabModel(Model):
         Args:
             **model_config: Configuration parameters to update
         """
-        return self.underlying_model.update_config(**model_config)
+        self.underlying_model.update_config(**model_config)
 
     def get_config(self) -> Any:
         """
@@ -313,7 +314,7 @@ class CleanlabModel(Model):
     def _get_session_id(self) -> Optional[str]:
         """Get session ID from agent if available."""
         if self._agent_ref and hasattr(self._agent_ref, "_session_manager"):
-            session_manager = getattr(self._agent_ref, "_session_manager", None)  # type: ignore[SLF001]
+            session_manager = getattr(self._agent_ref, "_session_manager", None)
             if session_manager and hasattr(session_manager, "session_id"):
                 return session_manager.session_id
         return None
@@ -517,8 +518,10 @@ class CleanlabModel(Model):
             eval_scores = {"trustworthiness": 1.0, "response_helpfulness": 1.0}
             validation_results = self.cleanlab_project.validate(
                 response=form_response_string_chat_completions_api(openai_collected_content),
-                messages=convert_strands_messages_for_cleanlab(messages),
-                tools=convert_strands_tools_to_openai_format(tool_specs),
+                messages=cast(list[ChatCompletionMessageParam], convert_strands_messages_for_cleanlab(messages)),
+                tools=cast(list[ChatCompletionToolParam], convert_strands_tools_to_openai_format(tool_specs))
+                if tool_specs
+                else None,
                 metadata={"thread_id": session_id, "stop_reason": stop_reason},
                 eval_scores=eval_scores,
                 **validate_fields,
@@ -526,8 +529,10 @@ class CleanlabModel(Model):
         else:
             validation_results = self.cleanlab_project.validate(
                 response=form_response_string_chat_completions_api(openai_collected_content),
-                messages=convert_strands_messages_for_cleanlab(messages),
-                tools=convert_strands_tools_to_openai_format(tool_specs),
+                messages=cast(list[ChatCompletionMessageParam], convert_strands_messages_for_cleanlab(messages)),
+                tools=cast(list[ChatCompletionToolParam], convert_strands_tools_to_openai_format(tool_specs))
+                if tool_specs
+                else None,
                 metadata={"thread_id": session_id, "stop_reason": stop_reason},
                 **validate_fields,
             )
@@ -598,7 +603,7 @@ class CleanlabModel(Model):
             return [{"text": final_response}], is_replaced
         return initial_response, is_replaced
 
-    def cleanlab_get_validate_fields(self, messages: Messages) -> dict[str, str]:
+    def cleanlab_get_validate_fields(self, messages: Messages) -> dict[str, Any]:
         """
         Extract query and context fields from Strands messages for cleanlab validation.
 
