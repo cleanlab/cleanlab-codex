@@ -202,6 +202,7 @@ def get_latest_user_message_content(messages: Messages) -> str:
             and msg["content"][0].get("text")
         ):
             user_message = msg["content"][0]["text"].lower()
+            break
 
     return user_message
 
