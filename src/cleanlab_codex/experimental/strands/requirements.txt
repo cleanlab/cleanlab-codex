@@ -1,0 +1,9 @@
+# Requirements for cleanlab_codex strands integration
+# Core dependencies
+cleanlab-tlm>=1.1.14
+openai
+strands
+
+# Parent package dependencies  
+cleanlab-codex
+codex-sdk
