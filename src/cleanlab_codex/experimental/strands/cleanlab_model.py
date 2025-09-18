@@ -6,18 +6,17 @@ from typing import TYPE_CHECKING, Any, AsyncGenerator, AsyncIterable, Optional, 
 
 from cleanlab_tlm.utils.chat import form_response_string_chat_completions_api
 from openai.types.chat import ChatCompletionMessageParam, ChatCompletionToolParam
-
 from strands.models.model import Model  # type: ignore[import-not-found]
 from strands.models.openai import OpenAIModel  # type: ignore[import-not-found]
 from strands.types.tools import ToolSpec, ToolUse  # type: ignore[import-not-found]
 
 if TYPE_CHECKING:
     from codex.types.project_validate_response import ProjectValidateResponse
-
-    from cleanlab_codex import Project
     from strands.agent.agent import Agent  # type: ignore[import-not-found]
     from strands.types.content import ContentBlock, Messages  # type: ignore[import-not-found]
     from strands.types.streaming import StreamEvent  # type: ignore[import-not-found]
+
+    from cleanlab_codex import Project
 
 T = TypeVar("T")
 OPENAI_TEXT_PART_TYPES = {"text", "output_text", "input_text"}
