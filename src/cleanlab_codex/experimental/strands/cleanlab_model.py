@@ -1,3 +1,5 @@
+"""Methods to integrate with AI Agents built using the AWS Strands framework."""
+
 from __future__ import annotations
 
 import json
@@ -5,13 +7,13 @@ import warnings
 from typing import TYPE_CHECKING, Any, AsyncGenerator, AsyncIterable, Optional, Type, TypeVar, Union, cast
 
 from cleanlab_tlm.utils.chat import form_response_string_chat_completions_api
-from openai.types.chat import ChatCompletionMessageParam, ChatCompletionToolParam
 from strands.models.model import Model  # type: ignore[import-not-found]
 from strands.models.openai import OpenAIModel  # type: ignore[import-not-found]
 from strands.types.tools import ToolSpec, ToolUse  # type: ignore[import-not-found]
 
 if TYPE_CHECKING:
     from codex.types.project_validate_response import ProjectValidateResponse
+    from openai.types.chat import ChatCompletionMessageParam, ChatCompletionToolParam
     from strands.agent.agent import Agent  # type: ignore[import-not-found]
     from strands.types.content import ContentBlock, Messages  # type: ignore[import-not-found]
     from strands.types.streaming import StreamEvent  # type: ignore[import-not-found]
@@ -518,8 +520,8 @@ class CleanlabModel(Model):  # type: ignore[misc]
             eval_scores = {"trustworthiness": 1.0, "response_helpfulness": 1.0}
             validation_results = self.cleanlab_project.validate(
                 response=form_response_string_chat_completions_api(openai_collected_content),
-                messages=cast(list[ChatCompletionMessageParam], convert_strands_messages_for_cleanlab(messages)),
-                tools=cast(list[ChatCompletionToolParam], convert_strands_tools_to_openai_format(tool_specs))
+                messages=cast(list["ChatCompletionMessageParam"], convert_strands_messages_for_cleanlab(messages)),
+                tools=cast(list["ChatCompletionToolParam"], convert_strands_tools_to_openai_format(tool_specs))
                 if tool_specs
                 else None,
                 metadata={"thread_id": session_id, "stop_reason": stop_reason},
@@ -529,8 +531,8 @@ class CleanlabModel(Model):  # type: ignore[misc]
         else:
             validation_results = self.cleanlab_project.validate(
                 response=form_response_string_chat_completions_api(openai_collected_content),
-                messages=cast(list[ChatCompletionMessageParam], convert_strands_messages_for_cleanlab(messages)),
-                tools=cast(list[ChatCompletionToolParam], convert_strands_tools_to_openai_format(tool_specs))
+                messages=cast(list["ChatCompletionMessageParam"], convert_strands_messages_for_cleanlab(messages)),
+                tools=cast(list["ChatCompletionToolParam"], convert_strands_tools_to_openai_format(tool_specs))
                 if tool_specs
                 else None,
                 metadata={"thread_id": session_id, "stop_reason": stop_reason},
