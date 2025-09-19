@@ -86,6 +86,7 @@ parallel = true
 omit = [
   "src/cleanlab_codex/__about__.py",
   "*/tests/*",
+  "src/cleanlab_codex/experimental/*",
 ]
 
 [tool.coverage.paths]
