@@ -517,7 +517,13 @@ class CleanlabModel(Model):  # type: ignore[misc]
         if (
             len(openai_collected_content.get("tool_calls", [])) > 0 and self.skip_validating_tool_calls
         ):  # assistant message with tool calls
-            eval_scores = {"trustworthiness": 1.0, "response_helpfulness": 1.0}
+            eval_scores = {
+                "trustworthiness": 1.0,
+                "response_helpfulness": 1.0,
+                "context_sufficiency": 1.0,
+                "query_ease": 1.0,
+                "response_groundedness": 1.0,
+            }
             validation_results = self.cleanlab_project.validate(
                 response=form_response_string_chat_completions_api(openai_collected_content),
                 messages=cast(list["ChatCompletionMessageParam"], convert_strands_messages_for_cleanlab(messages)),

@@ -1,9 +1,10 @@
 # Requirements for cleanlab_codex strands integration
-# Core dependencies
+# Core runtime dependencies
 cleanlab-tlm>=1.1.14
-openai
-strands
+strands-agents
+"strands-agents[openai]"
 
-# Parent package dependencies  
-cleanlab-codex
-codex-sdk
+# Type checking only (optional - not needed at runtime)
+# cleanlab-codex  # Only needed for Project type hints
+# codex-sdk      # Only needed for ProjectValidateResponse type hints  
+# openai         # Only needed for OpenAI type hints
