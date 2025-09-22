@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.0.29] 2025-09-19
 
+- Add experimental Strands API Integration with Codex
 - Upgrade codex-python version
 
 ## [1.0.28] 2025-09-05
