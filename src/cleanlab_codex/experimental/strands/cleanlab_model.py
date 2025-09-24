@@ -600,7 +600,7 @@ class CleanlabModel(Model):  # type: ignore[misc]
 
         is_replaced = False
         final_response = initial_response
-        if results.expert_answer and results.escalated_to_sme:
+        if results.expert_answer:  # and results.escalated_to_sme:  (Note: uncomment this to utilize Cleanlab Expert-Answers solely as a backup)
             final_response = results.expert_answer
             is_replaced = True
         elif results.should_guardrail:
