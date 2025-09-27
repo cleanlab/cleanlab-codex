@@ -1,4 +1,4 @@
-"""Cleanlab response rewriting hook V3 - Fixed text extraction for all response types."""
+"""Methods to integrate with AI Agents built using the OpenAI Agents framework."""
 
 from __future__ import annotations
 
@@ -26,6 +26,7 @@ from cleanlab_codex.experimental.openai_agents.utils import (
 
 
 def _cleanlab_string_to_response_output_message(text: str, message_id: str | None = None) -> ResponseOutputMessage:
+    """Convert text to OpenAI response output message format."""
     if message_id is None:
         message_id = f"msg_cleanlab{secrets.token_hex(16)}"  # TODO: Add support for marking cleanlab responses beyond adding cleanlab to ID
     return ResponseOutputMessage(
@@ -121,6 +122,7 @@ class CleanlabHook(RunHooks[TContext]):
         return bool(self._get_latest_response_text(response).strip())
 
     def _get_latest_response_text(self, response: ModelResponse) -> str:
+        """Extract text content from model response."""
         if self._latest_response_text is None:
             self._latest_response_text = form_response_string_responses_api_from_response(response)
         return self._latest_response_text
