@@ -148,7 +148,7 @@ class CleanlabHook(RunHooks[TContext]):
 
     async def _cleanlab_validate(
         self, response: ModelResponse, context: RunContextWrapper[TContext], agent: Any
-    ) -> ProjectValidateResponse | None:
+    ) -> ProjectValidateResponse:
         """Validate the model response using Cleanlab with actual conversation history."""
         # Step 1 - Convert hook items to Cleanlab format
         tools_dict = (
@@ -214,7 +214,7 @@ class CleanlabHook(RunHooks[TContext]):
         }
 
     async def cleanlab_get_final_response(
-        self, response: ModelResponse, validation_result: ProjectValidateResponse | None
+        self, response: ModelResponse, validation_result: ProjectValidateResponse
     ) -> None:
         """
         Determine the final response content based on cleanlab validation results.
@@ -230,9 +230,6 @@ class CleanlabHook(RunHooks[TContext]):
         Returns:
             Tuple of (final_content, was_replaced_flag)
         """
-        if validation_result is None:
-            return
-
         replacement_text = None
         if validation_result.expert_answer:
             replacement_text = validation_result.expert_answer
