@@ -1,4 +1,4 @@
-"""Methods to integrate with AI Agents built using the OpenAI Agents framework."""
+"""Methods to integrate with AI Agents built using the OpenAI Agents SDK."""
 
 from __future__ import annotations
 
