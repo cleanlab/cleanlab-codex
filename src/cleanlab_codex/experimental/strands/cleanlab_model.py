@@ -109,7 +109,7 @@ def convert_strands_tools_to_openai_format(tool_specs: list[dict[str, Any]]) -> 
     ]
 
 
-def convert_strands_messages_for_cleanlab(messages: Messages) -> list[dict[str, Any]]:
+def convert_strands_messages_for_cleanlab(messages: Messages, system_prompt: str | None) -> list[dict[str, Any]]:
     """
     Convert Strands message format to cleanlab validation format.
 
@@ -158,6 +158,9 @@ def convert_strands_messages_for_cleanlab(messages: Messages) -> list[dict[str, 
         else:
             formatted_message = OpenAIModel.format_request_messages([message])[0]
             cleanlab_messages.append(formatted_message)
+
+    if system_prompt is not None:
+        cleanlab_messages.insert(0, {"role": "system", "content": system_prompt})
 
     return cleanlab_messages
 
@@ -504,6 +507,7 @@ class CleanlabModel(Model):  # type: ignore[misc]
         collected_content: list[ContentBlock],
         tool_specs: list[dict[str, Any]],
         stop_reason: str,
+        system_prompt: str | None = None,
     ) -> tuple[ProjectValidateResponse, list[ContentBlock], bool]:
         """Validate response and return (results, content, is_replaced)."""
         session_id = self._get_session_id()
@@ -517,7 +521,7 @@ class CleanlabModel(Model):  # type: ignore[misc]
         if (
             len(openai_collected_content.get("tool_calls", [])) > 0 and self.skip_validating_tool_calls
         ):  # assistant message with tool calls
-            eval_scores = {
+            eval_scores = {  # TODO: make compatible with custom guardrails
                 "trustworthiness": 1.0,
                 "response_helpfulness": 1.0,
                 "context_sufficiency": 1.0,
@@ -526,7 +530,10 @@ class CleanlabModel(Model):  # type: ignore[misc]
             }
             validation_results = self.cleanlab_project.validate(
                 response=form_response_string_chat_completions_api(openai_collected_content),
-                messages=cast(list["ChatCompletionMessageParam"], convert_strands_messages_for_cleanlab(messages)),
+                messages=cast(
+                    list["ChatCompletionMessageParam"],
+                    convert_strands_messages_for_cleanlab(messages, system_prompt=system_prompt),
+                ),
                 tools=cast(list["ChatCompletionToolParam"], convert_strands_tools_to_openai_format(tool_specs))
                 if tool_specs
                 else None,
@@ -537,7 +544,10 @@ class CleanlabModel(Model):  # type: ignore[misc]
         else:
             validation_results = self.cleanlab_project.validate(
                 response=form_response_string_chat_completions_api(openai_collected_content),
-                messages=cast(list["ChatCompletionMessageParam"], convert_strands_messages_for_cleanlab(messages)),
+                messages=cast(
+                    list["ChatCompletionMessageParam"],
+                    convert_strands_messages_for_cleanlab(messages, system_prompt=system_prompt),
+                ),
                 tools=cast(list["ChatCompletionToolParam"], convert_strands_tools_to_openai_format(tool_specs))
                 if tool_specs
                 else None,
@@ -694,7 +704,7 @@ class CleanlabModel(Model):  # type: ignore[misc]
 
         # Step 2: Validate the complete message content once
         validation_results, replacement_content, is_replaced = self._cleanlab_validate(
-            messages, message_content, tool_specs or [], final_stop_reason
+            messages, message_content, tool_specs or [], final_stop_reason, system_prompt
         )
 
         # Step 3: Clean up messages history of current chat turn's tool calls if response was replaced with fallback or expert answer
