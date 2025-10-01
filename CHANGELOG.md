@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.30] 2025-10-01
+
+- Update API reference language from Codex -> Cleanlab AI Platform
+
 ## [1.0.29] 2025-09-19
 
 - Add experimental Strands API Integration with Codex
@@ -137,7 +141,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial release of the `cleanlab-codex` client library.
 
-[Unreleased]: https://github.com/cleanlab/cleanlab-codex/compare/v1.0.29...HEAD
+[Unreleased]: https://github.com/cleanlab/cleanlab-codex/compare/v1.0.30...HEAD
+[1.0.30]: https://github.com/cleanlab/cleanlab-codex/compare/v1.0.29...v1.0.30
 [1.0.29]: https://github.com/cleanlab/cleanlab-codex/compare/v1.0.28...v1.0.29
 [1.0.28]: https://github.com/cleanlab/cleanlab-codex/compare/v1.0.27...v1.0.28
 [1.0.27]: https://github.com/cleanlab/cleanlab-codex/compare/v1.0.26...v1.0.27
