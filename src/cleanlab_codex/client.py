@@ -1,4 +1,4 @@
-"""Client for interacting with Cleanlab Codex."""
+"""Codex Client for interacting with the Cleanlab AI Platform. Codex is the API interface to the Cleanlab AI Platform."""
 
 from __future__ import annotations
 
@@ -15,9 +15,9 @@ if _TYPE_CHECKING:
 
 class Client:
     """
-    Client for interacting with Cleanlab Codex. In order to use this client, make sure you have an account at [codex.cleanlab.ai](https://codex.cleanlab.ai).
+    Codex Client for interacting with the Cleanlab AI Platform. In order to use this client, make sure you have an account at [codex.cleanlab.ai](https://codex.cleanlab.ai).
 
-    We recommend using the [Web UI](https://codex.cleanlab.ai) to [set up Codex projects](/codex/web_tutorials/create_project), but you can also use this client to programmatically set up Codex projects.
+    We recommend using the [Web UI](https://codex.cleanlab.ai) to [set up Cleanlab projects](/codex/web_tutorials/create_project), but you can also use this client to programmatically set up Cleanlab projects.
     """
 
     def __init__(self, api_key: str | None = None, organization_id: Optional[str] = None):
@@ -56,7 +56,7 @@ class Client:
         return Project(self._client, project_id)
 
     def create_project(self, name: str, description: Optional[str] = None) -> Project:
-        """Create a new Codex project. Project will be created in the organization the client is using.
+        """Create a new Cleanlab project. Project will be created in the organization the client is using.
 
         Args:
             name (str): The name of the project.
