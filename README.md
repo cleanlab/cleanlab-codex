@@ -18,8 +18,8 @@ pip install cleanlab-codex
 Integrating Codex into your RAG application is as simple as:
 
 ```python
-from cleanlab_codex import Validator
-validator = Validator(codex_access_key=...) # optional configurations can improve accuracy/latency
+from cleanlab_codex import Project
+project = Project.from_access_key(...)
 
 # Your existing RAG code:
 context = rag_retrieve_context(user_query)
@@ -27,12 +27,12 @@ prompt = rag_form_prompt(user_query, retrieved_context)
 response = rag_generate_response(prompt)
 
 # Detect bad responses and remediate with Cleanlab
-results = validator.validate(query=query, context=context, response=response,
-    form_prompt=rag_form_prompt)
+results = project.validate(query=query, context=context, response=response,
+    messages=[..., prompt])
 
 final_response = (
     results["expert_answer"] # Codex's answer
-    if results["is_bad_response"] and results["expert_answer"]
+    if results["expert_answer"] is not None
     else response # Your RAG system's initial response
 )
 ```
