@@ -18,7 +18,11 @@ if _TYPE_CHECKING:
 
     from codex import Codex as _Codex
     from codex.types.project_validate_response import ProjectValidateResponse
-    from openai.types.chat import ChatCompletion, ChatCompletionMessageParam, ChatCompletionToolParam
+    from openai.types.chat import (
+        ChatCompletion,
+        ChatCompletionMessageParam,
+        ChatCompletionToolParam,
+    )
 
 
 _ERROR_CREATE_ACCESS_KEY = (
@@ -187,6 +191,8 @@ class Project:
                 - escalated_to_sme (bool): True if the query should be escalated to SME for review. When True, the query is logged and may be answered by an expert.
                 - eval_scores (dict[str, ThresholdedEvalScore]): Evaluation scores for different response attributes (e.g., trustworthiness, helpfulness, ...). Each includes a numeric score and a `failed` flag indicating whether the score falls below threshold.
                 - expert_answer (str | None): If it was auto-determined that this query should be escalated to SME, and a prior SME answer for a similar query was found, then this will return that expert answer.  Otherwise, it is None.
+                - expert_guardrail_override_explanation (str | None): If the final guardrail decision was overridden by expert review, this will contain an explanation for why the guardrail result was overridden. Otherwise, it is None.
+                - log_id (str): The ID of the log created for this query.
 
                 When available, consider swapping your AI response with the expert answer before serving the response to your user.
         """

@@ -32,8 +32,8 @@ def test_project_validate_with_dict_response(
     openai_messages_conversational: list["ChatCompletionMessageParam"],
 ) -> None:
     expected_result = ProjectValidateResponse(
-        is_bad_response=True,
         expert_answer=None,
+        expert_guardrail_override_explanation=None,
         eval_scores={
             "response_helpfulness": EvalScores(
                 score=0.8,
@@ -125,7 +125,7 @@ def test_project_validate_with_tools(
     openai_tools: list["ChatCompletionToolParam"],
 ) -> None:
     expected_result = ProjectValidateResponse(
-        is_bad_response=True,
+        expert_guardrail_override_explanation=None,
         expert_answer=None,
         eval_scores={
             "response_helpfulness": EvalScores(
