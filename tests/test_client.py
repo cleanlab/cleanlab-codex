@@ -63,6 +63,7 @@ def test_create_project_without_description(
         organization_id=FAKE_ORGANIZATION_ID,
         updated_at=datetime.now(),
         description=None,
+        is_template=False,
     )
     client = Client(DUMMY_API_KEY, organization_id=FAKE_ORGANIZATION_ID)
     project = client.create_project(FAKE_PROJECT_NAME)  # no description
@@ -126,6 +127,7 @@ def test_create_project(mock_client_from_api_key: MagicMock, default_headers: di
         organization_id=FAKE_ORGANIZATION_ID,
         updated_at=datetime.now(),
         description=FAKE_PROJECT_DESCRIPTION,
+        is_template=False,
     )
     mock_client_from_api_key.organization_id = FAKE_ORGANIZATION_ID
     codex = Client(DUMMY_API_KEY, organization_id=FAKE_ORGANIZATION_ID)
@@ -151,6 +153,7 @@ def test_get_project(mock_client_from_api_key: MagicMock) -> None:
         organization_id=FAKE_ORGANIZATION_ID,
         updated_at=datetime.now(),
         description=FAKE_PROJECT_DESCRIPTION,
+        is_template=False,
     )
 
     project = Client(DUMMY_API_KEY, organization_id=FAKE_ORGANIZATION_ID).get_project(FAKE_PROJECT_ID)
