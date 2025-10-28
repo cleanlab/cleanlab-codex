@@ -68,6 +68,24 @@ class Client:
 
         return Project.create(self._client, self._organization_id, name, description)
 
+    def create_project_from_template(
+        self,
+        template_project_id: str,
+        name: str | None = None,
+        description: str | None = None,
+    ) -> Project:
+        """Create a new project from a template. Project will be created in the organization the client is using.
+
+        Args:
+            template_project_id (str): The ID of the template project to create the project from.
+            name (str, optional): Optional name for the project. If not provided, the name will be the same as the template project.
+            description (str, optional): Optional description for the project. If not provided, the description will be the same as the template project.
+
+        Returns:
+            Project: The created project.
+        """
+        return Project.create_from_template(self._client, self._organization_id, template_project_id, name, description)
+
     def list_organizations(self) -> list[Organization]:
         """List the organizations the authenticated user is a member of.
 

@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.32] 2025-10-28
+
+- Add `Client.create_project_from_template()` method to create a new project from a template
+- Add `Project.create_from_template()` method to create a new project from a template
+
 ## [1.0.31] 2025-10-14
 
 - Add `expert_guardrail_override_explanation` and `log_id` to `ProjectValidateResponse` docstring
@@ -145,7 +150,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial release of the `cleanlab-codex` client library.
 
-[Unreleased]: https://github.com/cleanlab/cleanlab-codex/compare/v1.0.31...HEAD
+[Unreleased]: https://github.com/cleanlab/cleanlab-codex/compare/v1.0.32...HEAD
+[1.0.32]: https://github.com/cleanlab/cleanlab-codex/compare/v1.0.31...v1.0.32
 [1.0.31]: https://github.com/cleanlab/cleanlab-codex/compare/v1.0.30...v1.0.31
 [1.0.30]: https://github.com/cleanlab/cleanlab-codex/compare/v1.0.29...v1.0.30
 [1.0.29]: https://github.com/cleanlab/cleanlab-codex/compare/v1.0.28...v1.0.29

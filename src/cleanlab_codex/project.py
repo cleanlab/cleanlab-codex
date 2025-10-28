@@ -118,6 +118,36 @@ class Project:
 
         return Project(sdk_client, project_id, verify_existence=False)
 
+    @classmethod
+    def create_from_template(
+        cls,
+        sdk_client: _Codex,
+        organization_id: str,
+        template_project_id: str,
+        name: str | None = None,
+        description: str | None = None,
+    ) -> Project:
+        """Create a new project from a template.
+
+        Args:
+            sdk_client (Codex): The Codex SDK client to use to create the project. This client must be authenticated with a user-level API key.
+            organization_id (str): The ID of the organization to create the project in.
+            template_project_id (str): The ID of the template project to create the project from.
+            name (str, optional): Optional name for the project. If not provided, the name will be the same as the template project.
+            description (str, optional): Optional description for the project. If not provided, the description will be the same as the template project.
+
+        Returns:
+            Project: The created project.
+        """
+        project_id = sdk_client.projects.create_from_template(
+            organization_id=organization_id,
+            template_project_id=template_project_id,
+            name=name,
+            description=description,
+            extra_headers=_AnalyticsMetadata().to_headers(),
+        ).id
+        return Project(sdk_client, project_id, verify_existence=False)
+
     def create_access_key(
         self,
         name: str,

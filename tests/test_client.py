@@ -8,7 +8,9 @@ import pytest
 from codex import AuthenticationError
 from codex.types.project_return_schema import Config as ProjectReturnConfig
 from codex.types.project_return_schema import ProjectReturnSchema
-from codex.types.users.myself.user_organizations_schema import Organization as SDKOrganization
+from codex.types.users.myself.user_organizations_schema import (
+    Organization as SDKOrganization,
+)
 from codex.types.users.myself.user_organizations_schema import UserOrganizationsSchema
 
 from cleanlab_codex.client import Client
@@ -22,6 +24,7 @@ FAKE_PROJECT_NAME = "Test Project"
 FAKE_PROJECT_DESCRIPTION = "Test Description"
 DEFAULT_PROJECT_CONFIG = ProjectConfig()
 DUMMY_API_KEY = "GP0FzPfA7wYy5L64luII2YaRT2JoSXkae7WEo7dH6Bw"
+FAKE_TEMPLATE_PROJECT_ID = str(uuid.uuid4())
 
 
 def test_client_uses_default_organization(mock_client_from_api_key: MagicMock) -> None:
@@ -41,7 +44,9 @@ def test_client_uses_default_organization(mock_client_from_api_key: MagicMock) -
     assert client.organization_id == default_org_id
 
 
-def test_client_uses_specified_organization(mock_client_from_api_key: MagicMock) -> None:
+def test_client_uses_specified_organization(
+    mock_client_from_api_key: MagicMock,
+) -> None:
     """Test that client uses specified organization ID"""
     specified_org_id = "specified-org-id"
     client = Client(DUMMY_API_KEY, organization_id=specified_org_id)
@@ -63,6 +68,7 @@ def test_create_project_without_description(
         organization_id=FAKE_ORGANIZATION_ID,
         updated_at=datetime.now(),
         description=None,
+        is_template=False,
     )
     client = Client(DUMMY_API_KEY, organization_id=FAKE_ORGANIZATION_ID)
     project = client.create_project(FAKE_PROJECT_NAME)  # no description
@@ -126,6 +132,7 @@ def test_create_project(mock_client_from_api_key: MagicMock, default_headers: di
         organization_id=FAKE_ORGANIZATION_ID,
         updated_at=datetime.now(),
         description=FAKE_PROJECT_DESCRIPTION,
+        is_template=False,
     )
     mock_client_from_api_key.organization_id = FAKE_ORGANIZATION_ID
     codex = Client(DUMMY_API_KEY, organization_id=FAKE_ORGANIZATION_ID)
@@ -151,6 +158,7 @@ def test_get_project(mock_client_from_api_key: MagicMock) -> None:
         organization_id=FAKE_ORGANIZATION_ID,
         updated_at=datetime.now(),
         description=FAKE_PROJECT_DESCRIPTION,
+        is_template=False,
     )
 
     project = Client(DUMMY_API_KEY, organization_id=FAKE_ORGANIZATION_ID).get_project(FAKE_PROJECT_ID)
@@ -158,3 +166,28 @@ def test_get_project(mock_client_from_api_key: MagicMock) -> None:
 
     assert mock_client_from_api_key.projects.retrieve.call_count == 1
     assert mock_client_from_api_key.projects.retrieve.call_args[0][0] == FAKE_PROJECT_ID
+
+
+def test_create_project_from_template(mock_client_from_api_key: MagicMock, default_headers: dict[str, str]) -> None:
+    mock_client_from_api_key.projects.create_from_template.return_value = ProjectReturnSchema(
+        id=FAKE_PROJECT_ID,
+        config=ProjectReturnConfig(),
+        created_at=datetime.now(),
+        created_by_user_id=FAKE_USER_ID,
+        name=FAKE_PROJECT_NAME,
+        organization_id=FAKE_ORGANIZATION_ID,
+        updated_at=datetime.now(),
+        description=FAKE_PROJECT_DESCRIPTION,
+        is_template=False,
+    )
+    mock_client_from_api_key.organization_id = FAKE_ORGANIZATION_ID
+    codex = Client(DUMMY_API_KEY, organization_id=FAKE_ORGANIZATION_ID)
+    project = codex.create_project_from_template(FAKE_TEMPLATE_PROJECT_ID, FAKE_PROJECT_NAME, FAKE_PROJECT_DESCRIPTION)
+    mock_client_from_api_key.projects.create_from_template.assert_called_once_with(
+        organization_id=FAKE_ORGANIZATION_ID,
+        template_project_id=FAKE_TEMPLATE_PROJECT_ID,
+        name=FAKE_PROJECT_NAME,
+        description=FAKE_PROJECT_DESCRIPTION,
+        extra_headers=default_headers,
+    )
+    assert project.id == FAKE_PROJECT_ID
