@@ -23,6 +23,7 @@ FAKE_PROJECT_DESCRIPTION = "Test Description"
 DEFAULT_PROJECT_CONFIG = Config()
 DUMMY_ACCESS_KEY = "sk-1-EMOh6UrRo7exTEbEi8_azzACAEdtNiib2LLa1IGo6kA"
 FAKE_LOG_ID = str(uuid.uuid4())
+FAKE_TEMPLATE_PROJECT_ID = str(uuid.uuid4())
 
 
 def test_project_validate_with_dict_response(
@@ -216,6 +217,24 @@ def test_create_project(mock_client_from_api_key: MagicMock, default_headers: di
     )
     assert project.id == FAKE_PROJECT_ID
     assert mock_client_from_api_key.projects.retrieve.call_count == 0
+
+
+def test_create_project_from_template(mock_client_from_api_key: MagicMock, default_headers: dict[str, str]) -> None:
+    mock_client_from_api_key.projects.create_from_template.return_value.id = FAKE_PROJECT_ID
+    mock_client_from_api_key.organization_id = FAKE_ORGANIZATION_ID
+    project = Project.create_from_template(
+        mock_client_from_api_key,
+        FAKE_ORGANIZATION_ID,
+        FAKE_TEMPLATE_PROJECT_ID,
+    )
+    assert project.id == FAKE_PROJECT_ID
+    mock_client_from_api_key.projects.create_from_template.assert_called_once_with(
+        organization_id=FAKE_ORGANIZATION_ID,
+        template_project_id=FAKE_TEMPLATE_PROJECT_ID,
+        name=None,
+        description=None,
+        extra_headers=default_headers,
+    )
 
 
 def test_create_access_key(mock_client_from_api_key: MagicMock, default_headers: dict[str, str]) -> None:
