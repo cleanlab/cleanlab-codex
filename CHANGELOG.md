@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.33] 2025-11-05
+
+- Upgrade codex-python version to v0.1.0a32
+
 ## [1.0.32] 2025-10-28
 
 - Add `Client.create_project_from_template()` method to create a new project from a template
@@ -150,7 +154,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial release of the `cleanlab-codex` client library.
 
-[Unreleased]: https://github.com/cleanlab/cleanlab-codex/compare/v1.0.32...HEAD
+[Unreleased]: https://github.com/cleanlab/cleanlab-codex/compare/v1.0.33...HEAD
+[1.0.33]: https://github.com/cleanlab/cleanlab-codex/compare/v1.0.32...v1.0.33
 [1.0.32]: https://github.com/cleanlab/cleanlab-codex/compare/v1.0.31...v1.0.32
 [1.0.31]: https://github.com/cleanlab/cleanlab-codex/compare/v1.0.30...v1.0.31
 [1.0.30]: https://github.com/cleanlab/cleanlab-codex/compare/v1.0.29...v1.0.30
