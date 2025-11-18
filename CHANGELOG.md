@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.34] 2025-11-18
+
+- Add `Project.add_expert_answer()` method to add an expert answer to a project
+- Deprecate `Project.add_remediation()` method
+- Upgrade codex-python version to v0.1.0a33
+
 ## [1.0.33] 2025-11-05
 
 - Upgrade codex-python version to v0.1.0a32
@@ -154,7 +160,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial release of the `cleanlab-codex` client library.
 
-[Unreleased]: https://github.com/cleanlab/cleanlab-codex/compare/v1.0.33...HEAD
+[Unreleased]: https://github.com/cleanlab/cleanlab-codex/compare/v1.0.34...HEAD
+[1.0.34]: https://github.com/cleanlab/cleanlab-codex/compare/v1.0.33...v1.0.34
 [1.0.33]: https://github.com/cleanlab/cleanlab-codex/compare/v1.0.32...v1.0.33
 [1.0.32]: https://github.com/cleanlab/cleanlab-codex/compare/v1.0.31...v1.0.32
 [1.0.31]: https://github.com/cleanlab/cleanlab-codex/compare/v1.0.30...v1.0.31
