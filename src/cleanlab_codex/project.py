@@ -238,17 +238,34 @@ class Project:
             eval_scores=eval_scores,
         )
 
+    def add_expert_answer(self, question: str, answer: str) -> None:
+        """Add an expert answer to the project. An expert answer represents a query and answer pair that is expert verified
+        and should be used to answer future queries to the AI system that are similar to the query.
+
+        Args:
+            query (str): The query to add to the project.
+            answer (str): The expert answer for the query.
+        """
+        self._sdk_client.projects.remediations.expert_answers.create(
+            project_id=self.id,
+            query=question,
+            answer=answer,
+            extra_headers=_AnalyticsMetadata().to_headers(),
+        )
+
     def add_remediation(self, question: str, answer: str | None = None) -> None:
-        """Add a remediation to the project. A remediation represents a question and answer pair that is expert verified
+        """DEPRECATED: Use `add_expert_answer` instead.
+
+        Add a remediation to the project. A remediation represents a question and answer pair that is expert verified
         and should be used to answer future queries to the AI system that are similar to the question.
 
         Args:
             question (str): The question to add to the project.
             answer (str, optional): The expert answer for the question. If not provided, the question will be added to the project without an expert answer.
         """
-        self._sdk_client.projects.remediations.create(
+        self._sdk_client.projects.remediations.expert_answers.create(
             project_id=self.id,
-            question=question,
+            query=question,
             answer=answer,
             extra_headers=_AnalyticsMetadata().to_headers(),
         )
